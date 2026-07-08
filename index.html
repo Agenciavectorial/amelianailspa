@@ -193,10 +193,10 @@ nav.scrolled{padding:11px 56px;top:36px;background:rgba(251,247,251,0.97);box-sh
 @keyframes petalFall{0%{transform:translateY(-60px) rotate(0deg);opacity:.7}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
 
 /* TICKER */
-.ticker-wrap{overflow:hidden;background:linear-gradient(90deg,#7B6B8E 0%,#9485A8 50%,#7B6B8E 100%);padding:14px 0;white-space:nowrap;position:relative;z-index:2}
+.ticker-wrap{overflow:hidden;background:#DDD9E8;padding:14px 0;white-space:nowrap;position:relative;z-index:2}
 .ticker-inner{display:inline-flex;animation:ticker 32s linear infinite}
-.ticker-inner span{display:inline-flex;align-items:center;gap:10px;font-size:.82rem;font-weight:600;color:#F5F2F8;letter-spacing:.08em;text-transform:uppercase;padding-right:44px}
-.ticker-sep{color:rgba(245,242,248,.5)!important;padding-right:44px!important}
+.ticker-inner span{display:inline-flex;align-items:center;gap:10px;font-size:.82rem;font-weight:600;color:#3D2B52;letter-spacing:.08em;text-transform:uppercase;padding-right:44px}
+.ticker-sep{color:rgba(61,43,82,.3)!important;padding-right:44px!important}
 @keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 
 /* BTNS */
@@ -319,12 +319,12 @@ section{padding:100px 80px;position:relative}
 #experiencias .section-tag{color:var(--rosa-soft)}
 #experiencias .section-title{color:var(--blanco)}
 #experiencias .section-sub{color:rgba(255,255,255,.7)}
-.exp-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:48px;align-items:start}
+.exp-grid{display:grid;grid-template-columns:1fr 2fr 1fr;gap:16px;margin-top:48px;align-items:stretch}
 .exp-vw{border-radius:20px;overflow:hidden;position:relative;background:#111;cursor:pointer}
 .exp-vw video{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s}
 .exp-vw:hover video{transform:scale(1.03)}
 .exp-vw.tall{aspect-ratio:9/16}
-.exp-vw.wide{aspect-ratio:16/9;grid-column:span 2}
+.exp-vw.wide{aspect-ratio:3/4;grid-column:auto}
 .exp-vw.square{aspect-ratio:1/1}
 .exp-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:56px;height:56px;border-radius:50%;background:rgba(157,124,176,.7);backdrop-filter:blur(8px);border:2px solid rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;transition:opacity .3s,transform .3s;pointer-events:none}
 .exp-play svg{fill:white;width:22px;height:22px;margin-left:4px}
@@ -498,8 +498,8 @@ footer{background:var(--negro);color:rgba(255,255,255,.7);padding:64px 80px 30px
   .velo-video{margin-bottom:24px}
 
   /* EXPERIENCIAS MOBILE - 2 columnas limpias */
-  .exp-grid{grid-template-columns:1fr 1fr;gap:10px}
-  .exp-vw.wide{grid-column:span 2;aspect-ratio:16/9}
+  .exp-grid{grid-template-columns:1fr;gap:10px}
+  .exp-vw.wide{grid-column:auto;aspect-ratio:16/9}
   .exp-vw.tall{aspect-ratio:3/4;max-height:none}
   .exp-vw.square{aspect-ratio:1/1}
 
@@ -858,7 +858,7 @@ footer{background:var(--negro);color:rgba(255,255,255,.7);padding:64px 80px 30px
       </div>
     </a>
     <a href="https://agenda.kumbio.com/amelia-nail-spa" target="_blank" class="servicio-card active" data-cat="unas">
-      <img class="sc-img" src="https://res.cloudinary.com/dcuvpsgao/image/upload/v1781652162/Manicure_semipermanente_5_g9g5ry.jpg" alt="Tradicional Manos/Pies - manicure en un solo tono" loading="lazy">
+      <img class="sc-img" src="https://res.cloudinary.com/dcuvpsgao/image/upload/v1781652162/Manicure_semipermanente_1_r99gn4.jpg" alt="Tradicional Manos/Pies - manicure en un solo tono o francés" loading="lazy">
       <div class="sc-overlay"></div>
       <div class="sc-body">
         <svg class="servicio-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
@@ -1166,11 +1166,6 @@ footer{background:var(--negro);color:rgba(255,255,255,.7);padding:64px 80px 30px
       <div class="exp-play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
       <div class="exp-label">Nuestro Spa</div>
     </div>
-    <div class="exp-vw wide" onclick="toggleVideo(this)">
-      <video muted loop playsinline preload="none" poster="https://res.cloudinary.com/deyyiwil0/video/upload/so_1.5,q_auto,f_jpg/Experiencias_-Amelia_Nail_Spa_2_uhzwqu.jpg" data-src="https://res.cloudinary.com/deyyiwil0/video/upload/q_auto,f_auto/Experiencias_-Amelia_Nail_Spa_2_uhzwqu.mp4"></video>
-      <div class="exp-play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
-      <div class="exp-label">Clientas felices</div>
-    </div>
     <div class="exp-vw tall" onclick="toggleVideo(this)">
       <video muted loop playsinline preload="none" poster="https://res.cloudinary.com/deyyiwil0/video/upload/so_1.0,q_auto,f_jpg/Press_On_-_Amelia_Nail_Spa_vx58n6.jpg" data-src="https://res.cloudinary.com/deyyiwil0/video/upload/q_auto,f_auto/Press_On_-_Amelia_Nail_Spa_vx58n6.mp4"></video>
       <div class="exp-play"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
@@ -1245,6 +1240,15 @@ footer{background:var(--negro);color:rgba(255,255,255,.7);padding:64px 80px 30px
         <div class="team-avatar" style="background-image:url('https://res.cloudinary.com/dcuvpsgao/image/upload/v1782243580/Julieth.jpg_lvwfga.jpg')"></div>
         <strong>Julieth</strong>
         <span>Tranquila y amable. Disfruta dar vida a diseños únicos de nail art con paciencia y atención al detalle.</span>
+      </div>
+      <div class="team-card" tabindex="0" role="button" aria-label="Ver foto de Darly"
+        data-name="Darly" data-role="Manicurista"
+        data-bio="Parte esencial del equipo de Amelia Nail Spa. Con dedicación y amor por su trabajo, Darly aporta profesionalismo y calidez en cada servicio."
+        data-img="">
+        <div class="team-avatar" style="background:linear-gradient(135deg,#9D7CB0,#B79AC8)">D</div>
+        <strong>Darly</strong>
+        <span>Dedicada y profesional. Parte esencial del equipo con amor por cada detalle de su trabajo.</span>
+        <div style="font-size:.72rem;color:var(--rosa);margin-top:6px;font-style:italic">📸 Foto próximamente</div>
       </div>
     </div>
   </div>
@@ -1771,11 +1775,15 @@ document.addEventListener('DOMContentLoaded', function () {
     if (lastFocusedCard) lastFocusedCard.focus();
   }
 
-  document.querySelectorAll('.team-card[data-img]').forEach(function (card) {
-    card.addEventListener('click', function () { openTeamModal(card); });
+  document.querySelectorAll('.team-card[data-name]').forEach(function (card) {
+    card.addEventListener('click', function () {
+      if (!card.getAttribute('data-img')) return; // sin foto todavía
+      openTeamModal(card);
+    });
     card.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
+        if (!card.getAttribute('data-img')) return;
         openTeamModal(card);
       }
     });
