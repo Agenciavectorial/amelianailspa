@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://amelianailspa.com/sitemap.xml
