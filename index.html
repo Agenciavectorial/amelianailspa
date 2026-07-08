@@ -34,7 +34,7 @@
 <link rel="icon" type="image/png" sizes="16x16" href="https://res.cloudinary.com/deyyiwil0/image/upload/q_auto,f_png,w_16,h_16,c_fill,g_auto,r_max/v1776809816/Amelia_Nail_Spa_kuxwvh.png">
 <link rel="apple-touch-icon" sizes="180x180" href="https://res.cloudinary.com/deyyiwil0/image/upload/q_auto,f_png,w_180,h_180,c_fill,g_auto,r_max/v1776809816/Amelia_Nail_Spa_kuxwvh.png">
 <link rel="shortcut icon" href="https://res.cloudinary.com/deyyiwil0/image/upload/q_auto,f_png,w_32,h_32,c_fill,g_auto,r_max/v1776809816/Amelia_Nail_Spa_kuxwvh.png">
-<meta name="theme-color" content="#9D7CB0">
+<meta name="theme-color" content="#A98BBE">
 
 <!-- Preconnects (performance) -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -122,8 +122,8 @@
 
 <style>
 :root{
-  --rosa:#9D7CB0; --rosa-deep:#6B4F86; --rosa-soft:#EAD9EC;
-  --lila:#B79AC8; --crema:#FBF7FB; --blanco:#FFFFFF;
+  --rosa:#A98BBE; --rosa-deep:#7A6494; --rosa-soft:#EDE5F2;
+  --lila:#C4B5D4; --crema:#F7F4FA; --blanco:#FFFFFF;
   --negro:#221E28; --gris:#6E6776; --gris-claro:#F2ECF6;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -140,8 +140,8 @@ body::before{
 }
 
 /* NAV */
-nav{position:fixed;top:36px;left:0;right:0;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:18px 56px;background:rgba(251,247,251,0.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(157,124,176,0.12);transition:all .3s}
-nav.scrolled{padding:11px 56px;top:36px;background:rgba(251,247,251,0.97);box-shadow:0 2px 24px rgba(157,124,176,0.12)}
+nav{position:fixed;top:36px;left:0;right:0;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:18px 56px;background:rgba(251,247,251,0.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(169,139,190,0.12);transition:all .3s}
+nav.scrolled{padding:11px 56px;top:36px;background:rgba(251,247,251,0.97);box-shadow:0 2px 24px rgba(169,139,190,0.12)}
 /* NAV MOBILE HAMBURGER */
 .nav-hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:4px;background:none;border:none}
 .nav-hamburger span{display:block;width:24px;height:2px;background:var(--rosa-deep);border-radius:2px;transition:all .3s}
@@ -165,12 +165,12 @@ nav.scrolled{padding:11px 56px;top:36px;background:rgba(251,247,251,0.97);box-sh
 /* HERO */
 .hero{min-height:100vh;display:grid;grid-template-columns:1fr 1fr;align-items:center;padding-top:116px;position:relative;overflow:hidden;background:linear-gradient(135deg,#F0ECF5 0%,#E8E4EE 40%,#EDE7F3 100%)}
 .hero-bg{position:absolute;inset:0;z-index:0}
-.hero-bg-gradient{position:absolute;inset:0;background:radial-gradient(ellipse 65% 55% at 80% 45%,rgba(183,154,200,.28) 0%,transparent 65%),radial-gradient(ellipse 45% 45% at 10% 75%,rgba(157,124,176,.16) 0%,transparent 60%),radial-gradient(ellipse 30% 40% at 50% 20%,rgba(200,190,215,.12) 0%,transparent 55%)}
+.hero-bg-gradient{position:absolute;inset:0;background:radial-gradient(ellipse 65% 55% at 80% 45%,rgba(183,154,200,.28) 0%,transparent 65%),radial-gradient(ellipse 45% 45% at 10% 75%,rgba(169,139,190,.16) 0%,transparent 60%),radial-gradient(ellipse 30% 40% at 50% 20%,rgba(200,190,215,.12) 0%,transparent 55%)}
 /* decorative flowers bg */
 .hero-bg-flowers{position:absolute;inset:0;overflow:hidden;pointer-events:none}
 .hero-bg-flowers svg{position:absolute;opacity:.06}
 .hero-left{padding:80px 48px 80px 80px;position:relative;z-index:1}
-.hero-tag{display:inline-flex;align-items:center;gap:8px;background:rgba(157,124,176,.1);border:1px solid rgba(157,124,176,.25);padding:6px 16px;border-radius:50px;font-size:.78rem;font-weight:600;color:var(--rosa);letter-spacing:.08em;text-transform:uppercase;margin-bottom:24px;animation:fadeUp .8s ease both}
+.hero-tag{display:inline-flex;align-items:center;gap:8px;background:rgba(169,139,190,.1);border:1px solid rgba(169,139,190,.25);padding:6px 16px;border-radius:50px;font-size:.78rem;font-weight:600;color:var(--rosa);letter-spacing:.08em;text-transform:uppercase;margin-bottom:24px;animation:fadeUp .8s ease both}
 .hero-h1{font-family:'Playfair Display',serif;font-size:clamp(2.8rem,4.5vw,4.8rem);line-height:1.08;color:var(--rosa-deep);margin-bottom:8px;animation:fadeUp .8s .15s ease both}
 .hero-h1 em{font-style:italic;color:var(--rosa)}
 .hero-script{font-family:'Great Vibes',cursive;font-size:clamp(2rem,3.5vw,3.2rem);color:var(--lila);line-height:1.2;margin-bottom:24px;animation:fadeUp .8s .25s ease both}
@@ -190,18 +190,18 @@ nav.scrolled{padding:11px 56px;top:36px;background:rgba(251,247,251,0.97);box-sh
 
 /* FLOATING PETALS ANIMATION */
 .petal{position:absolute;pointer-events:none;animation:petalFall linear infinite;opacity:0}
-@keyframes petalFall{0%{transform:translateY(-60px) rotate(0deg);opacity:.7}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+
 
 /* TICKER */
 .ticker-wrap{overflow:hidden;background:#DDD9E8;padding:14px 0;white-space:nowrap;position:relative;z-index:2}
 .ticker-inner{display:inline-flex;animation:ticker 32s linear infinite}
-.ticker-inner span{display:inline-flex;align-items:center;gap:10px;font-size:.82rem;font-weight:600;color:#3D2B52;letter-spacing:.08em;text-transform:uppercase;padding-right:44px}
+.ticker-inner span{display:inline-flex;align-items:center;gap:10px;font-size:.82rem;font-weight:600;color:#4E3E66;letter-spacing:.08em;text-transform:uppercase;padding-right:44px}
 .ticker-sep{color:rgba(61,43,82,.3)!important;padding-right:44px!important}
 @keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 
 /* BTNS */
-.btn-primary{display:inline-flex;align-items:center;gap:8px;background:var(--rosa);color:var(--blanco);padding:14px 32px;border-radius:50px;font-size:.95rem;font-weight:600;text-decoration:none;transition:all .25s;box-shadow:0 8px 24px rgba(157,124,176,.35)}
-.btn-primary:hover{background:var(--rosa-deep);transform:translateY(-2px);box-shadow:0 12px 32px rgba(157,124,176,.45)}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;background:var(--rosa);color:var(--blanco);padding:14px 32px;border-radius:50px;font-size:.95rem;font-weight:600;text-decoration:none;transition:all .25s;box-shadow:0 8px 24px rgba(169,139,190,.35)}
+.btn-primary:hover{background:var(--rosa-deep);transform:translateY(-2px);box-shadow:0 12px 32px rgba(169,139,190,.45)}
 .btn-outline{display:inline-flex;align-items:center;gap:8px;border:2px solid var(--rosa);color:var(--rosa);padding:12px 28px;border-radius:50px;font-size:.95rem;font-weight:600;text-decoration:none;transition:all .25s}
 .btn-outline:hover{background:var(--rosa);color:var(--blanco);transform:translateY(-2px)}
 .btn-white{background:var(--blanco);color:var(--rosa-deep);padding:16px 36px;border-radius:50px;font-size:1rem;font-weight:700;text-decoration:none;transition:all .25s;box-shadow:0 8px 24px rgba(0,0,0,.15);display:inline-block}
@@ -221,8 +221,8 @@ section{padding:100px 80px;position:relative}
 
 /* DECORATIVE BG STRIPS */
 .bg-dots{background-image:radial-gradient(var(--rosa-soft) 1px,transparent 1px);background-size:28px 28px;background-color:var(--crema)}
-.bg-lines{background-image:repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(157,124,176,.06) 39px,rgba(157,124,176,.06) 40px);background-color:var(--blanco)}
-.bg-diagonal{background-image:repeating-linear-gradient(-45deg,transparent,transparent 18px,rgba(157,124,176,.04) 18px,rgba(157,124,176,.04) 19px);background-color:var(--gris-claro)}
+.bg-lines{background-image:repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(169,139,190,.06) 39px,rgba(169,139,190,.06) 40px);background-color:var(--blanco)}
+.bg-diagonal{background-image:repeating-linear-gradient(-45deg,transparent,transparent 18px,rgba(169,139,190,.04) 18px,rgba(169,139,190,.04) 19px);background-color:var(--gris-claro)}
 
 /* SERVICIOS */
 #servicios{background:var(--blanco)}
@@ -239,7 +239,7 @@ section{padding:100px 80px;position:relative}
   min-height:340px;
 }
 .servicio-card.active{display:flex!important;flex-direction:column;justify-content:flex-end;animation:fadeUp .4s ease both}
-.servicio-card:hover{border-color:var(--rosa);box-shadow:0 16px 48px rgba(157,124,176,.2);transform:translateY(-6px)}
+.servicio-card:hover{border-color:var(--rosa);box-shadow:0 16px 48px rgba(169,139,190,.2);transform:translateY(-6px)}
 .sc-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .6s}
 .servicio-card:hover .sc-img{transform:scale(1.07)}
 .sc-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(34,30,40,.92) 0%,rgba(34,30,40,.55) 45%,rgba(34,30,40,.15) 100%)}
@@ -267,7 +267,7 @@ section{padding:100px 80px;position:relative}
 .filter-btn.active,.filter-btn:hover{background:var(--rosa);border-color:var(--rosa);color:var(--blanco)}
 /* FLOWER GRID LAYOUT */
 .flower-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;position:relative}
-.flower-grid::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(157,124,176,.08) 0%,transparent 70%);pointer-events:none;z-index:0}
+.flower-grid::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(169,139,190,.08) 0%,transparent 70%);pointer-events:none;z-index:0}
 .masonry-item{border-radius:14px;overflow:hidden;cursor:pointer;position:relative;transition:opacity .4s,transform .4s,height .4s;aspect-ratio:1}
 .masonry-item:nth-child(2){border-radius:50% 14px 14px 14px}
 .masonry-item:nth-child(3){border-radius:14px 50% 14px 14px}
@@ -277,7 +277,7 @@ section{padding:100px 80px;position:relative}
 /* collapsed handled by JS */
 .masonry-item img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s}
 .masonry-item:hover img{transform:scale(1.07)}
-.masonry-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(107,79,134,.8) 0%,transparent 55%);opacity:0;transition:opacity .3s;display:flex;align-items:flex-end;padding:12px}
+.masonry-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(122,100,148,.8) 0%,transparent 55%);opacity:0;transition:opacity .3s;display:flex;align-items:flex-end;padding:12px}
 .masonry-item:hover .masonry-overlay{opacity:1}
 .masonry-overlay-text{color:var(--blanco);font-size:.78rem;font-weight:600;display:block}
 .masonry-overlay-btn{margin-top:5px;display:inline-flex;align-items:center;gap:4px;background:var(--rosa);border:none;color:var(--blanco);padding:6px 12px;border-radius:20px;font-size:.72rem;font-weight:700;text-decoration:none;transition:background .2s}
@@ -292,7 +292,7 @@ section{padding:100px 80px;position:relative}
 #antesdespues::before{content:'✦  ✦  ✦';position:absolute;top:0;left:0;right:0;text-align:center;padding:10px;color:var(--rosa-soft);font-size:.9rem;letter-spacing:14px;opacity:.5}
 .ba-header{text-align:center;margin-bottom:52px}
 .ba-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
-.ba-card{border-radius:22px;overflow:hidden;box-shadow:0 8px 32px rgba(157,124,176,.12)}
+.ba-card{border-radius:22px;overflow:hidden;box-shadow:0 8px 32px rgba(169,139,190,.12)}
 .ba-wrap{position:relative;width:100%;padding-bottom:130%;overflow:hidden;cursor:ew-resize}
 .ba-before,.ba-after{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .ba-after{clip-path:inset(0 50% 0 0);transition:none}
@@ -304,7 +304,7 @@ section{padding:100px 80px;position:relative}
 /* VELOTERAPIA */
 #veloterapia{background:var(--crema)}
 .velo-grid{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center}
-.velo-video{border-radius:30px;overflow:hidden;box-shadow:0 32px 80px rgba(157,124,176,.2);position:relative}
+.velo-video{border-radius:30px;overflow:hidden;box-shadow:0 32px 80px rgba(169,139,190,.2);position:relative}
 .velo-video::before{content:'';position:absolute;inset:-2px;background:linear-gradient(135deg,var(--rosa),var(--lila));border-radius:32px;z-index:-1}
 .velo-video video{width:100%;display:block}
 .velo-benefits{display:flex;flex-direction:column;gap:14px;margin-top:28px}
@@ -326,18 +326,18 @@ section{padding:100px 80px;position:relative}
 .exp-vw.tall{aspect-ratio:9/16}
 .exp-vw.wide{aspect-ratio:3/4;grid-column:auto}
 .exp-vw.square{aspect-ratio:1/1}
-.exp-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:56px;height:56px;border-radius:50%;background:rgba(157,124,176,.7);backdrop-filter:blur(8px);border:2px solid rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;transition:opacity .3s,transform .3s;pointer-events:none}
+.exp-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:56px;height:56px;border-radius:50%;background:rgba(169,139,190,.7);backdrop-filter:blur(8px);border:2px solid rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;transition:opacity .3s,transform .3s;pointer-events:none}
 .exp-play svg{fill:white;width:22px;height:22px;margin-left:4px}
 .exp-vw:hover .exp-play{opacity:0;transform:translate(-50%,-50%) scale(1.2)}
 .exp-vw.playing .exp-play{opacity:0}
-.exp-label{position:absolute;bottom:12px;left:12px;color:white;font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:rgba(107,79,134,.6);padding:4px 10px;border-radius:20px;backdrop-filter:blur(4px)}
+.exp-label{position:absolute;bottom:12px;left:12px;color:white;font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:rgba(122,100,148,.6);padding:4px 10px;border-radius:20px;backdrop-filter:blur(4px)}
 
 /* SEDE */
 #sede{background:var(--blanco)}
 .sede-layout{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:start}
 .sede-info{display:flex;flex-direction:column;gap:14px;margin-top:24px}
 .sede-info-item{display:flex;align-items:flex-start;gap:12px;color:var(--negro);font-size:.9rem}
-.sede-ic{width:38px;height:38px;border-radius:12px;background:rgba(157,124,176,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--rosa)}
+.sede-ic{width:38px;height:38px;border-radius:12px;background:rgba(169,139,190,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--rosa)}
 .sede-photos{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .sede-photos .sp{border-radius:16px;overflow:hidden}
 .sede-photos .sp:first-child{grid-column:span 2}
@@ -365,7 +365,7 @@ section{padding:100px 80px;position:relative}
 .testimonio-img{border-radius:18px;overflow:hidden;aspect-ratio:3/4}
 .testimonio-img img{width:100%;height:100%;object-fit:cover;transition:transform .4s}
 .testimonio-img:hover img{transform:scale(1.04)}
-.reviews-strip{background:var(--blanco);border-radius:24px;padding:32px 40px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:24px;box-shadow:0 4px 24px rgba(157,124,176,.08)}
+.reviews-strip{background:var(--blanco);border-radius:24px;padding:32px 40px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:24px;box-shadow:0 4px 24px rgba(169,139,190,.08)}
 .rs-score{text-align:center}
 .rs-val{font-family:'Playfair Display',serif;font-size:3.5rem;font-weight:900;color:var(--rosa-deep);line-height:1}
 .rs-stars{color:#F59E0B;font-size:1.2rem;margin:6px 0}
@@ -374,8 +374,8 @@ section{padding:100px 80px;position:relative}
 /* NUEVOS SERVICIOS */
 #nuevos{background:var(--gris-claro)}
 .nuevos-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:48px}
-.nuevo-card{background:var(--blanco);border-radius:20px;overflow:hidden;box-shadow:0 4px 20px rgba(157,124,176,.08);transition:transform .3s,box-shadow .3s}
-.nuevo-card:hover{transform:translateY(-6px);box-shadow:0 16px 40px rgba(157,124,176,.15)}
+.nuevo-card{background:var(--blanco);border-radius:20px;overflow:hidden;box-shadow:0 4px 20px rgba(169,139,190,.08);transition:transform .3s,box-shadow .3s}
+.nuevo-card:hover{transform:translateY(-6px);box-shadow:0 16px 40px rgba(169,139,190,.15)}
 .nuevo-card img{width:100%;height:200px;object-fit:cover}
 .nuevo-card-body{padding:20px}
 .nuevo-card h3{font-family:'Playfair Display',serif;color:var(--rosa-deep);margin-bottom:6px;font-size:1.05rem}
@@ -524,7 +524,7 @@ footer{background:var(--negro);color:rgba(255,255,255,.7);padding:64px 80px 30px
 #nosotros{
   background-color:var(--blanco);
   background-image:
-    radial-gradient(circle at 8% 12%, rgba(157,124,176,.05) 0%, transparent 45%),
+    radial-gradient(circle at 8% 12%, rgba(169,139,190,.05) 0%, transparent 45%),
     radial-gradient(circle at 92% 85%, rgba(183,154,200,.06) 0%, transparent 45%),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90' viewBox='0 0 90 90'%3E%3Cg fill='none' stroke='%239D7CB0' stroke-width='1' opacity='0.07'%3E%3Cpath d='M0 45c12-18 33-18 45 0s33 18 45 0'/%3E%3Cpath d='M0 15c12-18 33-18 45 0s33 18 45 0'/%3E%3Cpath d='M0 75c12-18 33-18 45 0s33 18 45 0'/%3E%3C/g%3E%3C/svg%3E");
   background-size:auto,auto,90px 90px;
@@ -536,9 +536,9 @@ footer{background:var(--negro);color:rgba(255,255,255,.7);padding:64px 80px 30px
 .nosotros-text{max-width:780px;margin:0 auto}
 .nosotros-text p{color:var(--gris);line-height:1.85;font-size:1rem;margin-bottom:18px}
 .nosotros-highlight{background:var(--gris-claro);border-left:3px solid var(--rosa);border-radius:0 12px 12px 0;padding:18px 24px;margin:8px auto 0;max-width:780px;font-family:'Playfair Display',serif;font-style:italic;font-size:1.15rem;line-height:1.6;color:var(--rosa-deep);text-align:left}
-.nosotros-photo{position:relative;max-width:920px;margin:44px auto 0;border-radius:28px;overflow:hidden;box-shadow:0 32px 80px rgba(107,79,134,.18)}
+.nosotros-photo{position:relative;max-width:920px;margin:44px auto 0;border-radius:28px;overflow:hidden;box-shadow:0 32px 80px rgba(122,100,148,.18)}
 .nosotros-photo img{width:100%;display:block;object-fit:cover}
-.nosotros-photo::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(107,79,134,.55) 0%,transparent 55%)}
+.nosotros-photo::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(122,100,148,.55) 0%,transparent 55%)}
 .nosotros-photo .nosotros-caption{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);z-index:2;color:var(--blanco);font-family:'Playfair Display',serif;font-size:1.1rem;letter-spacing:.02em}
 .nosotros-cta{margin-top:36px}
 @media(max-width:768px){
@@ -554,9 +554,9 @@ footer{background:var(--negro);color:rgba(255,255,255,.7);padding:64px 80px 30px
 .amp-toggle{display:none}
 .amp-overlay{position:fixed;inset:0;z-index:3000;background:rgba(34,30,40,.6);backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;padding:20px;animation:ampPopIn .5s ease 7s forwards}
 @keyframes ampPopIn{to{opacity:1;pointer-events:auto}}
-.amp-card{background:var(--blanco);border-radius:28px;max-width:430px;width:100%;padding:42px 34px 30px;text-align:center;position:relative;box-shadow:0 30px 90px rgba(107,79,134,.4);transform:translateY(30px) scale(.92);opacity:0;animation:ampCardIn .6s cubic-bezier(.2,.85,.25,1) 7s forwards;overflow:hidden}
+.amp-card{background:var(--blanco);border-radius:28px;max-width:430px;width:100%;padding:42px 34px 30px;text-align:center;position:relative;box-shadow:0 30px 90px rgba(122,100,148,.4);transform:translateY(30px) scale(.92);opacity:0;animation:ampCardIn .6s cubic-bezier(.2,.85,.25,1) 7s forwards;overflow:hidden}
 @keyframes ampCardIn{to{transform:translateY(0) scale(1);opacity:1}}
-.amp-card::before{content:'';position:absolute;top:-70px;left:50%;transform:translateX(-50%);width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,rgba(157,124,176,.28),transparent 70%);pointer-events:none}
+.amp-card::before{content:'';position:absolute;top:-70px;left:50%;transform:translateX(-50%);width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,rgba(169,139,190,.28),transparent 70%);pointer-events:none}
 .amp-close{position:absolute;top:12px;right:18px;font-size:1.7rem;color:var(--gris);cursor:pointer;line-height:1;z-index:2;text-decoration:none}
 .amp-close:hover{color:var(--rosa-deep)}
 .amp-badge{position:relative;display:inline-block;font-family:'Great Vibes',cursive;font-size:1.6rem;color:var(--rosa);margin-bottom:2px}
@@ -570,7 +570,7 @@ footer{background:var(--negro);color:rgba(255,255,255,.7);padding:64px 80px 30px
 /* ===== MICRO-ANIMACIONES ===== */
 @keyframes ampFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
 @keyframes ampShine{0%{left:-60%}60%,100%{left:130%}}
-@keyframes ampPulse{0%,100%{box-shadow:0 0 0 0 rgba(157,124,176,.5)}50%{box-shadow:0 0 0 9px rgba(157,124,176,0)}}
+@keyframes ampPulse{0%,100%{box-shadow:0 0 0 0 rgba(169,139,190,.5)}50%{box-shadow:0 0 0 9px rgba(169,139,190,0)}}
 .btn-primary{position:relative;overflow:hidden}
 .btn-primary::after{content:'';position:absolute;top:0;left:-60%;width:45%;height:100%;background:linear-gradient(120deg,transparent,rgba(255,255,255,.5),transparent);transform:skewX(-20deg);pointer-events:none}
 .btn-primary:hover::after{animation:ampShine .85s ease}
@@ -588,7 +588,7 @@ footer{background:var(--negro);color:rgba(255,255,255,.7);padding:64px 80px 30px
 .nos-pillars{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;max-width:980px;margin:44px auto 0}
 .nos-pillar{background:var(--gris-claro);border-radius:20px;padding:26px 18px;text-align:center;transition:transform .35s,box-shadow .35s}
 .nos-pillar:hover .nos-pic{transform:scale(1.12) rotate(-6deg)}
-.nos-pillar:hover{transform:translateY(-7px);box-shadow:0 18px 46px rgba(107,79,134,.18)}
+.nos-pillar:hover{transform:translateY(-7px);box-shadow:0 18px 46px rgba(122,100,148,.18)}
 .nos-pic{width:54px;height:54px;border-radius:16px;margin:0 auto 14px;background:linear-gradient(135deg,var(--rosa),var(--lila));display:flex;align-items:center;justify-content:center;color:#fff;transition:transform .35s ease}
 .nos-pillar strong{display:block;color:var(--negro);font-size:1rem;margin-bottom:6px}
 .nos-pillar p{color:var(--gris);font-size:.85rem;line-height:1.5}
@@ -606,21 +606,21 @@ footer{background:var(--negro);color:rgba(255,255,255,.7);padding:64px 80px 30px
 .nos-team-title em{color:var(--rosa);font-style:italic}
 .nos-team-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:24px}
 .team-card{background:var(--blanco);border:1px solid var(--gris-claro);border-radius:22px;padding:30px 18px;transition:transform .35s,box-shadow .35s;cursor:pointer}
-.team-card:hover,.team-card:focus-visible{transform:translateY(-7px);box-shadow:0 20px 52px rgba(107,79,134,.2);outline:none;border-color:var(--rosa)}
-.team-avatar{width:118px;height:118px;border-radius:50%;margin:0 auto 16px;background:linear-gradient(135deg,var(--rosa),var(--lila));display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Playfair Display',serif;font-size:2.4rem;box-shadow:0 14px 34px rgba(107,79,134,.28);overflow:hidden;background-size:cover!important;background-position:top center!important;animation:ampFloat 5s ease-in-out infinite;position:relative}
+.team-card:hover,.team-card:focus-visible{transform:translateY(-7px);box-shadow:0 20px 52px rgba(122,100,148,.2);outline:none;border-color:var(--rosa)}
+.team-avatar{width:118px;height:118px;border-radius:50%;margin:0 auto 16px;background:linear-gradient(135deg,var(--rosa),var(--lila));display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Playfair Display',serif;font-size:2.4rem;box-shadow:0 14px 34px rgba(122,100,148,.28);overflow:hidden;background-size:cover!important;background-position:top center!important;position:relative}
 .team-avatar::after{content:'';position:absolute;inset:0;border-radius:50%;background:rgba(34,30,40,0);display:flex;align-items:center;justify-content:center;transition:background .3s}
 .team-card:hover .team-avatar::after,.team-card:focus-visible .team-avatar::after{background:rgba(34,30,40,.32)}
 .team-avatar::before{content:'';position:absolute;top:50%;left:50%;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;opacity:0;transition:opacity .3s,transform .3s;transform:scale(.6);background:rgba(255,255,255,.92) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236B4F86' stroke-width='2.4'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") center/14px no-repeat;z-index:2}
 .team-card:hover .team-avatar::before,.team-card:focus-visible .team-avatar::before{opacity:1;transform:scale(1)}
-.team-card:nth-child(2) .team-avatar{animation-delay:.6s}
-.team-card:nth-child(3) .team-avatar{animation-delay:1.2s}
-.team-card:nth-child(4) .team-avatar{animation-delay:1.8s}
+
+
+
 .team-card strong{display:block;font-family:'Playfair Display',serif;color:var(--rosa-deep);font-size:1.2rem;margin-bottom:4px}
 .team-card span{display:block;color:var(--gris);font-size:.82rem;line-height:1.55}
 .team-role{color:var(--rosa)!important;font-weight:700;font-size:.78rem!important;letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px}
 .nos-team-owner{grid-template-columns:1fr;max-width:460px;margin:0 auto}
 .team-card-owner{padding:36px 30px}
-.team-card-owner .team-avatar{width:148px;height:148px;font-size:3rem;box-shadow:0 18px 44px rgba(107,79,134,.32)}
+.team-card-owner .team-avatar{width:148px;height:148px;font-size:3rem;box-shadow:0 18px 44px rgba(122,100,148,.32)}
 .team-card-owner strong{font-size:1.4rem}
 .nosotros-cta{text-align:center;margin-top:48px}
 @media(max-width:860px){.nos-pillars{grid-template-columns:repeat(2,1fr)}.nos-team-grid{grid-template-columns:repeat(2,1fr)}}
@@ -729,9 +729,9 @@ footer{background:var(--negro);color:rgba(255,255,255,.7);padding:64px 80px 30px
   </div>
   <div class="hero-right">
     <div class="hero-img"><img src="https://res.cloudinary.com/deyyiwil0/image/upload/q_auto,f_auto/Sede_Amelia_Nail_Spa_1_bleirt.jpg" alt="Nuestro local · Amelia Nail Spa" loading="eager"></div>
-    <div class="hero-img"><img src="https://res.cloudinary.com/dcuvpsgao/image/upload/v1781652160/Acr%C3%ADlicas_1_tuqhnz.jpg" alt="Acrílicas" loading="eager"></div>
-    <div class="hero-img"><img src="https://res.cloudinary.com/dcuvpsgao/image/upload/v1781652162/Manicure_semipermanente_1_r99gn4.jpg" alt="Semipermanente" loading="eager"></div>
-    <div class="hero-img"><img src="https://res.cloudinary.com/dcuvpsgao/image/upload/v1781652164/Press_on_1_lffysf.jpg" alt="Press On" loading="eager"></div>
+    <div class="hero-img"><img src="https://res.cloudinary.com/dcuvpsgao/image/upload/v1781652160/Acr%C3%ADlicas_1_tuqhnz.jpg" alt="Acrílicas" loading="lazy"></div>
+    <div class="hero-img"><img src="https://res.cloudinary.com/dcuvpsgao/image/upload/v1781652162/Manicure_semipermanente_1_r99gn4.jpg" alt="Semipermanente" loading="lazy"></div>
+    <div class="hero-img"><img src="https://res.cloudinary.com/dcuvpsgao/image/upload/v1781652164/Press_on_1_lffysf.jpg" alt="Press On" loading="lazy"></div>
   </div>
   <!-- floating petals -->
   <div id="petals"></div>
@@ -748,7 +748,7 @@ footer{background:var(--negro);color:rgba(255,255,255,.7);padding:64px 80px 30px
 <!-- SERVICIOS -->
 <section id="servicios" class="bg-lines" style="position:relative;overflow:hidden;">
 <!-- Decorative background petals -->
-<div style="position:absolute;top:-60px;right:-60px;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(157,124,176,.06) 0%,transparent 70%);pointer-events:none;z-index:0"></div>
+<div style="position:absolute;top:-60px;right:-60px;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(169,139,190,.06) 0%,transparent 70%);pointer-events:none;z-index:0"></div>
 <div style="position:absolute;bottom:-40px;left:-40px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(183,154,200,.06) 0%,transparent 70%);pointer-events:none;z-index:0"></div>
   <div class="servicios-header reveal">
     <div>
@@ -1003,10 +1003,10 @@ footer{background:var(--negro);color:rgba(255,255,255,.7);padding:64px 80px 30px
 <section id="galeria" class="bg-dots" style="position:relative;overflow:hidden">
 <!-- Decorative petals -->
 <div style="position:absolute;top:10%;right:2%;pointer-events:none;opacity:.07;z-index:0">
-  <svg width="120" height="120" viewBox="0 0 100 100"><circle cx="50" cy="25" r="18" fill="#9D7CB0"/><circle cx="75" cy="50" r="18" fill="#9D7CB0"/><circle cx="50" cy="75" r="18" fill="#9D7CB0"/><circle cx="25" cy="50" r="18" fill="#9D7CB0"/><circle cx="50" cy="50" r="22" fill="#C9AED8"/></svg>
+  <svg width="120" height="120" viewBox="0 0 100 100"><circle cx="50" cy="25" r="18" fill="#A98BBE"/><circle cx="75" cy="50" r="18" fill="#A98BBE"/><circle cx="50" cy="75" r="18" fill="#A98BBE"/><circle cx="25" cy="50" r="18" fill="#A98BBE"/><circle cx="50" cy="50" r="22" fill="#C9AED8"/></svg>
 </div>
 <div style="position:absolute;bottom:8%;left:1%;pointer-events:none;opacity:.05;z-index:0">
-  <svg width="100" height="100" viewBox="0 0 100 100"><circle cx="50" cy="25" r="18" fill="#B79AC8"/><circle cx="75" cy="50" r="18" fill="#B79AC8"/><circle cx="50" cy="75" r="18" fill="#B79AC8"/><circle cx="25" cy="50" r="18" fill="#B79AC8"/><circle cx="50" cy="50" r="22" fill="#D2BFE2"/></svg>
+  <svg width="100" height="100" viewBox="0 0 100 100"><circle cx="50" cy="25" r="18" fill="#C4B5D4"/><circle cx="75" cy="50" r="18" fill="#C4B5D4"/><circle cx="50" cy="75" r="18" fill="#C4B5D4"/><circle cx="25" cy="50" r="18" fill="#C4B5D4"/><circle cx="50" cy="50" r="22" fill="#D2BFE2"/></svg>
 </div>
   <div class="galeria-header reveal">
     <div class="section-tag">
@@ -1069,7 +1069,7 @@ footer{background:var(--negro);color:rgba(255,255,255,.7);padding:64px 80px 30px
 <!-- ANTES Y DESPUES -->
 <section id="antesdespues" class="bg-lines" style="position:relative;overflow:hidden">
 <div style="position:absolute;top:-30px;left:50%;transform:translateX(-50%);pointer-events:none;opacity:.04;z-index:0">
-  <svg width="200" height="200" viewBox="0 0 100 100"><circle cx="50" cy="25" r="18" fill="#9D7CB0"/><circle cx="75" cy="50" r="18" fill="#9D7CB0"/><circle cx="50" cy="75" r="18" fill="#9D7CB0"/><circle cx="25" cy="50" r="18" fill="#9D7CB0"/><circle cx="50" cy="50" r="22" fill="#C9AED8"/></svg>
+  <svg width="200" height="200" viewBox="0 0 100 100"><circle cx="50" cy="25" r="18" fill="#A98BBE"/><circle cx="75" cy="50" r="18" fill="#A98BBE"/><circle cx="50" cy="75" r="18" fill="#A98BBE"/><circle cx="25" cy="50" r="18" fill="#A98BBE"/><circle cx="50" cy="50" r="22" fill="#C9AED8"/></svg>
 </div>
   <div class="ba-header reveal">
     <div class="section-tag">
@@ -1117,7 +1117,7 @@ footer{background:var(--negro);color:rgba(255,255,255,.7);padding:64px 80px 30px
 <section id="veloterapia" style="background:var(--crema)">
   <div class="velo-grid">
     <div class="velo-video reveal">
-      <video autoplay muted loop playsinline preload="auto" style="width:100%;display:block">
+      <video muted loop playsinline preload="none" data-autoplay="true" style="width:100%;display:block">
         <source src="https://res.cloudinary.com/deyyiwil0/video/upload/q_auto,vc_h264/Veloterapia_-_Amelia_Nail_Spa_qoa6ui.mp4" type="video/mp4">
         <source src="https://res.cloudinary.com/deyyiwil0/video/upload/q_auto,f_auto/Veloterapia_-_Amelia_Nail_Spa_qoa6ui.mp4" type="video/mp4">
       </video>
@@ -1205,8 +1205,8 @@ footer{background:var(--negro);color:rgba(255,255,255,.7);padding:64px 80px 30px
       <div class="team-card team-card-owner" tabindex="0" role="button" aria-label="Ver foto de Erika"
         data-name="Erika" data-role="CEO · Amelia Nail Spa" data-no-agenda="true"
         data-bio="Exigente, apasionada y comprometida con la excelencia. Lidera Amelia Nail Spa con exigencia, respeto y compromiso, convencida de que los pequeños detalles hacen la diferencia. Disfruta ver crecer a su equipo y elevar la experiencia de cada cliente, para que la confianza, el respeto y el profesionalismo se sientan desde el primer momento."
-        data-img="https://res.cloudinary.com/dcuvpsgao/image/upload/v1782243576/Erika_xuhltz.jpg">
-        <div class="team-avatar" style="background-image:url('https://res.cloudinary.com/dcuvpsgao/image/upload/v1782243576/Erika_xuhltz.jpg')"></div>
+        data-img="https://res.cloudinary.com/dcuvpsgao/image/upload/q_auto,f_auto,w_600/v1782243576/Erika_xuhltz.jpg">
+        <div class="team-avatar" style="background-image:url('https://res.cloudinary.com/dcuvpsgao/image/upload/q_auto,f_auto,w_600/v1782243576/Erika_xuhltz.jpg')"></div>
         <strong>Erika</strong>
         <span class="team-role">CEO · Amelia Nail Spa</span>
         <span>Exigente, apasionada y comprometida con la excelencia. Lidera el spa convencida de que los pequeños detalles hacen la diferencia.</span>
@@ -1220,35 +1220,34 @@ footer{background:var(--negro);color:rgba(255,255,255,.7);padding:64px 80px 30px
       <div class="team-card" tabindex="0" role="button" aria-label="Ver foto de Leidy"
         data-name="Leidy" data-role="Uñas acrílicas"
         data-bio="Alegre, extrovertida y llena de buena energía. Le gusta que cada cliente se sienta escuchado y en confianza desde el primer momento. Disfruta especialmente realizar uñas acrílicas, donde combina agilidad con una atención cercana. Quiere que la recuerden por su energía y profesionalismo."
-        data-img="https://res.cloudinary.com/dcuvpsgao/image/upload/v1782243581/Leidy.jpg_xdyf10.jpg">
-        <div class="team-avatar" style="background-image:url('https://res.cloudinary.com/dcuvpsgao/image/upload/v1782243581/Leidy.jpg_xdyf10.jpg')"></div>
+        data-img="https://res.cloudinary.com/dcuvpsgao/image/upload/q_auto,f_auto,w_600/v1782243581/Leidy.jpg_xdyf10.jpg">
+        <div class="team-avatar" style="background-image:url('https://res.cloudinary.com/dcuvpsgao/image/upload/q_auto,f_auto,w_600/v1782243581/Leidy.jpg_xdyf10.jpg')"></div>
         <strong>Leidy</strong>
         <span>Alegre y llena de buena energía. Especialista en uñas acrílicas con agilidad y atención cercana en cada cita.</span>
       </div>
       <div class="team-card" tabindex="0" role="button" aria-label="Ver foto de Karla"
         data-name="Karla" data-role="Dipping &amp; nail art"
         data-bio="Con una personalidad cálida y una mirada perfeccionista, Karla cuida cada detalle de su trabajo. Su servicio favorito es el dipping, porque disfruta lograr acabados impecables. Su objetivo es que cada cliente viva una experiencia llena de confianza, buena energía y profesionalismo."
-        data-img="https://res.cloudinary.com/dcuvpsgao/image/upload/v1782243580/Karla.jpg_ri1j8n.jpg">
-        <div class="team-avatar" style="background-image:url('https://res.cloudinary.com/dcuvpsgao/image/upload/v1782243580/Karla.jpg_ri1j8n.jpg')"></div>
+        data-img="https://res.cloudinary.com/dcuvpsgao/image/upload/q_auto,f_auto,w_600/v1782243580/Karla.jpg_ri1j8n.jpg">
+        <div class="team-avatar" style="background-image:url('https://res.cloudinary.com/dcuvpsgao/image/upload/q_auto,f_auto,w_600/v1782243580/Karla.jpg_ri1j8n.jpg')"></div>
         <strong>Karla</strong>
         <span>Cálida y perfeccionista. Su favorito es el dipping, por los acabados impecables que logra.</span>
       </div>
       <div class="team-card" tabindex="0" role="button" aria-label="Ver foto de Julieth"
         data-name="Julieth" data-role="Nail art"
         data-bio="Su tranquilidad y amabilidad hacen que cada cita sea una experiencia agradable. Su servicio favorito es el nail art, porque disfruta dar vida a diseños únicos con paciencia y atención a los detalles. Su mayor satisfacción es ver a cada cliente feliz."
-        data-img="https://res.cloudinary.com/dcuvpsgao/image/upload/v1782243580/Julieth.jpg_lvwfga.jpg">
-        <div class="team-avatar" style="background-image:url('https://res.cloudinary.com/dcuvpsgao/image/upload/v1782243580/Julieth.jpg_lvwfga.jpg')"></div>
+        data-img="https://res.cloudinary.com/dcuvpsgao/image/upload/q_auto,f_auto,w_600/v1782243580/Julieth.jpg_lvwfga.jpg">
+        <div class="team-avatar" style="background-image:url('https://res.cloudinary.com/dcuvpsgao/image/upload/q_auto,f_auto,w_600/v1782243580/Julieth.jpg_lvwfga.jpg')"></div>
         <strong>Julieth</strong>
         <span>Tranquila y amable. Disfruta dar vida a diseños únicos de nail art con paciencia y atención al detalle.</span>
       </div>
       <div class="team-card" tabindex="0" role="button" aria-label="Ver foto de Darly"
         data-name="Darly" data-role="Manicurista"
         data-bio="Parte esencial del equipo de Amelia Nail Spa. Con dedicación y amor por su trabajo, Darly aporta profesionalismo y calidez en cada servicio."
-        data-img="">
-        <div class="team-avatar" style="background:linear-gradient(135deg,#9D7CB0,#B79AC8)">D</div>
+        data-img="https://res.cloudinary.com/dcuvpsgao/image/upload/q_auto,f_auto,w_600/v1783125605/Chica_Nueva_broknl.heic">
+        <div class="team-avatar" style="background-image:url('https://res.cloudinary.com/dcuvpsgao/image/upload/q_auto,f_auto,w_600/v1783125605/Chica_Nueva_broknl.heic')"></div>
         <strong>Darly</strong>
         <span>Dedicada y profesional. Parte esencial del equipo con amor por cada detalle de su trabajo.</span>
-        <div style="font-size:.72rem;color:var(--rosa);margin-top:6px;font-style:italic">📸 Foto próximamente</div>
       </div>
     </div>
   </div>
@@ -1259,8 +1258,8 @@ footer{background:var(--negro);color:rgba(255,255,255,.7);padding:64px 80px 30px
       <div class="team-card team-card-owner" tabindex="0" role="button" aria-label="Ver foto de Valentina"
         data-name="Valentina" data-role="Redes sociales &amp; contenido" data-no-agenda="true"
         data-bio="Creativa, auténtica y siempre llena de ideas. Es la mente detrás de los videos y de esas ocurrencias que ponen a todo el equipo a grabar. Le apasiona crear contenido cercano y mostrar el spa de una forma natural y auténtica."
-        data-img="https://res.cloudinary.com/dcuvpsgao/image/upload/v1782243580/Valentina.jpg_wqgqzs.jpg">
-        <div class="team-avatar" style="background-image:url('https://res.cloudinary.com/dcuvpsgao/image/upload/v1782243580/Valentina.jpg_wqgqzs.jpg')"></div>
+        data-img="https://res.cloudinary.com/dcuvpsgao/image/upload/q_auto,f_auto,w_600/v1782243580/Valentina.jpg_wqgqzs.jpg">
+        <div class="team-avatar" style="background-image:url('https://res.cloudinary.com/dcuvpsgao/image/upload/q_auto,f_auto,w_600/v1782243580/Valentina.jpg_wqgqzs.jpg')"></div>
         <strong>Valentina</strong>
         <span class="team-role">Redes sociales &amp; contenido</span>
         <span>Creativa y auténtica. La mente detrás de los videos y el contenido que muestra el spa tal como es.</span>
@@ -1341,7 +1340,7 @@ footer{background:var(--negro);color:rgba(255,255,255,.7);padding:64px 80px 30px
 <!-- TESTIMONIOS -->
 <section id="testimonios" style="background:var(--gris-claro);position:relative;overflow:hidden">
 <div style="position:absolute;top:20px;right:30px;pointer-events:none;opacity:.06;z-index:0">
-  <svg width="140" height="140" viewBox="0 0 100 100"><circle cx="50" cy="25" r="18" fill="#9D7CB0"/><circle cx="75" cy="50" r="18" fill="#9D7CB0"/><circle cx="50" cy="75" r="18" fill="#9D7CB0"/><circle cx="25" cy="50" r="18" fill="#9D7CB0"/><circle cx="50" cy="50" r="22" fill="#C9AED8"/></svg>
+  <svg width="140" height="140" viewBox="0 0 100 100"><circle cx="50" cy="25" r="18" fill="#A98BBE"/><circle cx="75" cy="50" r="18" fill="#A98BBE"/><circle cx="50" cy="75" r="18" fill="#A98BBE"/><circle cx="25" cy="50" r="18" fill="#A98BBE"/><circle cx="50" cy="50" r="22" fill="#C9AED8"/></svg>
 </div>
   <div class="testimonios-header reveal">
     <div class="section-tag" style="justify-content:center">
@@ -1541,20 +1540,6 @@ document.addEventListener('DOMContentLoaded', function () {
     requestAnimationFrame(step);
   });
 
-  /* ===== FLOATING PETALS (hero decorativo, ligero) ===== */
-  var petalsWrap = document.getElementById('petals');
-  if (petalsWrap) {
-    var petalSVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="%239D7CB0"><path d="M12 2c-3 4-3 8 0 10 3-2 3-6 0-10z"/></svg>';
-    for (var i = 0; i < 10; i++) {
-      var p = document.createElement('div');
-      p.className = 'petal';
-      p.style.left = (Math.random() * 100) + '%';
-      p.style.animationDuration = (8 + Math.random() * 10) + 's';
-      p.style.animationDelay = (Math.random() * 8) + 's';
-      p.innerHTML = '<svg width="' + (10 + Math.random() * 8) + '" height="' + (10 + Math.random() * 8) + '" viewBox="0 0 24 24" fill="#B79AC8"><path d="M12 2c-3 4-3 8 0 10 3-2 3-6 0-10z"/></svg>';
-      petalsWrap.appendChild(p);
-    }
-  }
 
   /* ===== SERVICIOS: tabs por categoría ===== */
   var tabBtns = document.querySelectorAll('.tab-btn');
@@ -1722,10 +1707,13 @@ document.addEventListener('DOMContentLoaded', function () {
         if (entry.isIntersecting) {
           var v = entry.target;
           if (!v.src && v.dataset.src) v.src = v.dataset.src;
+          if (v.dataset.autoplay === 'true') { v.play(); }
+        } else {
+          if (entry.target.dataset.autoplay === 'true') entry.target.pause();
         }
       });
     }, { rootMargin: '200px' });
-    document.querySelectorAll('video[data-src]').forEach(function (v) { videoObserver.observe(v); });
+    document.querySelectorAll('video[data-src], video[data-autoplay]').forEach(function (v) { videoObserver.observe(v); });
   }
 
   /* ===== SCROLL REVEAL ===== */
@@ -1777,7 +1765,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.querySelectorAll('.team-card[data-name]').forEach(function (card) {
     card.addEventListener('click', function () {
-      if (!card.getAttribute('data-img')) return; // sin foto todavía
+      if (!card.getAttribute('data-img')) return;
       openTeamModal(card);
     });
     card.addEventListener('keydown', function (e) {
