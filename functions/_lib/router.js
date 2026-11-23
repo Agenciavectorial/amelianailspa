@@ -4,10 +4,10 @@ import { leerSesion } from './auth.js';
 
 export function crearRouter() {
   const rutas = [];
-  const agregar = (metodo) => (patron, acceso, manejador) => {
+  const agregar = (metodo) => (patron, acceso, manejador, opciones = {}) => {
     const claves = [];
     const re = new RegExp('^' + patron.replace(/:(\w+)/g, (_, k) => { claves.push(k); return '([^/]+)'; }) + '/?$');
-    rutas.push({ metodo, re, claves, acceso, manejador });
+    rutas.push({ metodo, re, claves, acceso, manejador, crudo: !!opciones.crudo });
   };
   const api = { get: agregar('GET'), post: agregar('POST'), put: agregar('PUT'), patch: agregar('PATCH'), delete: agregar('DELETE'), rutas };
 
@@ -40,7 +40,7 @@ export function crearRouter() {
         if (!sesion) throw new HttpError(401, 'Tu sesión terminó. Ingresa de nuevo con tu PIN.');
         if (ruta.acceso === 'propietaria' && !sesion.esPropietaria) throw new HttpError(403, 'Solo la propietaria puede hacer esto.');
       }
-      const body = ['POST', 'PUT', 'PATCH'].includes(request.method) ? await leerJSON(request) : {};
+      const body = !ruta.crudo && ['POST', 'PUT', 'PATCH'].includes(request.method) ? await leerJSON(request) : {};
       const enSegundoPlano = (p) => { const seguro = Promise.resolve(p).catch((e) => console.error('segundo plano', e?.message || e)); if (context.waitUntil) context.waitUntil(seguro); };
       const r = await ruta.manejador({ request, env, db: env.DB, url, params, sesion, body, q: url.searchParams, context, enSegundoPlano });
       return r instanceof Response ? r : json(r ?? { ok: true });

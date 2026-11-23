@@ -6,6 +6,8 @@ export const CSP = [
   "style-src 'self'",
   "img-src 'self' data: https:",
   "font-src 'self'",
+  // Videos cortos del spa (Cloudinary) en la galería de cada servicio.
+  "media-src 'self' https://res.cloudinary.com",
   "connect-src 'self' https://cloudflareinsights.com",
   "manifest-src 'self'",
   "worker-src 'self'",

@@ -1,5 +1,5 @@
 // Equipo (solo Erika): colaboradoras, servicios que hacen, horario, permisos, PIN y calendario.
-import { api, html, crudo, pintar, $, $$, toast, ocupado, abrirHoja, cerrarHoja, hhmm, inicial, DIAS, ICONOS } from '/app-citas/js/util.js';
+import { api, html, crudo, pintar, $, $$, toast, ocupado, abrirHoja, cerrarHoja, hhmm, inicial, DIAS, ICONOS, SITIO } from '/app-citas/js/util.js';
 import { S, recargar, horarioSpa, categorias } from './estado.js';
 
 export const PERMISOS = [
@@ -10,7 +10,7 @@ export const PERMISOS = [
   ['ver_clientas', 'Ver sus clientas', 'Ver historial de las clientas que ella ha atendido.'],
 ];
 
-export const urlFeed = (token) => `${location.origin}/api/ics/${token}.ics`;
+export const urlFeed = (token) => `${SITIO}/api/ics/${token}.ics`;
 
 /** Editor del horario semanal de una colaboradora. Devuelve una función que lee los días. */
 export function editorHorario(cont, c, editable = true) {
