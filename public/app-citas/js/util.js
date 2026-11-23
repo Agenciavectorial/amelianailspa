@@ -141,10 +141,46 @@ export function toast(msg, tipo = '') {
   setTimeout(() => t.remove(), tipo === 'error' ? 5200 : 3200);
 }
 
+// ---------- capas en el historial ----------
+// Una hoja o el visor de fotos pueden ocupar una entrada del historial: el botón "atrás" del celular cierra
+// solo la capa de arriba (visor → ficha → lista) y la página no cambia de paso. Al cerrar con la X se
+// retrocede esa entrada sin que la página se entere. `trasHistorial` deja para después los pushState de la
+// página mientras ese retroceso está en curso (si no, se mezclarían las entradas).
+const capas = [];
+let tragar = 0;
+const enEspera = [];
+export function trasHistorial(fn) { if (tragar) enEspera.push(fn); else fn(); }
+function empujarCapa(alVolver) {
+  history.pushState({ ...(history.state || {}), capa: (history.state?.capa || 0) + 1 }, '');
+  capas.push(alVolver);
+}
+function quitarCapa(alVolver) {
+  const i = capas.lastIndexOf(alVolver);
+  if (i < 0) return;
+  capas.splice(i, 1);
+  tragar++;
+  history.back();
+}
+addEventListener('popstate', (e) => {
+  if (tragar) {
+    tragar--;
+    e.stopImmediatePropagation();
+    if (!tragar) enEspera.splice(0).forEach((f) => f());
+    return;
+  }
+  if (capas.length) {
+    e.stopImmediatePropagation();
+    capas.pop()();
+  }
+}, true);
+
 // ---------- hoja inferior ----------
 let hojaActual = null;
-export function abrirHoja(contenido, { alCerrar, clase = '' } = {}) {
-  cerrarHoja(true);
+const hojaDesdeAtras = () => cerrarHoja(false, { desdeAtras: true });
+/** `historial: true` → el botón "atrás" del celular cierra la hoja en vez de cambiar de página. */
+export function abrirHoja(contenido, { alCerrar, clase = '', historial = false } = {}) {
+  const teniaCapa = !!hojaActual?.conCapa;
+  cerrarHoja(true, { mantenerCapa: historial });
   const velo = document.createElement('div');
   velo.className = 'velo';
   const hoja = document.createElement('div');
@@ -158,21 +194,23 @@ export function abrirHoja(contenido, { alCerrar, clase = '' } = {}) {
   const cerrar = () => cerrarHoja();
   velo.addEventListener('click', cerrar);
   hoja.addEventListener('click', (e) => { if (e.target.closest('[data-cerrar]')) cerrar(); });
-  const esc = (e) => { if (e.key === 'Escape') cerrar(); };
+  const esc = (e) => { if (e.key === 'Escape' && !document.querySelector('.visor')) cerrar(); };
   document.addEventListener('keydown', esc);
-  hojaActual = { velo, hoja, alCerrar, esc };
+  if (historial && !teniaCapa) empujarCapa(hojaDesdeAtras);
+  hojaActual = { velo, hoja, alCerrar, esc, conCapa: historial };
   setTimeout(() => hoja.querySelector('[autofocus]')?.focus(), 320);
   return hoja;
 }
-export function cerrarHoja(inmediato = false) {
+export function cerrarHoja(inmediato = false, { desdeAtras = false, mantenerCapa = false } = {}) {
   if (!hojaActual) return;
-  const { velo, hoja, alCerrar, esc } = hojaActual;
+  const { velo, hoja, alCerrar, esc, conCapa } = hojaActual;
   hojaActual = null;
   document.removeEventListener('keydown', esc);
   document.body.classList.remove('con-hoja');
   velo.classList.remove('abierto');
   hoja.classList.remove('abierta');
   setTimeout(() => { velo.remove(); hoja.remove(); }, inmediato ? 0 : 300);
+  if (conCapa && !desdeAtras && !mantenerCapa) quitarCapa(hojaDesdeAtras);
   alCerrar?.();
 }
 
@@ -201,6 +239,7 @@ export async function ocupado(boton, fn) {
 }
 
 export const ICONOS = {
+  lupa: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5M11 8.5v5M8.5 11h5"/></svg>',
   atras: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>',
   cerrar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>',
   check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>',
@@ -264,50 +303,148 @@ export function videoLiviano(url) {
 
 // ---------- ver fotos en grande ----------
 /**
- * Visor a pantalla completa: desliza entre fotos, se cierra con la X, tocando fuera, con Esc o con "atrás".
+ * Visor a pantalla completa. Desliza entre fotos; pellizca o toca dos veces para acercar; desliza hacia abajo,
+ * toca la X, Esc o "atrás" para cerrar (vuelve a donde estaba, por ejemplo a la ficha del servicio).
  * @param {{url: string, titulo?: string, texto?: string}[]} lista
  */
 export function verFotos(lista, inicio = 0) {
   const fotos = (lista || []).filter((f) => f && f.url);
-  if (!fotos.length) return;
+  if (!fotos.length || document.querySelector('.visor')) return;
+  inicio = Math.min(Math.max(0, inicio), fotos.length - 1);
   const capa = document.createElement('div');
   capa.className = 'visor';
   capa.setAttribute('role', 'dialog');
   capa.setAttribute('aria-modal', 'true');
   capa.setAttribute('aria-label', fotos[inicio]?.titulo || 'Foto');
+  const ancho = Math.min(1440, Math.round(innerWidth * (devicePixelRatio || 1)));
   capa.innerHTML = String(html`
     <button type="button" class="visor-cerrar" aria-label="Cerrar">${crudo(ICONOS.cerrar)}</button>
     <div class="visor-pista">${fotos.map((f, i) => html`<figure class="visor-foto">
-      <img src="${fotoAncho(f.url, Math.min(1440, Math.round(innerWidth * (devicePixelRatio || 1))))}" alt="${f.titulo || ''}" ${crudo(Math.abs(i - inicio) > 1 ? 'loading="lazy"' : '')} decoding="async" referrerpolicy="no-referrer">
+      <div class="visor-marco"><img src="${fotoAncho(f.url, ancho)}" alt="${f.titulo || ''}" ${crudo(Math.abs(i - inicio) > 1 ? 'loading="lazy"' : '')} decoding="async" referrerpolicy="no-referrer" draggable="false"></div>
       ${f.titulo || f.texto ? html`<figcaption>${f.titulo ? html`<strong>${f.titulo}</strong>` : ''}${f.texto ? html`<span>${f.texto}</span>` : ''}</figcaption>` : ''}
     </figure>`)}</div>
-    ${fotos.length > 1 ? html`<p class="visor-cuenta" aria-live="polite"><span>${inicio + 1}</span> / ${fotos.length}</p>` : ''}`);
+    <p class="visor-cuenta" aria-live="polite">${fotos.length > 1 ? html`<span>${inicio + 1}</span> / ${fotos.length} · ` : ''}Pellizca para acercar</p>`);
   document.body.append(capa);
   document.body.classList.add('con-visor');
   const pista = capa.querySelector('.visor-pista');
   pista.scrollLeft = pista.clientWidth * inicio;
   const cuenta = capa.querySelector('.visor-cuenta span');
-  pista.addEventListener('scroll', () => { if (cuenta) cuenta.textContent = String(Math.round(pista.scrollLeft / pista.clientWidth) + 1); }, { passive: true });
+  const actual = () => Math.round(pista.scrollLeft / Math.max(1, pista.clientWidth));
+  pista.addEventListener('scroll', () => { if (cuenta) cuenta.textContent = String(actual() + 1); }, { passive: true });
+
+  // ---- zoom (pellizcar / doble toque), mover la foto acercada y deslizar hacia abajo para cerrar ----
+  let z = 1, tx = 0, ty = 0, img = null;
+  const punteros = new Map();
+  let inicioGesto = null, ultimoToque = 0, bajando = 0;
+  const aplicar = () => {
+    if (!img) return;
+    img.style.transform = `translate(${tx}px, ${ty}px) scale(${z})`;
+    capa.classList.toggle('acercado', z > 1.01);
+  };
+  const reiniciar = () => { if (img) { img.style.transform = ''; } z = 1; tx = 0; ty = 0; capa.classList.remove('acercado'); };
+  const limitar = () => {
+    const r = img.getBoundingClientRect();
+    const mx = Math.max(0, (r.width - innerWidth) / 2 + 20), my = Math.max(0, (r.height - innerHeight) / 2 + 20);
+    tx = Math.min(mx, Math.max(-mx, tx)); ty = Math.min(my, Math.max(-my, ty));
+  };
+  pista.addEventListener('pointerdown', (e) => {
+    const el = e.target.closest('.visor-marco img');
+    if (!el) return;
+    if (img !== el) { reiniciar(); img = el; }
+    punteros.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    try { el.setPointerCapture(e.pointerId); } catch { /* sin captura */ }
+    const p = [...punteros.values()];
+    if (p.length === 2) inicioGesto = { d: Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y), z, tx, ty };
+    else if (p.length === 1) {
+      inicioGesto = { x: e.clientX, y: e.clientY, tx, ty, z };
+      const ahora = Date.now();
+      if (ahora - ultimoToque < 300) {
+        // doble toque: acercar donde se tocó, o volver al tamaño normal
+        if (z > 1.01) reiniciar();
+        else { z = 2.5; const r = el.getBoundingClientRect(); tx = (r.left + r.width / 2 - e.clientX) * 1.5; ty = (r.top + r.height / 2 - e.clientY) * 1.5; limitar(); aplicar(); }
+        ultimoToque = 0;
+      } else ultimoToque = ahora;
+    }
+  });
+  pista.addEventListener('pointermove', (e) => {
+    if (!punteros.has(e.pointerId) || !inicioGesto) return;
+    punteros.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const p = [...punteros.values()];
+    if (p.length === 2 && inicioGesto.d) {
+      z = Math.min(4, Math.max(1, inicioGesto.z * Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y) / inicioGesto.d));
+      aplicar();
+    } else if (p.length === 1 && inicioGesto.x != null) {
+      const dx = e.clientX - inicioGesto.x, dy = e.clientY - inicioGesto.y;
+      if (z > 1.01) { tx = inicioGesto.tx + dx; ty = inicioGesto.ty + dy; limitar(); aplicar(); }
+      else if (dy > 0 && Math.abs(dy) > Math.abs(dx) * 1.2) {
+        bajando = dy;
+        img.style.transform = `translateY(${dy}px) scale(${Math.max(0.85, 1 - dy / 1500)})`;
+        capa.style.setProperty('--velo', String(Math.max(0.35, 0.94 - dy / 500)));
+      }
+    }
+  });
+  const soltar = (e) => {
+    punteros.delete(e.pointerId);
+    if (bajando && !punteros.size) {
+      const d = bajando;
+      bajando = 0;
+      if (d > 110) return cerrar();
+      if (img) img.style.transform = '';
+      capa.style.removeProperty('--velo');
+    }
+    if (z <= 1.01 && !punteros.size) reiniciar();
+    const p = [...punteros.values()];
+    inicioGesto = p.length === 1 ? { x: p[0].x, y: p[0].y, tx, ty, z } : null;
+  };
+  pista.addEventListener('pointerup', soltar);
+  pista.addEventListener('pointercancel', soltar);
+  pista.addEventListener('scroll', () => { if (z <= 1.01 && img) { reiniciar(); img = null; } }, { passive: true });
+
+  // ---- cerrar ----
   let cerrado = false;
   const cerrar = (desdeAtras = false) => {
     if (cerrado) return;
     cerrado = true;
-    removeEventListener('keydown', tecla);
-    removeEventListener('popstate', atras);
+    removeEventListener('keydown', tecla, true);
     document.body.classList.remove('con-visor');
-    capa.remove();
-    if (!desdeAtras && history.state?.visor) history.back();
+    capa.classList.add('saliendo');
+    setTimeout(() => capa.remove(), 160);
+    if (!desdeAtras) quitarCapa(alVolver);
   };
+  const alVolver = () => cerrar(true);
   const tecla = (e) => {
-    if (e.key === 'Escape') cerrar();
+    if (e.key === 'Escape') { e.stopPropagation(); cerrar(); }
     if (e.key === 'ArrowRight') pista.scrollBy({ left: pista.clientWidth, behavior: 'smooth' });
     if (e.key === 'ArrowLeft') pista.scrollBy({ left: -pista.clientWidth, behavior: 'smooth' });
   };
-  const atras = () => cerrar(true);
-  history.pushState({ ...(history.state || {}), visor: true }, '');
-  addEventListener('keydown', tecla);
-  addEventListener('popstate', atras);
+  empujarCapa(alVolver);
+  addEventListener('keydown', tecla, true);
   capa.querySelector('.visor-cerrar').onclick = () => cerrar();
-  capa.addEventListener('click', (e) => { if (e.target === capa || e.target.classList.contains('visor-foto')) cerrar(); });
+  capa.addEventListener('click', (e) => { if (z <= 1.01 && (e.target === capa || e.target.classList.contains('visor-foto') || e.target.classList.contains('visor-marco'))) cerrar(); });
   capa.querySelector('.visor-cerrar').focus();
+}
+
+/** Foto de una profesional que se amplía al tocarla (con una lupita que lo indica). */
+export function avatarAmpliable(c, { tam = 48 } = {}) {
+  if (!c?.foto) return html`<span class="avatar inicial">${inicial(c?.nombre)}</span>`;
+  return html`<button type="button" class="avatar-ampliar" data-ampliar-url="${c.foto}" data-ampliar-titulo="${c.nombre}" data-ampliar-texto="${c.cargo || ''}" aria-label="Ver la foto de ${c.nombre} en grande">${foto(c.foto, { sizes: `${tam}px`, ancho: tam, clase: 'avatar', lazy: false })}<span class="lupa-mini" aria-hidden="true">${crudo(ICONOS.lupa)}</span></button>`;
+}
+
+/**
+ * Un solo manejador para todo lo que se amplía: [data-ampliar-url] (una foto) o [data-ampliar-lista]
+ * (la página resuelve la lista con `resolver(clave)`; p. ej. "servicio:3").
+ */
+export function activarAmpliar(resolver = () => null) {
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-ampliar-url], [data-ampliar-lista]');
+    if (!b) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (b.dataset.ampliarLista) {
+      const r = resolver(b.dataset.ampliarLista);
+      if (r?.length) verFotos(r);
+      return;
+    }
+    verFotos([{ url: b.dataset.ampliarUrl, titulo: b.dataset.ampliarTitulo || '', texto: b.dataset.ampliarTexto || '' }]);
+  }, true);
 }

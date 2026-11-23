@@ -140,17 +140,21 @@ h1 em, h2 em, h3 em { color: var(--rosa-deep); font-style: italic; }
 .texto-confirmar { margin-top: 6px; }
 
 /* ---------- visor de fotos en grande ---------- */
-.visor { position: fixed; inset: 0; z-index: 90; background: rgba(20, 16, 24, .94); display: grid; grid-template-rows: 1fr auto; animation: aparecer .18s ease-out; }
-.visor-pista { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior: contain; }
+.visor { --velo: .96; position: fixed; inset: 0; z-index: 90; background: rgba(14, 11, 18, var(--velo)); display: grid; grid-template-rows: 1fr auto; animation: aparecer .18s ease-out; }
+.visor.saliendo { opacity: 0; transition: opacity .15s; }
+.visor-pista { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior: contain; min-height: 0; }
+.visor.acercado .visor-pista { overflow: hidden; }
 .visor-pista::-webkit-scrollbar { display: none; }
-.visor-foto { flex: 0 0 100%; scroll-snap-align: center; margin: 0; display: grid; grid-template-rows: 1fr auto; align-items: center; justify-items: center; padding: calc(56px + env(safe-area-inset-top, 0px)) 12px 12px; min-height: 0; }
-.visor-foto img { max-width: 100%; max-height: calc(100dvh - 170px); object-fit: contain; border-radius: 14px; }
-.visor-foto figcaption { color: #fff; text-align: center; display: grid; gap: 2px; padding-top: 12px; }
+.visor-foto { flex: 0 0 100%; scroll-snap-align: center; margin: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; min-height: 0; padding: env(safe-area-inset-top, 0px) 0 0; }
+.visor-marco { display: grid; place-items: center; min-height: 0; overflow: hidden; }
+.visor-marco img { width: 100%; height: 100%; object-fit: contain; touch-action: pan-x; user-select: none; -webkit-user-select: none; transition: transform .12s ease-out; will-change: transform; }
+.visor.acercado .visor-marco img { touch-action: none; transition: none; }
+.visor-foto figcaption { color: #fff; text-align: center; display: grid; gap: 2px; padding: 10px 16px 0; }
 .visor-foto figcaption strong { font-family: var(--serif, serif); font-size: 1.35rem; }
 .visor-foto figcaption span { opacity: .8; font-size: .95rem; }
-.visor-cerrar { position: absolute; top: calc(10px + env(safe-area-inset-top, 0px)); right: 12px; z-index: 2; width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; background: rgba(255, 255, 255, .16); color: #fff; }
+.visor-cerrar { position: absolute; top: calc(10px + env(safe-area-inset-top, 0px)); right: 12px; z-index: 2; width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; background: rgba(255, 255, 255, .18); color: #fff; backdrop-filter: blur(6px); }
 .visor-cerrar svg { width: 24px; height: 24px; }
-.visor-cuenta { color: #fff; opacity: .8; text-align: center; margin: 0; padding: 0 0 calc(16px + env(safe-area-inset-bottom, 0px)); font-size: .9rem; }
+.visor-cuenta { color: #fff; opacity: .75; text-align: center; margin: 0; padding: 8px 0 calc(14px + env(safe-area-inset-bottom, 0px)); font-size: .85rem; }
 body.con-visor { overflow: hidden; }
 @keyframes aparecer { from { opacity: 0; } to { opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .visor { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .visor { animation: none; } .visor-marco img { transition: none; } }

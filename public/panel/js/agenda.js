@@ -1,8 +1,8 @@
 // Agenda: vista día (columnas por colaboradora) y semana (una colaboradora), con citas y bloqueos.
-import { api, html, crudo, pintar, $, $$, abrirHoja, cerrarHoja, hora, horaCorta, fechaLarga, fechaCorta, DIAS_CORTOS, fechaD, sumarDias, diaSemana, inicial, ICONOS, toast } from '/app-citas/js/util.js?v=14671ef4de';
-import { S, esDuena, puede, colab, conAgenda, horarioSpa, rangoColab, aplicarEstilos } from './estado.js?v=14671ef4de';
-import { verCita, nuevaCita, nuevoBloqueo, verBloqueo, cobrar, pastillaEstado } from './citas.js?v=14671ef4de';
-import { enviar, textoPlantilla, datosCita } from './mensajes.js?v=14671ef4de';
+import { api, html, crudo, pintar, $, $$, abrirHoja, cerrarHoja, hora, horaCorta, fechaLarga, fechaCorta, DIAS_CORTOS, fechaD, sumarDias, diaSemana, inicial, ICONOS, toast } from '/app-citas/js/util.js?v=363881ba72';
+import { S, esDuena, puede, colab, conAgenda, horarioSpa, rangoColab, aplicarEstilos } from './estado.js?v=363881ba72';
+import { verCita, nuevaCita, nuevoBloqueo, verBloqueo, cobrar, pastillaEstado } from './citas.js?v=363881ba72';
+import { enviar, textoPlantilla, datosCita } from './mensajes.js?v=363881ba72';
 
 const PX = 1.5; // píxeles por minuto
 let estado = null;
