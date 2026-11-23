@@ -1,11 +1,11 @@
 # Formato de importación (Kumbio → plataforma de citas)
 
-El Agente 3 (escritorio) extrae de Kumbio y entrega estos CSV (UTF-8, separados por coma, con encabezado).
-El importador del panel de Erika (Agente 2) los acepta tal cual. Columnas que no se conozcan van vacías.
+La exportación de Kumbio se entrega en estos CSV (UTF-8, separados por coma, con encabezado).
+El importador del panel de Erika los acepta tal cual. Columnas que no se conozcan van vacías.
 
 **Los archivos con datos de clientas NO se suben a GitHub.** Se guardan en el Drive del spa y se cargan
 directamente en el panel (`/panel` → Importar) cuando la plataforma esté en línea.
-`servicios.csv` y `colaboradoras.csv` sí se pueden compartir con los agentes (no tienen datos privados de clientas).
+`servicios.csv` y `colaboradoras.csv` sí van en `docs/migracion-kumbio/datos/` (no tienen datos privados de clientas).
 
 ## servicios.csv
 `categoria,nombre,precio,duracion_min,descripcion,colaboradoras,foto_url`

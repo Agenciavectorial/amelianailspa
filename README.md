@@ -9,9 +9,9 @@ hechas por Agencia Vectorial. Todo se publica en **Cloudflare Pages** (proyecto 
 | `public/styles.css`, `public/app.js` | Estilos e interacción de la página (sin scripts en línea). |
 | `public/img/` | Fotos en WebP en varios tamaños (480/720/960…), servidas desde el mismo sitio. |
 | `public/fonts/` | Playfair Display, DM Sans y Great Vibes servidas localmente (más rápido que Google Fonts). |
-| `public/reservar/`, `public/panel/`, `functions/` | Plataforma de citas (rama `claude/plataforma-citas`, en desarrollo). |
+| `public/reservar/`, `public/panel/`, `functions/` | Plataforma de citas (en desarrollo). |
 | `scripts/cambiar-agenda.py` | Cambia el enlace de "Agendar" de toda la página (Kumbio → `/reservar`). |
-| `docs/agentes/` | Prompt del agente de escritorio y formato de importación desde Kumbio. |
+| `docs/migracion-kumbio/` | Formato de importación desde Kumbio y reporte de la migración. |
 
 ## Velocidad (Lighthouse, con compresión como en Cloudflare)
 | | Antes (Netlify, celular) | Ahora celular | Ahora computador |
@@ -45,6 +45,9 @@ Hoy los botones "Agendar" apuntan a Kumbio. Cuando la plataforma propia esté en
 ```bash
 python3 scripts/cambiar-agenda.py /reservar
 ```
+Eso deja cada tarjeta de servicio en `/reservar?servicio=<slug>` (atributo `data-servicio`), el botón
+"Agenda con ella" del equipo en `/reservar?con=<slug>` (atributo `data-con`), abre todo en la misma pestaña
+y agrega `/reservar` al sitemap. Los slugs coinciden con `docs/plataforma/PARA-LA-PAGINA.md`.
 
 ## Publicar en Cloudflare Pages
 1. Cloudflare → Workers & Pages → Create → Pages → conectar este repositorio.

@@ -259,8 +259,14 @@ document.addEventListener('DOMContentLoaded', function () {
     teamModalRole.textContent = role;
     teamModalBio.textContent = bio;
     // Ocultar/mostrar botón de agenda según si atiende público
-    var agendaBtn = document.querySelector('.team-modal-info .btn-primary');
-    if (agendaBtn) agendaBtn.style.display = noAgenda ? 'none' : '';
+    var agendaBtn = document.getElementById('teamModalAgenda');
+    if (agendaBtn) {
+      agendaBtn.style.display = noAgenda ? 'none' : '';
+      // Con la plataforma propia, el botón abre la agenda de esa profesional.
+      var base = agendaBtn.getAttribute('href').split('?')[0];
+      var con = card.getAttribute('data-con');
+      if (base === '/reservar') agendaBtn.setAttribute('href', con ? '/reservar?con=' + encodeURIComponent(con) : '/reservar');
+    }
     teamModal.classList.add('open');
     lastFocusedCard = card;
   }

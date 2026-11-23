@@ -1,6 +1,7 @@
 User-agent: *
 Allow: /
-Disallow: /panel
+Disallow: /panel/
 Disallow: /api/
+Disallow: /reservar/cita/
 
 Sitemap: https://amelianailspa.com/sitemap.xml
