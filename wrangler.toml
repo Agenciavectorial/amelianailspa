@@ -1,0 +1,8 @@
+# Cloudflare Pages: Amelia Nail Spa (página + plataforma de citas).
+# Sitio estático en public/ (sin paso de build) y funciones en functions/.
+name = "amelianailspa"
+compatibility_date = "2026-10-01"
+pages_build_output_dir = "public"
+
+# La base de datos D1 de citas y los secretos se agregan con la plataforma de citas
+# (los secretos van en el panel de Cloudflare, nunca en el repositorio).
