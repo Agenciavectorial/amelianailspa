@@ -647,3 +647,134 @@ html,body{overflow-x:clip}
   .nav-links{display:none}
   .nav-hamburger{display:flex}
 }
+
+/* =====================================================================
+   REDISEÑO 2026 · celular primero
+   ===================================================================== */
+.btn-wa{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#1faa53;color:#fff;padding:14px 28px;border-radius:50px;font-size:.95rem;font-weight:600;text-decoration:none;box-shadow:0 8px 24px rgba(31,170,83,.28);transition:transform .2s,box-shadow .2s}
+.btn-wa:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(31,170,83,.35)}
+.hero-btn-wa{display:none}
+
+/* Chips del inicio: abierto/cerrado en vivo y reseñas */
+.hero-chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 18px;animation:fadeUp .8s .1s ease both}
+.hero-estado,.hero-resenas{display:inline-flex;align-items:center;gap:7px;padding:7px 14px;border-radius:50px;font-size:.8rem;font-weight:600;text-decoration:none;background:#fff;color:var(--negro);box-shadow:0 4px 14px rgba(122,100,148,.12)}
+.hero-estado::before{content:'';width:8px;height:8px;border-radius:50%;background:#1faa53;box-shadow:0 0 0 4px rgba(31,170,83,.18)}
+.hero-estado.cerrado::before{background:#c2410c;box-shadow:0 0 0 4px rgba(194,65,12,.15)}
+.hero-resenas span{color:#e0a100}
+
+/* Accesos rápidos por categoría */
+.cat-chips{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;padding:22px 20px 6px;background:var(--blanco)}
+.cat-chip{display:inline-flex;align-items:center;gap:8px;padding:11px 18px;border-radius:16px;background:var(--crema);border:1px solid rgba(122,100,148,.14);color:var(--rosa-deep);font-weight:600;font-size:.92rem;text-decoration:none;transition:background .2s,transform .2s}
+.cat-chip svg{width:20px;height:20px}
+.cat-chip:hover{background:var(--rosa-soft);transform:translateY(-2px)}
+.cat-chip-suave{color:var(--gris)}
+
+/* Destacados: lo más pedido y promociones */
+#destacados{padding:34px 0 46px;background:var(--blanco)}
+.dest-wrap{max-width:1200px;margin:0 auto;padding:0 40px}
+.dest-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:18px}
+.dest-head .section-title{margin:0;font-size:clamp(1.7rem,2.6vw,2.4rem)}
+.dest-todos{color:var(--rosa-deep);font-weight:700;text-decoration:none;white-space:nowrap}
+.dest-rail{display:grid;grid-template-columns:repeat(6,1fr);gap:14px}
+.dest-card{position:relative;display:block;border-radius:22px;overflow:hidden;aspect-ratio:4/5;background:var(--rosa-soft);text-decoration:none;color:#fff;box-shadow:0 10px 26px rgba(122,100,148,.14);transition:transform .3s}
+.dest-card:hover{transform:translateY(-4px)}
+.dest-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.dest-card::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(34,30,40,.86) 0%,rgba(34,30,40,.2) 52%,transparent 75%)}
+.dest-info{position:absolute;left:0;right:0;bottom:0;z-index:1;padding:14px;display:flex;flex-direction:column;gap:2px}
+.dest-info strong{font-family:'Playfair Display',serif;font-size:1.08rem;line-height:1.2}
+.dest-info small{opacity:.85;font-size:.78rem}
+.dest-cta{align-self:flex-start;margin-top:8px;background:#fff;color:var(--rosa-deep);font-weight:700;font-size:.8rem;padding:7px 14px;border-radius:50px}
+.dest-promos{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-bottom:26px}
+.promo-card{position:relative;display:flex;align-items:flex-end;min-height:170px;border-radius:24px;overflow:hidden;padding:20px;color:#fff;text-decoration:none;background:linear-gradient(135deg,var(--rosa) 0%,var(--rosa-deep) 100%);box-shadow:0 14px 34px rgba(122,100,148,.25)}
+.promo-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.45}
+.promo-card div{position:relative}
+.promo-card small{display:inline-block;background:rgba(255,255,255,.22);padding:4px 10px;border-radius:50px;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.promo-card strong{display:block;font-family:'Playfair Display',serif;font-size:1.4rem;margin:8px 0 4px}
+.promo-card p{opacity:.92;font-size:.88rem;margin:0}
+.promo-card .precio{display:inline-block;margin-top:10px;background:#fff;color:var(--rosa-deep);font-weight:800;padding:5px 12px;border-radius:50px}
+.pasos{list-style:none;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:26px 0 0;padding:0}
+.pasos li{display:flex;align-items:center;gap:12px;background:var(--crema);border-radius:18px;padding:14px 16px;font-weight:600;color:var(--negro);font-size:.92rem}
+.pasos b{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--rosa-deep);color:#fff;font-family:'Playfair Display',serif}
+
+/* Botón "Reservar con ella" en cada profesional */
+.team-reservar{display:inline-flex;margin-top:14px;padding:9px 16px;border-radius:50px;background:var(--rosa-deep);color:#fff!important;font-weight:700;font-size:.82rem;text-decoration:none}
+.team-reservar:hover{background:#5E4B78}
+
+/* ---------- Celular ---------- */
+@media(max-width:768px){
+  body{font-size:17px}
+  /* Inicio a pantalla completa con fotos que se alternan */
+  .hero{display:flex;flex-direction:column;justify-content:flex-end;min-height:calc(100svh - 66px);padding:64px 0 0!important;background:#2a2430;overflow:hidden}
+  .hero-bg,#petals,.hero-bg-flowers{display:none}
+  .hero-right{position:absolute;inset:0;height:auto;padding:0;display:block;z-index:0}
+  .hero-img{position:absolute;inset:0;border-radius:0!important;margin:0!important;opacity:0;transition:opacity 1.2s ease;animation:none}
+  .hero-img.activa,.hero-img:first-child:not(.apagada){opacity:1}
+  .hero-img img{transform:scale(1.04);transition:transform 6s ease}
+  .hero-img.activa img{transform:scale(1.12)}
+  .hero::after{content:'';position:absolute;inset:0;z-index:1;background:linear-gradient(to top,rgba(34,30,40,.94) 0%,rgba(34,30,40,.72) 38%,rgba(34,30,40,.12) 70%,rgba(34,30,40,.25) 100%)}
+  .hero-left{position:relative;z-index:2;padding:0 20px 26px;color:#fff}
+  .hero-tag{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.28);color:#fff;backdrop-filter:blur(6px)}
+  .hero-h1{color:#fff;font-size:2.35rem;line-height:1.08;margin-bottom:2px}
+  .hero-h1 em{color:#E5D6F0}
+  .hero-script{color:#D9C8E8;font-size:1.9rem;margin-bottom:10px}
+  .hero-desc{color:rgba(255,255,255,.88);font-size:.98rem;line-height:1.6;margin-bottom:20px;max-width:none}
+  .hero-btns{display:grid;grid-template-columns:1fr;gap:10px}
+  .hero-btns .btn-primary,.hero-btns .btn-wa{justify-content:center;width:100%;min-height:56px;font-size:1.05rem;padding:14px 20px;border-radius:18px}
+  .hero-btns .btn-primary{background:#fff;color:var(--rosa-deep);box-shadow:0 10px 30px rgba(0,0,0,.25)}
+  .hero-btn-arte{display:none!important}
+  .hero-btn-wa{display:inline-flex}
+  .hero-stats{display:none}
+  .hero-chips{margin-bottom:14px}
+  .hero-estado,.hero-resenas{background:rgba(255,255,255,.95)}
+
+  /* Accesos rápidos: tira deslizable */
+  .cat-chips{justify-content:flex-start;flex-wrap:nowrap;overflow-x:auto;scroll-snap-type:x mandatory;padding:16px 16px 4px;scrollbar-width:none}
+  .cat-chips::-webkit-scrollbar{display:none}
+  .cat-chip{flex:none;scroll-snap-align:start;padding:12px 18px;font-size:.98rem}
+
+  /* Destacados: carrusel */
+  #destacados{padding:22px 0 34px}
+  .dest-wrap{padding:0}
+  .dest-head{padding:0 16px}
+  .dest-rail{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;padding:4px 16px 10px;scrollbar-width:none}
+  .dest-rail::-webkit-scrollbar{display:none}
+  .dest-card{flex:0 0 62%;scroll-snap-align:start}
+  .dest-promos{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;padding:0 16px 6px;scrollbar-width:none}
+  .promo-card{flex:0 0 86%;scroll-snap-align:start}
+  .pasos{grid-template-columns:1fr;padding:0 16px;gap:8px}
+
+  /* Servicios: tarjetas deslizables en vez de una lista larga */
+  .servicios-tabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -16px 18px;padding:0 16px}
+  .servicios-tabs::-webkit-scrollbar{display:none}
+  .tab-btn{flex:none;padding:11px 18px;font-size:.95rem}
+  .servicios-grid{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -16px;padding:0 16px 12px;scrollbar-width:none}
+  .servicios-grid::-webkit-scrollbar{display:none}
+  .servicio-card.active{flex:0 0 84%;scroll-snap-align:center;min-height:420px}
+  .servicio-nombre{font-size:1.35rem}
+  .servicio-desc{font-size:.92rem}
+  .servicio-cta-btn{padding:11px 18px!important;font-size:.92rem!important}
+
+  /* Galería: dos filas deslizables */
+  .flower-grid{display:grid;grid-auto-flow:column;grid-template-rows:repeat(2,auto);grid-auto-columns:46%;grid-template-columns:none;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -16px;padding:0 16px 10px;scrollbar-width:none}
+  .flower-grid::-webkit-scrollbar{display:none}
+  .flower-grid .masonry-item{scroll-snap-align:start}
+  .galeria-filters{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;margin:0 -16px 16px;padding:0 16px;scrollbar-width:none}
+  .galeria-filters::-webkit-scrollbar{display:none}
+  .filter-btn{flex:none;padding:10px 16px}
+  #verMasBtn{display:none}
+
+  /* Equipo: carrusel con botón de reservar */
+  .nos-team-grid:not(.nos-team-owner){display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -16px;padding:4px 16px 12px;scrollbar-width:none}
+  .nos-team-grid:not(.nos-team-owner)::-webkit-scrollbar{display:none}
+  .nos-team-grid:not(.nos-team-owner) .team-card{flex:0 0 70%;scroll-snap-align:center}
+
+  /* Textos largos de "Nosotros" más cortos */
+  .nos-pillars{gap:10px}
+}
+@media(prefers-reduced-motion:reduce){.hero-img img,.hero-img.activa img{transition:none;transform:none}}
+@media(max-width:768px){
+  .servicios-header>a,.servicios-header .btn-primary{display:none}
+  .servicios-header{margin-bottom:18px}
+  section{padding-top:44px;padding-bottom:44px}
+}
+.dest-head .section-title em{color:#8B6FA8}
