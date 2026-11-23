@@ -30,7 +30,7 @@ async function entrar(p, quien, pin) {
   await c.click('.servicio >> nth=5'); await c.click('.servicio >> nth=7');
   await foto(c, 'c3-elegidos');
   await c.click('#btnSeguir'); await c.waitForSelector('.pro'); await foto(c, 'c4-profesional');
-  await c.click('.pro >> nth=2'); await c.waitForSelector('.turno'); await c.click('.turno >> nth=1'); await foto(c, 'c5-horario');
+  await c.click('.pro >> nth=2'); await c.waitForSelector('.turno'); await c.click('.dia:not([disabled]) >> nth=2'); await c.waitForTimeout(800); await c.waitForSelector('.turno'); await c.click('.turno >> nth=1'); await foto(c, 'c5-horario');
   await c.click('#btnSeguir'); await c.fill('[name=nombre]', 'Laura Ejemplo'); await c.fill('[name=celular]', '300 555 1234'); await c.check('[name=politica]');
   await foto(c, 'c6-datos');
   await c.click('#btnReservar'); await c.waitForSelector('.listo .codigo'); await c.waitForTimeout(700); await foto(c, 'c7-confirmada');
