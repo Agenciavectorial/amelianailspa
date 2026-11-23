@@ -1,5 +1,5 @@
 // Arranque del panel: sesión, navegación (dock en celular, barra lateral en computador) y rutas por hash.
-import { api, html, crudo, pintar, $, $$, toast, inicial, ICONOS } from '/app-citas/js/util.js';
+import { api, html, crudo, pintar, $, $$, toast, inicial, ICONOS, cerrarHoja } from '/app-citas/js/util.js';
 import { S, recargar, esDuena, puede } from './estado.js';
 import { pantallaIngreso } from './login.js';
 
@@ -86,6 +86,8 @@ async function navegar() {
   const [, sec = 'inicio', ...resto] = location.hash.replace(/^#/, '').split('/');
   const valida = sec === 'mas' || secciones().some((s) => s.id === sec);
   const id = valida ? sec : 'inicio';
+  // Al cambiar de sección se cierra la hoja que hubiera abierta (si no, tapa la pantalla nueva).
+  if (id !== rutaActual && document.body.classList.contains('con-hoja')) cerrarHoja(true);
   rutaActual = id;
   for (const a of $$('[data-sec]')) a.classList.toggle('activo', a.dataset.sec === id || (id !== 'mas' && a.dataset.sec === 'mas' && !secciones().find((s) => s.id === id)?.dock && window.innerWidth < 900));
   const v = $('#vista');

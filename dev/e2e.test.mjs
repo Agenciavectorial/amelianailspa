@@ -578,6 +578,68 @@ test('galerías: catálogo con fotos y video, edición solo de Erika, subida sin
   assert.equal(cat3.cuerpo.ajustes.color_acento, 'ciruela');
 });
 
+for (const ancho of [360, 390]) {
+  test(`panel a ${ancho} px: ninguna pantalla se desborda a lo ancho y el menú inferior responde`, { skip: !chromium && 'Playwright no disponible' }, async () => {
+    const b = await chromium.launch();
+    try {
+      const ctx = await b.newContext({ viewport: { width: ancho, height: 780 }, isMobile: true, hasTouch: true, deviceScaleFactor: 1, locale: 'en-US' });
+      await ctx.addInitScript(() => localStorage.setItem('amelia_tour_omitir', '1'));
+      const p = await ctx.newPage();
+      const errores = [];
+      p.on('pageerror', (e) => errores.push(e.message));
+      const revisar = async (donde) => {
+        await p.waitForLoadState('networkidle');
+        await p.waitForTimeout(250);
+        const w = await p.evaluate(() => document.documentElement.scrollWidth);
+        const culpables = w > ancho ? await p.evaluate((a) => [...document.querySelectorAll('body *')].filter((e) => e.getBoundingClientRect().right > a + 0.5)
+          .slice(-4).map((e) => `${e.tagName.toLowerCase()}.${[...e.classList].join('.')}#${e.id}`), ancho) : [];
+        assert.ok(w <= ancho, `${donde}: la página mide ${w}px en una pantalla de ${ancho}px (${culpables.join(', ')})`);
+        const mas = await p.$('.dock a[data-sec="mas"]');
+        if (mas && !(await p.$('.hoja'))) {
+          const ok = await mas.evaluate((el) => { const r = el.getBoundingClientRect(); const x = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return !!x && el.contains(x); });
+          assert.ok(ok, `${donde}: el botón "Más" queda tapado`);
+        }
+      };
+      const entrar = async (quien, pin) => {
+        await p.goto(`${base}/panel/`, { waitUntil: 'networkidle' });
+        await p.click(`.persona >> text=${quien}`);
+        for (const d of pin) await p.click(`.tecla[data-n="${d}"]`);
+        await p.click('#entrar');
+        await p.waitForSelector('.dock');
+      };
+      await entrar('Erika', '2468');
+      for (const sec of ['inicio', `agenda/${DIA}/lista/`, `agenda/${DIA}/dia/`, `agenda/${DIA}/semana/`, 'clientas', 'fidelizacion', 'analitica', 'notas',
+        'servicios', 'promociones', 'equipo', 'mensajes', 'spa', 'ajustes', 'importar', 'cuenta', 'mas']) {
+        await p.goto(`${base}/panel/#/${sec}`);
+        await revisar(`#/${sec}`);
+      }
+      await p.goto(`${base}/panel/#/servicios`);
+      await p.click('.fila-servicio >> nth=0');
+      await revisar('ficha de servicio');
+      await p.goto(`${base}/panel/#/equipo`);
+      await p.waitForSelector('.tarjeta-equipo');
+      await p.click('.tarjeta-equipo >> nth=1');
+      await p.click('[data-tab="horario"]');
+      await revisar('horario de una colaboradora');
+      await p.click('.he-modo >> nth=0');
+      await p.selectOption('.he-modo >> nth=0', 'propio');
+      await revisar('horario propio de una colaboradora');
+      await p.goto(`${base}/panel/#/spa`);
+      await p.waitForSelector('.he-fila');
+      await p.screenshot({ path: CAPTURAS + `movil-panel-8-horario-${ancho}.png` });
+      await p.click('.dock a[data-sec="mas"]');
+      await p.waitForURL(/#\/mas/);
+      await p.context().clearCookies();
+      await entrar('Karla', '1357');
+      for (const sec of ['inicio', `agenda/${DIA}/lista/`, 'notas', 'cuenta', 'mas']) {
+        await p.goto(`${base}/panel/#/${sec}`);
+        await revisar(`colaboradora #/${sec}`);
+      }
+      assert.deepEqual(errores, []);
+    } finally { await b.close(); }
+  });
+}
+
 for (const [nombre, disp] of [['iPhone 13', 'iPhone 13'], ['Android 360 px', 'Galaxy S8']]) {
   test(`celular (${nombre}): reserva con ficha y galería, en pocos toques`, { skip: !chromium && 'Playwright no disponible' }, async () => {
     const b = await chromium.launch();

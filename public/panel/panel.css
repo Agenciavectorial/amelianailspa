@@ -127,6 +127,10 @@ body.con-hoja .dock { visibility: hidden; }
 .segmentado button[aria-pressed="true"] { background: var(--blanco); color: var(--negro); box-shadow: var(--sombra-s); }
 .segmentado.ancho { display: flex; margin: 10px 0; }
 .segmentado.ancho button { flex: 1; }
+/* Si las opciones no caben (celular de 360 px), se desliza dentro de su barra en vez de correr la página. */
+.segmentado.ancho { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.segmentado.ancho::-webkit-scrollbar { display: none; }
+.segmentado.ancho button { flex: 1 0 auto; white-space: nowrap; padding-inline: 12px; }
 
 .agenda-marco { overflow: auto; margin: 0 -16px; padding: 0 16px 8px; overscroll-behavior: contain; max-height: calc(100dvh - 240px - var(--seguro-abajo)); }
 @media (min-width: 900px) { .agenda-marco { max-height: calc(100dvh - 190px); margin: 0; padding: 0; border-radius: var(--radio); } }
@@ -245,11 +249,14 @@ body.con-hoja .dock { visibility: hidden; }
 .permiso > span:first-child { display: grid; gap: 2px; }
 .permiso small { color: var(--gris); font-size: .82rem; }
 .horario-editor { display: grid; gap: 8px; }
-.he-fila { display: grid; grid-template-columns: 92px 1fr; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--gris-claro); }
-.he-fila .he-horas { grid-column: 2; display: flex; align-items: center; gap: 6px; }
-.he-fila .input { min-height: 42px; padding: 8px 10px; }
-.he-horas .input { flex: 1; }
-@media (min-width: 700px) { .he-fila { grid-template-columns: 110px 1fr 1fr; } .he-fila .he-horas { grid-column: auto; } }
+.he-fila { display: grid; grid-template-columns: minmax(0, 92px) minmax(0, 1fr); gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--gris-claro); }
+.he-fila > * { min-width: 0; }
+/* En celular las horas van en su propia línea, a todo el ancho, y cada campo se encoge lo necesario. */
+.he-fila .he-horas { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 6px; }
+.he-fila .input { min-height: 44px; padding: 8px 10px; }
+.he-horas .input { width: 100%; min-width: 0; font-size: 1rem; }
+.he-fila select.input { width: 100%; min-width: 0; }
+@media (min-width: 700px) { .he-fila { grid-template-columns: 110px minmax(0, 1fr) minmax(0, 1.4fr); } .he-fila .he-horas { grid-column: auto; } }
 .vista-foto img { width: 100%; max-height: 180px; object-fit: cover; border-radius: 16px; margin-bottom: 12px; }
 .alinear-campo { align-self: end; margin-bottom: 26px; }
 .feed { background: var(--gris-claro); border-radius: 12px; padding: 10px 12px; margin: 8px 0; overflow-x: auto; }
