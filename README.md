@@ -10,6 +10,8 @@ hechas por Agencia Vectorial. Todo se publica en **Cloudflare Pages** (proyecto 
 | `public/img/` | Fotos en WebP en varios tamaños (480/720/960…), servidas desde el mismo sitio. |
 | `public/fonts/` | Playfair Display, DM Sans y Great Vibes servidas localmente (más rápido que Google Fonts). |
 | `public/reservar/`, `public/panel/`, `functions/` | Plataforma de citas (en desarrollo). |
+| `scripts/version-archivos.py` | Pone `?v=huella` a styles.css, app.js y analitica.js (correr tras editarlos). |
+| `scripts/optimizar-fotos.py` | Convierte fotos nuevas a WebP en 480/720/960. |
 | `scripts/cambiar-agenda.py` | Cambia el enlace de "Agendar" de toda la página (Kumbio → `/reservar`). |
 | `docs/migracion-kumbio/` | Formato de importación desde Kumbio y reporte de la migración. |
 
@@ -58,3 +60,14 @@ y agrega `/reservar` al sitemap. Los slugs coinciden con `docs/plataforma/PARA-L
 2. Framework preset: **None**. Build command: *(vacío)*. Output directory: **public** (también lo fija `wrangler.toml`).
 3. Probar en `amelianailspa.pages.dev`; cuando todo esté bien, agregar `amelianailspa.com` en *Custom domains*
    y apagar el sitio de Netlify.
+
+## Rediseño (nov 2026)
+- Celular primero: inicio a pantalla completa con fotos que se alternan, estado abierto/cerrado en vivo
+  (horario de la plataforma), reseñas, botones grandes de reservar y WhatsApp, accesos por categoría,
+  "Lo más pedido" y promociones en vivo (`/api/public/catalogo`), y servicios, galería y equipo en carruseles.
+- Dominio único: `functions/_middleware.js` redirige `amelianailspa.pages.dev` a `amelianailspa.com`
+  (las vistas previas con código siguen funcionando). `www` redirige con una regla de Cloudflare.
+- Velocidad en el dominio real (Lighthouse celular): 91–96, LCP 2,3–2,6 s, 0,8 MB. Analytics y portadas
+  de video se cargan después de lo importante. **Después de editar CSS o JS correr `scripts/version-archivos.py`**,
+  porque Cloudflare guarda esos archivos un año.
+- Fotos de banco con Licencia Unsplash para servicios sin foto propia: `docs/creditos-fotos.md`.
