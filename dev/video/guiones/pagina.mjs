@@ -22,6 +22,7 @@ const escenas = [
 
 export default {
   id: 'pagina',
+  pausa: 1.6, // más aire entre escenas: aquí hay mucho que mirar
   titulo: 'Tu nueva página',
   subtitulo: 'Lo que cambió y cómo reservan tus clientas',
   escenas,

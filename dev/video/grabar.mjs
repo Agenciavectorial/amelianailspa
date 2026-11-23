@@ -52,6 +52,7 @@ export async function grabar(video, { chica, rapido = false, solo = null } = {})
       userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1',
       locale: 'es-CO', timezoneId: 'America/Bogota', colorScheme: 'light',
       permissions: ['notifications'],
+      bypassCSP: true, // solo en la grabación local: permite los estilos del indicador de toques y las tarjetas
     });
     await ctx.addInitScript(TOQUE);
     await ctx.route('https://wa.me/**', (r) => r.abort());
@@ -77,7 +78,7 @@ export async function grabar(video, { chica, rapido = false, solo = null } = {})
     const tiempos = [];
     for (const e of escenas) {
       const { voz, audio } = duracionEscena(video, e);
-      const d = voz + PAUSA;
+      const d = voz + (guion.pausa ?? PAUSA);
       const ini = Date.now() / 1000;
       const hasta = rapido ? async () => {} : async (frac) => { const falta = ini + d * frac - Date.now() / 1000; if (falta > 0) await page.waitForTimeout(falta * 1000); };
       process.stdout.write(`  ${e.id} (${d.toFixed(1)} s) … `);

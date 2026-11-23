@@ -20,6 +20,7 @@ export const TOQUE = `(() => {
       @keyframes __w{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}\`;
     document.documentElement.appendChild(st);
   };
+  if (document.documentElement) css(); addEventListener('DOMContentLoaded', css);
   addEventListener('pointerdown', (e) => {
     css();
     const d = document.createElement('div'); d.className = '__toque';
@@ -29,12 +30,13 @@ export const TOQUE = `(() => {
   window.__mostrarWA = (url) => {
     css();
     let t = ''; try { t = new URL(url).searchParams.get('text') || ''; } catch {}
+    t = t.split(location.origin).join('https://amelianailspa.com'); // en el video se ve el dominio real, no el servidor local
     document.querySelectorAll('.__wa').forEach((x) => x.remove());
     const c = document.createElement('div'); c.className = '__wa';
     c.innerHTML = '<b><i></i>Mensaje listo para enviar por WhatsApp</b><p></p>';
     c.querySelector('p').textContent = t;
     document.documentElement.appendChild(c);
-    setTimeout(() => c.remove(), 6000);
+    setTimeout(() => c.remove(), 9000);
   };
   // Notificaciones simuladas SOLO para la grabación local (el navegador sin pantalla no tiene servicio push).
   try {
@@ -64,9 +66,9 @@ export const TOQUE = `(() => {
     if (document.body) pon(); else addEventListener('DOMContentLoaded', pon);
   };
   const abrir = window.open;
-  window.open = function (url, ...r) { if (String(url).includes('wa.me')) { window.__mostrarWA(String(url)); return null; } return abrir.call(this, url, ...r); };
+  window.open = function (url, ...r) { if (/wa\.me|whatsapp/i.test(String(url))) { window.__mostrarWA(String(url)); return null; } return abrir.call(this, url, ...r); };
   addEventListener('click', (e) => {
-    const a = e.target.closest && e.target.closest('a[href*="wa.me"]');
+    const a = e.target.closest && e.target.closest('a[href*="wa.me"], a[href*="whatsapp"]');
     if (a) { e.preventDefault(); e.stopPropagation(); window.__mostrarWA(a.href); }
   }, true);
 })();`;
@@ -382,9 +384,11 @@ export const chicas = {
     await centrar(page, page.locator('#listaHoy'));
     await hasta(0.4);
     await dock(page, 'Agenda');
-    await hasta(0.6);
+    await hasta(0.55);
+    await tocar(page, page.locator('[data-modo="dia"]:visible').first(), { centrar: false });
+    await hasta(0.68);
     await tocar(page, '#agDespues', { centrar: false });
-    await hasta(0.75);
+    await hasta(0.8);
     await tocar(page, page.locator('[data-modo="semana"]:visible').first(), { centrar: false });
   },
   async citas({ page, hasta }) {

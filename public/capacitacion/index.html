@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>Capacitación · Amelia Nail Spa</title>
+<link rel="icon" href="/favicon.ico">
+<style>
+@font-face{font-family:'DM Sans';src:url('/fonts/dm-sans.woff2') format('woff2');font-weight:100 900;font-display:swap}
+@font-face{font-family:'Playfair Display';src:url('/fonts/playfair-display.woff2') format('woff2');font-weight:400 900;font-display:swap}
+@font-face{font-family:'Playfair Display';font-style:italic;src:url('/fonts/playfair-display-italic.woff2') format('woff2');font-weight:400 900;font-display:swap}
+@font-face{font-family:'Great Vibes';src:url('/fonts/great-vibes.woff2') format('woff2');font-display:swap}
+:root{--lila:#A98BBE;--morado:#7A6494;--fondo:#F7F4FA;--tinta:#2b2233;--suave:#6b6075}
+*{box-sizing:border-box}
+body{margin:0;font-family:'DM Sans',system-ui,sans-serif;color:var(--tinta);background:var(--fondo)}
+header{text-align:center;padding:36px 16px 10px}
+header img{width:84px;height:84px;border-radius:50%;box-shadow:0 8px 24px rgba(122,100,148,.25)}
+.script{font-family:'Great Vibes',cursive;color:var(--morado);font-size:30px;display:block;margin-top:10px}
+h1{font-family:'Playfair Display',serif;font-size:clamp(30px,6vw,44px);margin:0;line-height:1.1}
+h1 em{color:var(--morado)}
+.intro{color:var(--suave);max-width:560px;margin:12px auto 0;line-height:1.5}
+.progreso{display:inline-block;margin-top:14px;background:#fff;border-radius:999px;padding:8px 16px;font-weight:600;color:var(--morado);box-shadow:0 4px 14px rgba(122,100,148,.12)}
+main{max-width:1100px;margin:0 auto;padding:10px 16px 60px}
+section{margin-top:34px}
+h2{font-family:'Playfair Display',serif;font-size:28px;margin:0}
+.nota{color:var(--suave);margin:4px 0 16px}
+.rejilla{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px}
+.video{background:#fff;border-radius:22px;overflow:hidden;box-shadow:0 8px 26px rgba(122,100,148,.12)}
+.video.ancho{grid-column:1/-1}
+.marco{background:#1d1822}
+video{display:block;width:100%;aspect-ratio:9/16;object-fit:contain;background:#1d1822}
+.ancho video{aspect-ratio:16/9}
+.info{padding:14px 16px 16px}
+h3{margin:0;font-size:18px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.visto-chip{font-size:12px;background:#e6f4ea;color:#2f7a4a;border-radius:999px;padding:3px 10px}
+.meta{color:var(--suave);font-size:14px;line-height:1.45;margin:6px 0 10px}
+details summary{cursor:pointer;color:var(--morado);font-weight:600;font-size:14px;margin-bottom:6px}
+.caps{list-style:none;padding:0;margin:0 0 8px;columns:2;column-gap:12px}
+.caps button{all:unset;cursor:pointer;display:flex;gap:8px;font-size:13px;padding:4px 0;color:var(--tinta)}
+.caps button span{color:var(--morado);font-variant-numeric:tabular-nums;min-width:34px}
+.marcar{display:flex;gap:8px;align-items:center;font-size:14px;color:var(--suave);cursor:pointer}
+.marcar input{accent-color:var(--morado);width:18px;height:18px}
+.video.visto{outline:3px solid #cfe9d8}
+footer{text-align:center;color:var(--suave);font-size:13px;padding:0 16px 30px}
+@media (max-width:520px){.caps{columns:1}.rejilla{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <img src="/icon-512.png" alt="Amelia Nail Spa" width="84" height="84">
+  <span class="script">Capacitación</span>
+  <h1>Así funciona <em>tu Amelia</em></h1>
+  <p class="intro">Videos cortos para Erika y el equipo. Se ven mejor en el celular. Cuando termines uno, márcalo como visto.</p>
+  <span class="progreso" id="progreso"></span>
+</header>
+<main>
+<section><h2>Para Erika</h2><p class="nota">Tu panel de propietaria, parte por parte.</p><div class="rejilla">
+  <article class="video" data-id="erika">
+    <div class="marco"><video controls preload="none" playsinline poster="videos/erika.jpg" src="videos/erika.mp4"></video></div>
+    <div class="info">
+      <h3>Tu panel de Amelia <span class="visto-chip" hidden>✓ Visto</span></h3>
+      <p class="meta">4:57 min · Citas, cobros, clientas, servicios, equipo, horario, promociones, mensajes, clientas que vuelven e importar Kumbio.</p>
+      <details><summary>Capítulos</summary><ol class="caps"><li><button type="button" data-t="3.0"><span>0:03</span>Bienvenida</button></li><li><button type="button" data-t="22.8"><span>0:23</span>Entrar y crear tu PIN</button></li><li><button type="button" data-t="39.8"><span>0:40</span>El inicio del día</button></li><li><button type="button" data-t="58.9"><span>0:59</span>Agenda por chica</button></li><li><button type="button" data-t="76.4"><span>1:16</span>Crear una cita</button></li><li><button type="button" data-t="93.9"><span>1:34</span>Mover y cancelar</button></li><li><button type="button" data-t="107.5"><span>1:48</span>Asistencia y cobro</button></li><li><button type="button" data-t="122.8"><span>2:03</span>Clientas e historial</button></li><li><button type="button" data-t="139.3"><span>2:19</span>Servicios, fotos y precios</button></li><li><button type="button" data-t="155.7"><span>2:36</span>Equipo y PIN de las chicas</button></li><li><button type="button" data-t="172.8"><span>2:53</span>Horario y festivos</button></li><li><button type="button" data-t="185.7"><span>3:06</span>Reglas de reserva</button></li><li><button type="button" data-t="198.1"><span>3:18</span>Promociones</button></li><li><button type="button" data-t="209.7"><span>3:30</span>Mensajes y recordatorios</button></li><li><button type="button" data-t="228.4"><span>3:48</span>Te toca volver</button></li><li><button type="button" data-t="247.8"><span>4:08</span>Notificaciones</button></li><li><button type="button" data-t="265.0"><span>4:25</span>Importar Kumbio</button></li><li><button type="button" data-t="283.3"><span>4:43</span>Listo</button></li></ol></details>
+      <label class="marcar"><input type="checkbox"> Ya lo vi</label>
+    </div>
+  </article></div></section>
+<section><h2>Para el equipo</h2><p class="nota">Cada una tiene su video con su nombre.</p><div class="rejilla">
+  <article class="video" data-id="chicas-leidy">
+    <div class="marco"><video controls preload="none" playsinline poster="videos/chicas-leidy.jpg" src="videos/chicas-leidy.mp4"></video></div>
+    <div class="info">
+      <h3>Video de Leidy <span class="visto-chip" hidden>✓ Visto</span></h3>
+      <p class="meta">1:48 min · Entrar con el PIN, instalar la app, ver la agenda y las citas, bloquear un horario, activar avisos y escribirle a la clienta.</p>
+      
+      <label class="marcar"><input type="checkbox"> Ya lo vi</label>
+    </div>
+  </article>
+  <article class="video" data-id="chicas-karla">
+    <div class="marco"><video controls preload="none" playsinline poster="videos/chicas-karla.jpg" src="videos/chicas-karla.mp4"></video></div>
+    <div class="info">
+      <h3>Video de Karla <span class="visto-chip" hidden>✓ Visto</span></h3>
+      <p class="meta">1:49 min · Entrar con el PIN, instalar la app, ver la agenda y las citas, bloquear un horario, activar avisos y escribirle a la clienta.</p>
+      
+      <label class="marcar"><input type="checkbox"> Ya lo vi</label>
+    </div>
+  </article>
+  <article class="video" data-id="chicas-julieth">
+    <div class="marco"><video controls preload="none" playsinline poster="videos/chicas-julieth.jpg" src="videos/chicas-julieth.mp4"></video></div>
+    <div class="info">
+      <h3>Video de Julieth <span class="visto-chip" hidden>✓ Visto</span></h3>
+      <p class="meta">1:49 min · Entrar con el PIN, instalar la app, ver la agenda y las citas, bloquear un horario, activar avisos y escribirle a la clienta.</p>
+      
+      <label class="marcar"><input type="checkbox"> Ya lo vi</label>
+    </div>
+  </article>
+  <article class="video" data-id="chicas-daily">
+    <div class="marco"><video controls preload="none" playsinline poster="videos/chicas-daily.jpg" src="videos/chicas-daily.mp4"></video></div>
+    <div class="info">
+      <h3>Video de Daily <span class="visto-chip" hidden>✓ Visto</span></h3>
+      <p class="meta">1:47 min · Entrar con el PIN, instalar la app, ver la agenda y las citas, bloquear un horario, activar avisos y escribirle a la clienta.</p>
+      
+      <label class="marcar"><input type="checkbox"> Ya lo vi</label>
+    </div>
+  </article></div></section>
+<section><h2>La página y la reserva</h2><p class="nota">Lo que cambió en amelianailspa.com y cómo reserva una clienta.</p><div class="rejilla">
+  <article class="video" data-id="pagina">
+    <div class="marco"><video controls preload="none" playsinline poster="videos/pagina.jpg" src="videos/pagina.mp4"></video></div>
+    <div class="info">
+      <h3>Tu nueva página (celular) <span class="visto-chip" hidden>✓ Visto</span></h3>
+      <p class="meta">1:41 min · Antes y después, velocidad, menú del celular, Google, la reserva en línea y la app de tus clientas.</p>
+      
+      <label class="marcar"><input type="checkbox"> Ya lo vi</label>
+    </div>
+  </article>
+  <article class="video ancho" data-id="pagina-horizontal">
+    <div class="marco"><video controls preload="none" playsinline poster="videos/pagina-horizontal.jpg" src="videos/pagina-horizontal.mp4"></video></div>
+    <div class="info">
+      <h3>Tu nueva página (horizontal) <span class="visto-chip" hidden>✓ Visto</span></h3>
+      <p class="meta">1:41 min · La misma explicación, para verla en computador o televisor.</p>
+      
+      <label class="marcar"><input type="checkbox"> Ya lo vi</label>
+    </div>
+  </article></div></section>
+</main>
+<footer>Amelia Nail Spa · C.C. Bosque Plaza, Aranjuez, Medellín · Página privada, no aparece en Google.</footer>
+<script>
+(function () {
+  var CLAVE = 'amelia-capacitacion-vistos';
+  var vistos = {};
+  try { vistos = JSON.parse(localStorage.getItem(CLAVE) || '{}'); } catch (e) {}
+  var guardar = function () { try { localStorage.setItem(CLAVE, JSON.stringify(vistos)); } catch (e) {} };
+  var tarjetas = Array.prototype.slice.call(document.querySelectorAll('.video'));
+  function pintar() {
+    var n = 0;
+    tarjetas.forEach(function (t) {
+      var v = !!vistos[t.dataset.id];
+      if (v) n++;
+      t.classList.toggle('visto', v);
+      t.querySelector('.visto-chip').hidden = !v;
+      t.querySelector('.marcar input').checked = v;
+    });
+    document.getElementById('progreso').textContent = n + ' de ' + tarjetas.length + ' videos vistos';
+  }
+  tarjetas.forEach(function (t) {
+    var video = t.querySelector('video');
+    t.querySelector('.marcar input').addEventListener('change', function (e) { vistos[t.dataset.id] = e.target.checked; guardar(); pintar(); });
+    video.addEventListener('timeupdate', function () {
+      if (!vistos[t.dataset.id] && video.duration && video.currentTime / video.duration > 0.9) { vistos[t.dataset.id] = true; guardar(); pintar(); }
+    });
+    video.addEventListener('play', function () { tarjetas.forEach(function (o) { var ov = o.querySelector('video'); if (ov !== video) ov.pause(); }); });
+    Array.prototype.forEach.call(t.querySelectorAll('[data-t]'), function (b) {
+      b.addEventListener('click', function () { video.preload = 'auto'; video.currentTime = Number(b.dataset.t); video.play(); video.scrollIntoView({ behavior: 'smooth', block: 'center' }); });
+    });
+  });
+  pintar();
+})();
+</script>
+</body>
+</html>
