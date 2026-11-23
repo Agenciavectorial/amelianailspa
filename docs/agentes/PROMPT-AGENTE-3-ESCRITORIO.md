@@ -56,7 +56,7 @@ dirección coincidan con la página (Lun–Vie 9am–7pm · Sáb 10am–7pm · D
 ## Tarea 4 — Cloudflare Pages (publicar la página nueva)
 1. Cloudflare → Workers & Pages → Create → Pages → **Connect to Git** → repo `Agenciavectorial/amelianailspa`.
 2. Nombre del proyecto `amelianailspa`. Framework preset **None**, build command vacío, output directory **public**.
-   **Rama de producción: `claude/kind-fermat-3buvno`** (así Netlify, que publica desde `main`, no se afecta).
+   **Rama de producción: `claude/kind-fermat-3buvno`** (así no se toca `main`, por si Netlify publica desde ahí).
 3. Abre `https://amelianailspa.pages.dev` en el computador y en el celular y revisa: carga rápido, se ven todas las fotos,
    el menú inferior funciona, los botones de Agendar abren Kumbio, WhatsApp abre el chat, la sección de preguntas se despliega.
    Anota cualquier error en el reporte.
