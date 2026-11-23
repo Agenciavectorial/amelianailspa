@@ -11,11 +11,25 @@
 /fonts/*
   Cache-Control: public, max-age=31536000, immutable
 
+# CSS y JS: se revalidan siempre (la plataforma de citas no versiona sus archivos)
 /*.css
-  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  Cache-Control: public, max-age=0, must-revalidate
 
 /*.js
-  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  Cache-Control: public, max-age=0, must-revalidate
+
+# Archivos de la página con versión (?v=huella, scripts/version-archivos.py): caché de un año
+/styles.css
+  ! Cache-Control
+  Cache-Control: public, max-age=31536000, immutable
+
+/app.js
+  ! Cache-Control
+  Cache-Control: public, max-age=31536000, immutable
+
+/analitica.js
+  ! Cache-Control
+  Cache-Control: public, max-age=31536000, immutable
 
 /og.jpg
   Cache-Control: public, max-age=604800

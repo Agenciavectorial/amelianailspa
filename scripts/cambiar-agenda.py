@@ -33,8 +33,11 @@ def etiqueta(m):
     tag = m.group(0)
     destino = nuevo
     serv = re.search(r'data-servicio="([^"]+)"', tag)
+    con = re.search(r'data-con="([^"]+)"', tag)
     if interno and serv:
         destino = f'{nuevo}?servicio={serv.group(1)}'
+    elif interno and con:
+        destino = f'{nuevo}?con={con.group(1)}'
     tag = re.sub(r'href="%s"' % ACTUAL, f'href="{destino}"', tag)
     tag = re.sub(r'\s+target="_blank"', '', tag)
     tag = re.sub(r'\s+rel="noopener"', '', tag)
