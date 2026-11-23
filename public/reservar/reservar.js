@@ -147,7 +147,9 @@ function pasoServicios() {
   if (tokensGuardados().length) ofrecerAvisos($('#avisosInicio'));
   for (const b of $$('.servicio', app)) b.onclick = () => alternar(Number(b.dataset.id));
   $('#quitarCon', app)?.addEventListener('click', () => { E.con = null; pasoServicios(); });
-  $('.categorias .chip[aria-pressed="true"]', app)?.scrollIntoView({ inline: 'center', block: 'nearest' });
+  // Centra la categoría activa moviendo solo la fila de chips (sin desplazar la página)
+  const chipActivo = $('.categorias .chip[aria-pressed="true"]', app);
+  if (chipActivo) chipActivo.parentElement.scrollLeft = chipActivo.offsetLeft - 16;
 }
 
 function populares() {

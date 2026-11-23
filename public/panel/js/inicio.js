@@ -12,7 +12,7 @@ function saludo() {
 export async function vista(v) {
   pintar(v, html`
     <header class="cabeza-vista">
-      <div><span class="script">${saludo()}</span><h1>${S.yo.nombre.split(' ')[0]}, <em>así va tu negocio</em></h1></div>
+      <div><span class="script">${saludo()}</span><h1>${S.yo.nombre.split(' ')[0]}, <em>${esDuena() ? 'así va tu negocio' : 'así va tu día'}</em></h1></div>
     </header>
     <div class="stats" id="stats">${[1, 2, 3, 4].map(() => html`<div class="stat esqueleto"></div>`)}</div>
     <div class="acciones-rapidas">
@@ -42,10 +42,10 @@ export async function vista(v) {
   ]);
   const cl = res.clientas_mes;
   pintar($('#stats'), html`
-    <div class="stat destacado"><span>Ingresos del mes</span><strong>${dinero(res.ingresos_mes.total)}</strong><small>${res.ingresos_mes.citas} citas cobradas${res.ingresos_mes.propinas ? ` · ${dinero(res.ingresos_mes.propinas)} propinas` : ''}</small></div>
+    <div class="stat destacado"><span>${esDuena() ? 'Ingresos del mes' : 'Tus ingresos del mes'}</span><strong>${dinero(res.ingresos_mes.total)}</strong><small>${res.ingresos_mes.citas} ${res.ingresos_mes.citas === 1 ? 'cita cobrada' : 'citas cobradas'}${res.ingresos_mes.propinas ? ` · ${dinero(res.ingresos_mes.propinas)} propinas` : ''}</small></div>
     <div class="stat"><span>Citas esta semana</span><strong>${res.citas_semana}</strong><small>próximos 7 días</small></div>
-    <div class="stat"><span>Asistencia del mes</span><strong>${res.asistencia_mes.pct != null ? res.asistencia_mes.pct + '%' : '—'}</strong><small>${res.asistencia_mes.si} asistieron · ${res.asistencia_mes.no} faltaron</small></div>
-    <div class="stat"><span>Clientas del mes</span><strong>${cl.nuevas + cl.recurrentes}</strong><small>${cl.nuevas} nuevas · ${cl.recurrentes} recurrentes</small></div>`);
+    <div class="stat"><span>Asistencia del mes</span><strong>${res.asistencia_mes.pct != null ? res.asistencia_mes.pct + '%' : '—'}</strong><small>${res.asistencia_mes.si} ${res.asistencia_mes.si === 1 ? 'asistió' : 'asistieron'} · ${res.asistencia_mes.no} ${res.asistencia_mes.no === 1 ? 'faltó' : 'faltaron'}</small></div>
+    <div class="stat"><span>Clientas del mes</span><strong>${cl.nuevas + cl.recurrentes}</strong><small>${cl.nuevas} ${cl.nuevas === 1 ? 'nueva' : 'nuevas'} · ${cl.recurrentes} ${cl.recurrentes === 1 ? 'recurrente' : 'recurrentes'}</small></div>`);
 
   if (res.proxima) {
     const p = res.proxima;
@@ -124,7 +124,6 @@ export async function vista(v) {
       b.closest('.fila-gestionar').classList.add('hecha');
     };
   }
-  void esDuena;
 }
 
 export function enlaceRepetir(c) {
