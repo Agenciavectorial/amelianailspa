@@ -366,6 +366,21 @@ document.addEventListener('DOMContentLoaded', function () {
     promo.querySelector('.promo-cta').addEventListener('click', hidePromo);
   }
 
+  /* ===== Portadas de los videos: se cargan al acercarse ===== */
+  var conPortada = document.querySelectorAll('video[data-poster]');
+  if ('IntersectionObserver' in window) {
+    var obsPortada = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        en.target.poster = en.target.dataset.poster;
+        obsPortada.unobserve(en.target);
+      });
+    }, { rootMargin: '400px 0px' });
+    conPortada.forEach(function (v) { obsPortada.observe(v); });
+  } else {
+    conPortada.forEach(function (v) { v.poster = v.dataset.poster; });
+  }
+
   /* ===== Fotos 2-4 del inicio: se cargan cuando la página ya está lista ===== */
   function cargarHeroDiferidas() {
     document.querySelectorAll('.hero-right img[data-src]').forEach(function (img) {
