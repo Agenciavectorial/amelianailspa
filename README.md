@@ -45,6 +45,9 @@ Hoy los botones "Agendar" apuntan a Kumbio. Cuando la plataforma propia esté en
 ```bash
 python3 scripts/cambiar-agenda.py /reservar
 ```
+Eso deja cada tarjeta de servicio en `/reservar?servicio=<slug>` (atributo `data-servicio`), el botón
+"Agenda con ella" del equipo en `/reservar?con=<slug>` (atributo `data-con`), abre todo en la misma pestaña
+y agrega `/reservar` al sitemap. Los slugs coinciden con `docs/plataforma/PARA-LA-PAGINA.md`.
 
 ## Publicar en Cloudflare Pages
 1. Cloudflare → Workers & Pages → Create → Pages → conectar este repositorio.
