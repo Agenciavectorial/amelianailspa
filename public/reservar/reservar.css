@@ -346,3 +346,41 @@ body.reservar { font-size: 17px; }
 .pro-foto:focus-visible { outline: 3px solid var(--rosa); outline-offset: 2px; }
 .pro-ver { font-size: .76rem; color: var(--rosa-deep); font-weight: 600; }
 .ficha-medio[data-ver] { cursor: zoom-in; }
+
+/* ---------- fotos ampliables ---------- */
+.servicio { position: relative; }
+.servicio-zoom { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 112px; height: 112px; border-radius: 18px; cursor: zoom-in; display: grid; align-items: end; justify-items: end; padding: 6px; }
+.servicio-zoom .servicio-num { position: static; display: inline-flex; align-items: center; gap: 4px; min-height: 26px; padding: 3px 9px; font-size: .74rem; background: rgba(34, 30, 40, .74); }
+.servicio-zoom .servicio-num svg { width: 14px; height: 14px; }
+.servicio-zoom:focus-visible, .mini-zoom:focus-visible, .avatar-ampliar:focus-visible { outline: 3px solid var(--rosa); outline-offset: 2px; }
+@media (max-width: 370px) { .servicio-zoom { width: 92px; height: 92px; } }
+.popular-caja, .promo-caja { position: relative; flex: none; scroll-snap-align: start; }
+.promo-caja { width: min(82%, 340px); display: grid; }
+.promo-caja .promo { width: 100%; }
+.mini-zoom { position: absolute; top: 6px; right: 6px; z-index: 2; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: rgba(34, 30, 40, .62); color: #fff; cursor: zoom-in; }
+.mini-zoom svg { width: 20px; height: 20px; }
+.avatar-ampliar { position: relative; flex: none; border-radius: 50%; cursor: zoom-in; padding: 0; display: inline-grid; }
+.avatar-ampliar .avatar { width: 52px; height: 52px; }
+.lupa-mini { position: absolute; right: -3px; bottom: -3px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--blanco); color: var(--rosa-deep); box-shadow: var(--sombra-s); }
+.lupa-mini svg { width: 14px; height: 14px; }
+/* "¿Con quién?": fotos grandes y con lupa */
+.pro { gap: 16px; }
+.pro .avatar { width: 92px !important; height: 92px !important; flex: none; }
+.pro-caja .pro-foto { left: 14px; width: 96px; height: 96px; }
+.pro-caja .pro-foto::after { content: ''; position: absolute; right: 2px; bottom: 6px; width: 28px; height: 28px; border-radius: 50%; background: var(--blanco) center / 16px no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237B5A8C' stroke-width='2.6' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='6.5'/%3E%3Cpath d='M16 16l4.5 4.5M11 8.5v5M8.5 11h5'/%3E%3C/svg%3E"); box-shadow: var(--sombra-s); }
+.pro-ver { display: inline-flex; align-items: center; gap: 4px; }
+.pro-ver svg { width: 13px; height: 13px; }
+@media (max-width: 370px) { .pro .avatar { width: 80px !important; height: 80px !important; } .pro-caja .pro-foto { width: 84px; height: 84px; } }
+
+/* Confirmación: los botones nunca se salen en celulares angostos (el texto pasa a dos líneas si hace falta) */
+.acciones-listo { grid-template-columns: minmax(0, 1fr); }
+.acciones-listo .btn { min-width: 0; max-width: 100%; white-space: normal; text-align: center; line-height: 1.2; min-height: 52px; height: auto; padding-block: 10px; }
+.acciones-listo .dos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.acciones-listo .dos .btn { flex-direction: column; gap: 4px; font-size: .86rem; }
+.acciones-listo .btn svg { flex: none; }
+.ticket-fila > div { min-width: 0; text-align: left; }
+.ticket-fila div span { overflow-wrap: anywhere; }
+/* La letra manuscrita sobresale de su línea: espacio arriba para que la cabecera fija no la corte */
+.saludo { padding-top: 12px; }
+.saludo .script { line-height: 1.25; }
+.resumen-cita li span:last-child { color: var(--gris); font-size: .9rem; }

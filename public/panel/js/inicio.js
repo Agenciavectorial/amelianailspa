@@ -1,9 +1,9 @@
 // Inicio: resumen del negocio, citas por gestionar (¿asistió?), próxima cita, hoy/mañana y clientas a contactar.
-import { api, html, crudo, pintar, $, toast, hora, dinero, fechaLarga, fechaCorta, sumarDias, inicial, ICONOS, SITIO } from '/app-citas/js/util.js?v=14671ef4de';
-import { tarjetaDescarga, activarDescarga, tarjetaAvisos } from './descargar.js?v=14671ef4de';
-import { S, esDuena, puede, colab, aplicarEstilos } from './estado.js?v=14671ef4de';
-import { verCita, nuevaCita, nuevoBloqueo, pastillaEstado, cobrar } from './citas.js?v=14671ef4de';
-import { enviar, textoPlantilla } from './mensajes.js?v=14671ef4de';
+import { api, html, crudo, pintar, $, toast, hora, dinero, fechaLarga, fechaCorta, sumarDias, inicial, ICONOS, SITIO } from '/app-citas/js/util.js?v=363881ba72';
+import { tarjetaDescarga, activarDescarga, tarjetaAvisos } from './descargar.js?v=363881ba72';
+import { S, esDuena, puede, colab, aplicarEstilos } from './estado.js?v=363881ba72';
+import { verCita, nuevaCita, nuevoBloqueo, pastillaEstado, cobrar } from './citas.js?v=363881ba72';
+import { enviar, textoPlantilla } from './mensajes.js?v=363881ba72';
 
 function saludo() {
   const h = new Date(Date.now() - 5 * 3600000).getUTCHours();

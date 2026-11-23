@@ -1,7 +1,7 @@
 // Gestionar la cita con el enlace privado (/reservar/cita/#<token>): ver, reprogramar, cancelar.
-import { api, html, crudo, pintar, $, toast, ocupado, confirmar, hora, duracion, dinero, fechaLarga, ICONOS, hoyBogota } from '/app-citas/js/util.js?v=14671ef4de';
-import { crearSelector } from './selector.js?v=14671ef4de';
-import { estadoPush, activarPush } from '/app-citas/js/push.js?v=14671ef4de';
+import { api, html, crudo, pintar, $, toast, ocupado, confirmar, hora, duracion, dinero, fechaLarga, ICONOS, hoyBogota, avatarAmpliable, activarAmpliar } from '/app-citas/js/util.js?v=363881ba72';
+import { crearSelector } from './selector.js?v=363881ba72';
+import { estadoPush, activarPush } from '/app-citas/js/push.js?v=363881ba72';
 
 const app = $('#app');
 const bandeja = $('#bandeja');
@@ -43,7 +43,7 @@ function ver() {
           <span class="resumen-hora">${hora(cita.inicio)} – ${hora(cita.fin)} · ${duracion(cita.fin - cita.inicio)}</span>
         </div>
         <ul class="resumen-lista">
-          ${cita.servicios.map((s) => html`<li><span>${s.nombre}</span><span>${s.precio != null ? dinero(s.precio) : '—'}</span></li>`)}
+          ${cita.servicios.map((s) => html`<li><span>${s.nombre}</span><span>${s.precio != null ? dinero(s.precio) : 'En el spa'}</span></li>`)}
         </ul>
         <div class="resumen-pie"><span>Con <strong>${cita.colaboradora.nombre}</strong></span><span class="muted">Código <strong>${cita.codigo}</strong></span></div>
       </div>
@@ -106,7 +106,7 @@ function reprogramar() {
     <section class="paso">
       <button class="btn ghost chico" id="volver">${crudo(ICONOS.atras)} Volver</button>
       <h2 class="titulo-paso">Elige tu nuevo horario</h2>
-      <div class="con-quien"><img class="avatar" src="${cita.colaboradora.foto}" alt=""><span>Con <strong>${cita.colaboradora.nombre}</strong> · ${duracion(cita.fin - cita.inicio)}</span></div>
+      <div class="con-quien">${avatarAmpliable(cita.colaboradora, { tam: 52 })}<span>Con <strong>${cita.colaboradora.nombre}</strong> · ${duracion(cita.fin - cita.inicio)}</span></div>
       <div id="selector"></div>
     </section>`);
   $('#volver').onclick = ver;
@@ -136,3 +136,5 @@ $('#btnSeguir').onclick = (e) => ocupado(e.currentTarget, async () => {
 
 window.addEventListener('hashchange', () => location.reload());
 cargar();
+
+activarAmpliar();

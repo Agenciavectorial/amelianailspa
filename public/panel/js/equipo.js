@@ -1,6 +1,6 @@
 // Equipo (solo Erika): colaboradoras, servicios que hacen, horario, permisos, PIN y calendario.
-import { api, html, crudo, pintar, $, $$, toast, ocupado, abrirHoja, cerrarHoja, hhmm, inicial, DIAS, ICONOS, SITIO } from '/app-citas/js/util.js?v=14671ef4de';
-import { S, recargar, horarioSpa, categorias } from './estado.js?v=14671ef4de';
+import { api, html, crudo, pintar, $, $$, toast, ocupado, abrirHoja, cerrarHoja, hhmm, inicial, DIAS, ICONOS, SITIO } from '/app-citas/js/util.js?v=363881ba72';
+import { S, recargar, horarioSpa, categorias } from './estado.js?v=363881ba72';
 
 export const PERMISOS = [
   ['gestionar_citas', 'Gestionar sus citas', 'Crear, mover, cancelar y marcar asistencia de sus propias citas.'],
@@ -65,7 +65,7 @@ export async function vista(v) {
           <span class="flecha-mas">›</span>
         </button>`)}
     </div>`);
-  const { aplicarEstilos } = await import('./estado.js?v=14671ef4de');
+  const { aplicarEstilos } = await import('./estado.js?v=363881ba72');
   aplicarEstilos(v);
   $('#nuevaColab').onclick = () => editar(null, v);
   v.onclick = (e) => { const b = e.target.closest('.tarjeta-equipo'); if (b) editar(S.colaboradoras.find((c) => c.id === Number(b.dataset.id)), v); };

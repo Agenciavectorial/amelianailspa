@@ -697,7 +697,25 @@ for (const [nombre, disp] of [['iPhone 13', 'iPhone 13'], ['Android 360 px', 'Ga
       await p.screenshot({ path: CAPTURAS + `movil-reservar-2b-foto-grande${suf}.png` });
       await p.click('.visor-cerrar');
       await p.waitForSelector('.visor', { state: 'detached' });
-      assert.ok(await p.isVisible('#fichaAgendar'), 'al cerrar la foto sigue en la ficha');
+      await p.waitForTimeout(400);
+      assert.ok(await p.isVisible('#fichaAgendar'), 'al cerrar la foto con la X sigue en la ficha');
+      // "Atrás" del celular respeta el orden: foto → ficha → lista
+      await p.click('.ficha-medio[data-ver] >> nth=0');
+      await p.waitForSelector('.visor .visor-marco img');
+      await p.goBack();
+      await p.waitForSelector('.visor', { state: 'detached' });
+      await p.waitForTimeout(400);
+      assert.ok(await p.isVisible('#fichaAgendar'), 'atrás cierra solo la foto');
+      await p.goBack();
+      await p.waitForSelector('.hoja.ficha', { state: 'detached' });
+      assert.ok(await p.isVisible('.servicio-abrir >> text=Press On'), 'atrás otra vez cierra la ficha y queda la lista');
+      // La miniatura de la tarjeta abre las fotos directamente
+      await p.click('.servicio:has(.servicio-abrir:has-text("Press On")) .servicio-zoom');
+      await p.waitForSelector('.visor .visor-marco img');
+      await p.keyboard.press('Escape');
+      await p.waitForSelector('.visor', { state: 'detached' });
+      await p.click('.servicio-abrir >> text=Press On');
+      await p.waitForSelector('#fichaAgendar');
       // Toque 2: agendar este servicio → profesional
       await p.click('#fichaAgendar');
       await p.waitForSelector('.pro');

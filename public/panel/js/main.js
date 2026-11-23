@@ -1,7 +1,7 @@
 // Arranque del panel: sesión, navegación (dock en celular, barra lateral en computador) y rutas por hash.
-import { api, html, crudo, pintar, $, $$, toast, inicial, ICONOS, cerrarHoja } from '/app-citas/js/util.js?v=14671ef4de';
-import { S, recargar, esDuena, puede } from './estado.js?v=14671ef4de';
-import { pantallaIngreso } from './login.js?v=14671ef4de';
+import { api, html, crudo, pintar, $, $$, toast, inicial, ICONOS, cerrarHoja } from '/app-citas/js/util.js?v=363881ba72';
+import { S, recargar, esDuena, puede } from './estado.js?v=363881ba72';
+import { pantallaIngreso } from './login.js?v=363881ba72';
 
 const raiz = $('#raiz');
 
@@ -41,11 +41,11 @@ function secciones() {
 }
 
 const MODULOS = {
-  inicio: () => import('./inicio.js?v=14671ef4de'), agenda: () => import('./agenda.js?v=14671ef4de'), clientas: () => import('./clientas.js?v=14671ef4de'),
-  servicios: () => import('./servicios.js?v=14671ef4de'), equipo: () => import('./equipo.js?v=14671ef4de'), spa: () => import('./ajustes.js?v=14671ef4de'),
-  ajustes: () => import('./ajustes.js?v=14671ef4de'), importar: () => import('./importar.js?v=14671ef4de'), cuenta: () => import('./ajustes.js?v=14671ef4de'),
-  fidelizacion: () => import('./fidelizacion.js?v=14671ef4de'), analitica: () => import('./analitica.js?v=14671ef4de'), notas: () => import('./notas.js?v=14671ef4de'),
-  promociones: () => import('./promociones.js?v=14671ef4de'), mensajes: () => import('./plantillas.js?v=14671ef4de'),
+  inicio: () => import('./inicio.js?v=363881ba72'), agenda: () => import('./agenda.js?v=363881ba72'), clientas: () => import('./clientas.js?v=363881ba72'),
+  servicios: () => import('./servicios.js?v=363881ba72'), equipo: () => import('./equipo.js?v=363881ba72'), spa: () => import('./ajustes.js?v=363881ba72'),
+  ajustes: () => import('./ajustes.js?v=363881ba72'), importar: () => import('./importar.js?v=363881ba72'), cuenta: () => import('./ajustes.js?v=363881ba72'),
+  fidelizacion: () => import('./fidelizacion.js?v=363881ba72'), analitica: () => import('./analitica.js?v=363881ba72'), notas: () => import('./notas.js?v=363881ba72'),
+  promociones: () => import('./promociones.js?v=363881ba72'), mensajes: () => import('./plantillas.js?v=363881ba72'),
   mas: null,
 };
 
@@ -122,11 +122,11 @@ async function entrar() {
   }
   shell();
   $('#fab')?.addEventListener('click', async () => {
-    const { nuevaCita } = await import('./citas.js?v=14671ef4de');
+    const { nuevaCita } = await import('./citas.js?v=363881ba72');
     const m = /^#\/agenda\/(\d{4}-\d{2}-\d{2})/.exec(location.hash);
     nuevaCita({ fecha: m ? m[1] : S.hoy, colaboradoraId: esDuena() ? undefined : S.yo.id }, () => navegar());
   });
-  setTimeout(() => import('./tour.js?v=14671ef4de').then((t) => t.tourSiEsPrimeraVez()), 700);
+  setTimeout(() => import('./tour.js?v=363881ba72').then((t) => t.tourSiEsPrimeraVez()), 700);
   window.removeEventListener('hashchange', navegar);
   window.addEventListener('hashchange', navegar);
   navegar();

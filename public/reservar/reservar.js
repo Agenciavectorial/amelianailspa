@@ -1,10 +1,10 @@
 // Reserva de citas para clientas (sin cuenta). Pasos: servicios → profesional → horario → datos → listo.
 import {
   api, html, crudo, pintar, $, $$, toast, ocupado, hora, duracion, dinero, fechaLarga, ICONOS, inicial, celularBonito, abrirHoja, cerrarHoja,
-  SITIO, aplicarAcento, foto, fotoAncho, videoLiviano, verFotos,
-} from '/app-citas/js/util.js?v=14671ef4de';
-import { crearSelector } from './selector.js?v=14671ef4de';
-import { estadoPush, activarPush } from '/app-citas/js/push.js?v=14671ef4de';
+  SITIO, aplicarAcento, foto, fotoAncho, videoLiviano, verFotos, trasHistorial, avatarAmpliable, activarAmpliar,
+} from '/app-citas/js/util.js?v=363881ba72';
+import { crearSelector } from './selector.js?v=363881ba72';
+import { estadoPush, activarPush } from '/app-citas/js/push.js?v=363881ba72';
 
 const PUSH = { sw: '/reservar/sw.js', scope: '/reservar/' };
 
@@ -40,7 +40,7 @@ const hacenTodo = (c) => E.sel.every((id) => c.servicios.includes(id));
 // ---------- navegación ----------
 function irA(paso, { empujar = true } = {}) {
   E.paso = paso;
-  if (empujar) history.pushState({ paso }, '', location.search);
+  if (empujar) trasHistorial(() => history.pushState({ paso }, '', location.search));
   pintarPaso();
   window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
 }
@@ -118,15 +118,16 @@ function pasoServicios() {
       <div id="misCitas"></div>
       <div id="avisosInicio"></div>
       ${!conColab && C.promociones?.length ? html`<h2 class="titulo-bloque">Promociones</h2><div class="promos">${C.promociones.map((p) => html`
+        <div class="promo-caja">${p.foto ? html`<button type="button" class="mini-zoom" data-ampliar-url="${p.foto}" data-ampliar-titulo="${p.titulo}" data-ampliar-texto="${p.descripcion || ''}" aria-label="Ver la foto de ${p.titulo} en grande">${crudo(ICONOS.lupa)}</button>` : ''}
         <button class="promo" data-promo="${p.id}">
           ${foto(p.foto, { sizes: '(min-width: 760px) 320px, 80vw' })}
           <span class="promo-texto"><strong>${p.titulo}</strong>${p.descripcion ? html`<span>${p.descripcion}</span>` : ''}
             <span class="promo-pie">${p.precio_promo != null ? html`<b>${dinero(p.precio_promo)}</b>` : ''}${p.hasta ? html`<small>hasta ${fechaLarga(p.hasta).replace(/^\S+ /, '')}</small>` : ''}</span></span>
-        </button>`)}</div>` : ''}
+        </button></div>`)}</div>` : ''}
       ${!conColab && populares().length ? html`<h2 class="titulo-bloque">Lo más pedido</h2><div class="populares">${populares().map((s) => html`
-        <button class="popular" data-pop="${s.id}">${foto(s.foto, { sizes: '116px', ancho: 116 })}<span>${s.nombre}</span></button>`)}</div>
+        <div class="popular-caja"><button class="popular" data-pop="${s.id}">${foto(s.foto, { sizes: '116px', ancho: 116 })}<span>${s.nombre}</span></button>${fotosDe(s).length ? html`<button type="button" class="mini-zoom" data-ampliar-lista="servicio:${s.id}" aria-label="Ver fotos de ${s.nombre}">${crudo(ICONOS.lupa)}</button>` : ''}</div>`)}</div>
         <h2 class="titulo-bloque">Todos los servicios</h2>` : ''}
-      ${conColab ? html`<div class="con-colab"><img class="avatar" src="${conColab.foto}" alt=""><span>Reservando con <strong>${conColab.nombre}</strong></span><button class="btn ghost chico" id="quitarCon">Cambiar</button></div>` : ''}
+      ${conColab ? html`<div class="con-colab">${avatarAmpliable(conColab, { tam: 52 })}<span>Reservando con <strong>${conColab.nombre}</strong></span><button class="btn ghost chico" id="quitarCon">Cambiar</button></div>` : ''}
       <div class="categorias" role="tablist">
         ${cats.map((c) => html`<button class="chip" role="tab" data-cat="${c}" aria-pressed="${c === E.cat}">${c}</button>`)}
       </div>
@@ -198,6 +199,19 @@ async function pintarMisCitas() {
   });
 }
 
+/** Fotos (no videos) de un servicio, para el visor. */
+function fotosDe(s) {
+  const l = (s.medios || []).filter((m) => m.tipo !== 'video').map((m) => m.url);
+  return l.length ? l : (s.foto && !/\/arte\//.test(s.foto) ? [s.foto] : []);
+}
+activarAmpliar((clave) => {
+  const [tipo, id] = clave.split(':');
+  if (tipo !== 'servicio') return null;
+  const s = porId(Number(id));
+  const l = s ? fotosDe(s) : [];
+  return l.map((url, k) => ({ url, titulo: s.nombre, texto: l.length > 1 ? `Foto ${k + 1} de ${l.length}` : '' }));
+});
+
 function tarjetaServicio(s) {
   const marcado = E.sel.includes(s.id);
   const conColab = E.con && E.con !== 'cualquiera' ? colabPorSlug(E.con) : null;
@@ -205,7 +219,7 @@ function tarjetaServicio(s) {
   return html`
     <div class="servicio ${marcado ? 'marcado' : ''} ${noHace ? 'no-disponible' : ''}" data-id="${s.id}">
       <button type="button" class="servicio-abrir" data-abrir="${s.id}" ${noHace ? crudo('disabled') : ''} aria-label="Ver ${s.nombre}">
-      <span class="servicio-foto">${foto(s.foto, { sizes: '112px', ancho: 112 })}${s.medios?.length > 1 ? html`<span class="servicio-num">${s.medios.length} ${crudo(s.medios.some((m) => m.tipo === 'video') ? '▶' : '')}</span>` : ''}</span>
+      <span class="servicio-foto">${foto(s.foto, { sizes: '112px', ancho: 112 })}</span>
       <span class="servicio-cuerpo">
         <span class="servicio-nombre">${s.nombre}</span>
         <span class="servicio-desc">${noHace ? `${conColab.nombre} no hace este servicio` : s.descripcion}</span>
@@ -215,6 +229,7 @@ function tarjetaServicio(s) {
         </span>
       </span>
       </button>
+      ${fotosDe(s).length ? html`<button type="button" class="servicio-zoom" data-ampliar-lista="servicio:${s.id}" aria-label="Ver fotos de ${s.nombre} en grande"><span class="servicio-num">${crudo(ICONOS.lupa)}${fotosDe(s).length > 1 ? ` ${fotosDe(s).length} fotos` : ' Ver'}${s.medios?.some((m) => m.tipo === 'video') ? ' · ▶' : ''}</span></button>` : ''}
       <button type="button" class="servicio-marca" data-alternar="${s.id}" aria-pressed="${marcado}" aria-label="${marcado ? 'Quitar' : 'Agregar'} ${s.nombre}" ${noHace ? crudo('disabled') : ''}>${crudo(marcado ? ICONOS.check : ICONOS.mas)}</button>
     </div>`;
 }
@@ -270,7 +285,7 @@ function abrirFicha(id) {
     <div class="ficha-acciones">
       <button class="btn bloque grande" id="fichaAgendar">Agendar este servicio</button>
       <button class="btn ghost bloque" id="fichaAlternar">${marcado ? 'Quitar de mi cita' : 'Agregar y seguir viendo'}</button>
-    </div>`, { clase: 'ficha' });
+    </div>`, { clase: 'ficha', historial: true });
   const car = $('#fichaCarrusel', h);
   if (car) {
     const items = $$('.ficha-medio', car);
@@ -326,8 +341,8 @@ function pasoProfesional() {
         ${aptas.map((c) => html`
         <div class="pro-caja">
           <button class="pro" data-slug="${c.slug}">
-            ${c.foto ? foto(c.foto, { sizes: '66px', ancho: 66, clase: 'avatar', lazy: false }) : html`<span class="avatar inicial">${inicial(c.nombre)}</span>`}
-            <span class="pro-texto"><strong>${c.nombre}</strong><span>${c.cargo || 'Manicurista'}</span>${c.foto ? html`<small class="pro-ver">Toca su foto para verla en grande</small>` : ''}</span>
+            ${c.foto ? foto(c.foto, { sizes: '92px', ancho: 92, clase: 'avatar', lazy: false }) : html`<span class="avatar inicial">${inicial(c.nombre)}</span>`}
+            <span class="pro-texto"><strong>${c.nombre}</strong><span>${c.cargo || 'Manicurista'}</span>${c.foto ? html`<small class="pro-ver">${crudo(ICONOS.lupa)} Toca su foto para verla</small>` : ''}</span>
             <span class="flecha-pro">${crudo(ICONOS.atras)}</span>
           </button>
           ${c.foto ? html`<button type="button" class="pro-foto" data-foto-de="${c.slug}" aria-label="Ver la foto de ${c.nombre} en grande"></button>` : ''}
@@ -355,7 +370,7 @@ function pasoHorario() {
     <section class="paso">
       ${resumenServicios()}
       <div class="con-quien">
-        ${c ? html`<img class="avatar" src="${c.foto}" alt=""><span>Con <strong>${c.nombre}</strong></span>` : html`<span class="avatar destello">${crudo(ICONOS.chispa)}</span><span>Con <strong>quien esté disponible</strong></span>`}
+        ${c ? html`${avatarAmpliable(c, { tam: 52 })}<span>Con <strong>${c.nombre}</strong></span>` : html`<span class="avatar destello">${crudo(ICONOS.chispa)}</span><span>Con <strong>quien esté disponible</strong></span>`}
         <button class="btn ghost chico" id="cambiarPro">Cambiar</button>
       </div>
       <div id="selector"></div>
@@ -472,7 +487,7 @@ function pasoListo() {
       <div class="codigo" aria-label="Código de reserva">${r.codigo}</div>
       <div class="tarjeta ticket">
         <div class="ticket-fila"><span>${crudo(ICONOS.calendario)}</span><div><strong>${r.fecha_texto}</strong><span>${r.hora_texto} · ${duracion(r.fin - r.inicio)}</span></div></div>
-        <div class="ticket-fila"><img class="avatar" src="${r.colaboradora.foto}" alt=""><div><strong>Con ${r.colaboradora.nombre}</strong><span>${servicios}</span></div></div>
+        <div class="ticket-fila">${avatarAmpliable(r.colaboradora, { tam: 52 })}<div><strong>Con ${r.colaboradora.nombre}</strong><span>${servicios}</span></div></div>
         <div class="ticket-fila"><span>${crudo(ICONOS.ubicacion)}</span><div><strong>C.C. Bosque Plaza</strong><span>${C.ajustes.direccion}</span></div></div>
         ${r.precio_total != null ? html`<div class="ticket-total"><span>Total estimado</span><strong>${dinero(r.precio_total)}</strong></div>` : ''}
       </div>

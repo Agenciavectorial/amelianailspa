@@ -2,9 +2,9 @@
 import {
   api, html, crudo, pintar, $, $$, toast, ocupado, confirmar, abrirHoja, cerrarHoja, hora, hhmm, aMin, duracion, dinero,
   fechaLarga, celularBonito, inicial, ICONOS, sumarDias,
-} from '/app-citas/js/util.js?v=14671ef4de';
-import { S, esDuena, puede, colab, conAgenda, categorias, aplicarEstilos } from './estado.js?v=14671ef4de';
-import { botonesCita, datosCita, textoPlantilla, enviar } from './mensajes.js?v=14671ef4de';
+} from '/app-citas/js/util.js?v=363881ba72';
+import { S, esDuena, puede, colab, conAgenda, categorias, aplicarEstilos } from './estado.js?v=363881ba72';
+import { botonesCita, datosCita, textoPlantilla, enviar } from './mensajes.js?v=363881ba72';
 
 export const METODOS = [['efectivo', 'Efectivo'], ['nequi', 'Nequi'], ['daviplata', 'Daviplata'], ['tarjeta', 'Tarjeta'], ['transferencia', 'Transferencia'], ['otro', 'Otro']];
 
