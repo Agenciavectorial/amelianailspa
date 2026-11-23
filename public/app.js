@@ -265,7 +265,7 @@ document.addEventListener('DOMContentLoaded', function () {
       // Con la plataforma propia, el botón abre la agenda de esa profesional.
       var base = agendaBtn.getAttribute('href').split('?')[0];
       var con = card.getAttribute('data-con');
-      if (base === '/reservar') agendaBtn.setAttribute('href', con ? '/reservar?con=' + encodeURIComponent(con) : '/reservar');
+      if (base === '/reservar' || base === '/reservar/') agendaBtn.setAttribute('href', con ? '/reservar/?con=' + encodeURIComponent(con) : '/reservar/');
     }
     teamModal.classList.add('open');
     lastFocusedCard = card;

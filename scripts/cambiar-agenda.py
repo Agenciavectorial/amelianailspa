@@ -2,7 +2,7 @@
 """Cambia el enlace de "Agendar" de toda la página (botones, menú, dock, tarjetas y datos para Google).
 
 Hoy apunta a Kumbio. Cuando la plataforma propia esté en producción:
-    python3 scripts/cambiar-agenda.py /reservar
+    python3 scripts/cambiar-agenda.py /reservar/
 Para volver a Kumbio:
     python3 scripts/cambiar-agenda.py https://agenda.kumbio.com/amelia-nail-spa
 
@@ -16,13 +16,15 @@ import re, sys, pathlib
 
 if len(sys.argv) != 2:
     sys.exit(__doc__)
-nuevo = sys.argv[1].rstrip('/') or '/reservar'
+nuevo = sys.argv[1]
+if nuevo.rstrip('/') == '/reservar':
+    nuevo = '/reservar/'   # con barra final: Cloudflare redirige /reservar a /reservar/
 interno = nuevo.startswith('/')
 raiz = pathlib.Path(__file__).resolve().parent.parent / 'public'
 pagina = raiz / 'index.html'
 html = pagina.read_text(encoding='utf-8')
 
-ACTUAL = r'(?:https://agenda\.kumbio\.com/amelia-nail-spa|https://amelianailspa\.com/reservar|/reservar)(?:\?[^"]*)?'
+ACTUAL = r'(?:https://agenda\.kumbio\.com/amelia-nail-spa|https://amelianailspa\.com/reservar/?|/reservar/?)(?:\?[^"]*)?'
 cambios = 0
 
 def etiqueta(m):
@@ -50,8 +52,8 @@ pagina.write_text(html, encoding='utf-8')
 # Sitemap: /reservar se indexa solo cuando la plataforma está activa.
 sitemap = raiz / 'sitemap.xml'
 sm = sitemap.read_text(encoding='utf-8')
-bloque = '  <url>\n    <loc>https://amelianailspa.com/reservar</loc>\n  </url>\n'
-if interno and '/reservar</loc>' not in sm:
+bloque = '  <url>\n    <loc>https://amelianailspa.com/reservar/</loc>\n  </url>\n'
+if interno and '/reservar/</loc>' not in sm:
     sm = sm.replace('</urlset>', bloque + '</urlset>')
 elif not interno:
     sm = sm.replace(bloque, '')
