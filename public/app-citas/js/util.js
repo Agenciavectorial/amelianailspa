@@ -1,5 +1,24 @@
 // Utilidades compartidas del front (reservar + panel). Sin dependencias.
 
+/** Dominio para enlaces que salen de la app (WhatsApp, calendario, copiar enlace). En desarrollo local, el local. */
+export const SITIO = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? location.origin : 'https://amelianailspa.com';
+
+/** Acentos de marca permitidos (todos de la paleta del spa, con contraste AA para texto blanco). */
+export const ACENTOS = {
+  lavanda: { nombre: 'Lavanda', rosa: '#A98BBE', deep: '#7A6494', soft: '#EDE5F2', grad: ['#B79BCB', '#8E74AA', '#7A6494'] },
+  ciruela: { nombre: 'Ciruela', rosa: '#9C7AA8', deep: '#5E4570', soft: '#EAE1EF', grad: ['#A887B5', '#7A5A8C', '#5E4570'] },
+  rosa: { nombre: 'Rosa antiguo', rosa: '#C48BB0', deep: '#8E5579', soft: '#F5E6EF', grad: ['#D19BBD', '#A86D93', '#8E5579'] },
+  malva: { nombre: 'Malva', rosa: '#A88AA0', deep: '#6F5468', soft: '#EFE6EC', grad: ['#B79CB0', '#8A6C82', '#6F5468'] },
+};
+export function aplicarAcento(clave) {
+  const a = ACENTOS[clave] || ACENTOS.lavanda;
+  const r = document.documentElement.style;
+  r.setProperty('--rosa', a.rosa);
+  r.setProperty('--rosa-deep', a.deep);
+  r.setProperty('--rosa-soft', a.soft);
+  r.setProperty('--grad', `linear-gradient(135deg, ${a.grad[0]} 0%, ${a.grad[1]} 55%, ${a.grad[2]} 100%)`);
+}
+
 /** Escapa texto para insertarlo en HTML. */
 export function esc(v) {
   return String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -195,3 +214,100 @@ export const ICONOS = {
   copiar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="12" height="12" rx="2.5"/><path d="M5 15V5a2 2 0 012-2h10"/></svg>',
   ubicacion: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0114 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
 };
+
+// ---------- imágenes livianas ----------
+// Las fotos del sitio vienen en varios anchos (/img/nombre-320.webp, -480, -720, -960 …).
+// `foto()` arma <img> con srcset/sizes para que cada celular baje solo el tamaño que necesita.
+const RE_IMG = /^\/img\/([\w-]+)-(\d+)\.webp$/;
+const ANCHOS = [320, 480, 720, 960];
+const RE_CLOUD = /^(https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\/)(.+)$/;
+
+/** Lista [url, ancho] de las variantes disponibles, o null si la foto no tiene variantes conocidas. */
+export function variantes(url) {
+  const s = String(url || '');
+  const m = RE_IMG.exec(s);
+  if (m) {
+    const max = Number(m[2]);
+    const l = ANCHOS.filter((a) => a < max).map((a) => [`/img/${m[1]}-${a}.webp`, a]);
+    return [...l, [s, max]];
+  }
+  const c = RE_CLOUD.exec(s);
+  if (c && !/(^|,)w_\d/.test(c[2].split('/')[0])) return [480, 720, 1080].map((a) => [`${c[1]}f_auto,q_auto,c_limit,w_${a}/${c[2]}`, a]);
+  return null;
+}
+
+/** La variante más pequeña que cubre `ancho` píxeles (para fondos y miniaturas). */
+export function fotoAncho(url, ancho) {
+  const v = variantes(url);
+  if (!v) return url;
+  return (v.find(([, a]) => a >= ancho) || v[v.length - 1])[0];
+}
+
+/** <img> responsivo. `ancho`/`alto` reservan el espacio (sin saltos); `prioridad` para la primera pantalla. */
+export function foto(url, { sizes = '100vw', ancho, alto, alt = '', clase = '', prioridad = false, lazy = true, id = '' } = {}) {
+  if (!url) return '';
+  const v = variantes(url);
+  const src = v ? (v.find(([, a]) => a >= 480) || v[v.length - 1])[0] : url;
+  const srcset = v && v.length > 1 ? v.map(([u, a]) => `${u} ${a}w`).join(', ') : '';
+  return html`<img src="${src}"${srcset ? html` srcset="${srcset}" sizes="${sizes}"` : ''}${ancho ? html` width="${ancho}" height="${alto || ancho}"` : ''} alt="${alt}"${clase ? html` class="${clase}"` : ''}${id ? html` id="${id}"` : ''} ${crudo(prioridad ? 'fetchpriority="high"' : lazy ? 'loading="lazy"' : '')} decoding="async" referrerpolicy="no-referrer">`;
+}
+
+/** Videos de Cloudinary con ancho limitado (no bajar el original en el celular). */
+export function videoLiviano(url) {
+  const m = /^(https:\/\/res\.cloudinary\.com\/[^/]+\/video\/upload\/)(.+)$/.exec(String(url || ''));
+  if (!m) return url;
+  const [primero, ...resto] = m[2].split('/');
+  const esTrans = resto.length && /^[a-z]{1,3}_/.test(primero);
+  if (esTrans && /(^|,)w_\d/.test(primero)) return url;
+  return esTrans ? `${m[1]}${primero},w_720,c_limit/${resto.join('/')}` : `${m[1]}q_auto,f_auto,w_720,c_limit/${m[2]}`;
+}
+
+// ---------- ver fotos en grande ----------
+/**
+ * Visor a pantalla completa: desliza entre fotos, se cierra con la X, tocando fuera, con Esc o con "atrás".
+ * @param {{url: string, titulo?: string, texto?: string}[]} lista
+ */
+export function verFotos(lista, inicio = 0) {
+  const fotos = (lista || []).filter((f) => f && f.url);
+  if (!fotos.length) return;
+  const capa = document.createElement('div');
+  capa.className = 'visor';
+  capa.setAttribute('role', 'dialog');
+  capa.setAttribute('aria-modal', 'true');
+  capa.setAttribute('aria-label', fotos[inicio]?.titulo || 'Foto');
+  capa.innerHTML = String(html`
+    <button type="button" class="visor-cerrar" aria-label="Cerrar">${crudo(ICONOS.cerrar)}</button>
+    <div class="visor-pista">${fotos.map((f, i) => html`<figure class="visor-foto">
+      <img src="${fotoAncho(f.url, Math.min(1440, Math.round(innerWidth * (devicePixelRatio || 1))))}" alt="${f.titulo || ''}" ${crudo(Math.abs(i - inicio) > 1 ? 'loading="lazy"' : '')} decoding="async" referrerpolicy="no-referrer">
+      ${f.titulo || f.texto ? html`<figcaption>${f.titulo ? html`<strong>${f.titulo}</strong>` : ''}${f.texto ? html`<span>${f.texto}</span>` : ''}</figcaption>` : ''}
+    </figure>`)}</div>
+    ${fotos.length > 1 ? html`<p class="visor-cuenta" aria-live="polite"><span>${inicio + 1}</span> / ${fotos.length}</p>` : ''}`);
+  document.body.append(capa);
+  document.body.classList.add('con-visor');
+  const pista = capa.querySelector('.visor-pista');
+  pista.scrollLeft = pista.clientWidth * inicio;
+  const cuenta = capa.querySelector('.visor-cuenta span');
+  pista.addEventListener('scroll', () => { if (cuenta) cuenta.textContent = String(Math.round(pista.scrollLeft / pista.clientWidth) + 1); }, { passive: true });
+  let cerrado = false;
+  const cerrar = (desdeAtras = false) => {
+    if (cerrado) return;
+    cerrado = true;
+    removeEventListener('keydown', tecla);
+    removeEventListener('popstate', atras);
+    document.body.classList.remove('con-visor');
+    capa.remove();
+    if (!desdeAtras && history.state?.visor) history.back();
+  };
+  const tecla = (e) => {
+    if (e.key === 'Escape') cerrar();
+    if (e.key === 'ArrowRight') pista.scrollBy({ left: pista.clientWidth, behavior: 'smooth' });
+    if (e.key === 'ArrowLeft') pista.scrollBy({ left: -pista.clientWidth, behavior: 'smooth' });
+  };
+  const atras = () => cerrar(true);
+  history.pushState({ ...(history.state || {}), visor: true }, '');
+  addEventListener('keydown', tecla);
+  addEventListener('popstate', atras);
+  capa.querySelector('.visor-cerrar').onclick = () => cerrar();
+  capa.addEventListener('click', (e) => { if (e.target === capa || e.target.classList.contains('visor-foto')) cerrar(); });
+  capa.querySelector('.visor-cerrar').focus();
+}

@@ -8,14 +8,15 @@ import {
   cancelarCita, cambiarEstado, detalleCita, ESTADOS_ACTIVOS,
 } from '../reservas.js';
 import { ahoraBogota, difDias, sumarDias, aMinutos } from '../tiempo.js';
-import { avisarEquipo } from '../notificaciones.js';
+import { avisarEquipo, avisarClienta } from '../notificaciones.js';
 
 const PERMISOS = ['gestionar_citas', 'gestionar_bloqueos', 'editar_horario', 'ver_agenda_equipo', 'ver_clientas'];
 const AJUSTES_EDITABLES = {
   anticipacion_min: [0, 10080], ventana_dias: [1, 365], intervalo_min: [5, 120],
   cancelacion_horas: [0, 168], max_citas_por_celular: [1, 20], dias_inactiva: [15, 730],
 };
-const AJUSTES_TEXTO = { whatsapp: 20, nombre_spa: 80, direccion: 200, politica_texto: 600, resena_url: 300 };
+const AJUSTES_TEXTO = { whatsapp: 20, nombre_spa: 80, direccion: 200, politica_texto: 600, resena_url: 300, bienvenida_titulo: 60, bienvenida_texto: 200, portada_url: 600 };
+const ACENTOS = ['lavanda', 'ciruela', 'rosa', 'malva'];
 
 function permisosLimpios(p = {}) {
   return Object.fromEntries(PERMISOS.map((k) => [k, v.bool(p[k])]));
@@ -175,6 +176,7 @@ export function rutasPanel(r) {
     const clientaId = await clientaPorCelular(db, nombre, celular);
     const c = await insertarCita(db, { clientaId, colaboradoraId, fecha, inicio, servicios, origen: 'panel', notas, quien: quien(sesion), forzar });
     enSegundoPlano(avisarEquipo(env, c.id, 'nueva', { excluirId: sesion.id }));
+    enSegundoPlano(avisarClienta(env, c.id, 'nueva'));
     return { id: c.id, codigo: c.codigo };
   });
 
@@ -187,6 +189,7 @@ export function rutasPanel(r) {
       if (cita.estado === 'cancelada') return { ok: true };
       await cancelarCita(db, cita.id, quien(sesion), v.texto(body.motivo, 'motivo', { max: 200, opcional: true }));
       enSegundoPlano(avisarEquipo(env, cita.id, 'cancelada', { excluirId: sesion.id }));
+      enSegundoPlano(avisarClienta(env, cita.id, 'cancelada'));
     } else if (accion === 'estado') {
       const estado = body.estado;
       if (!['asistio', 'no_asistio', 'confirmada'].includes(estado)) falla(400, 'Estado inválido.');
@@ -215,6 +218,7 @@ export function rutasPanel(r) {
       }
       await moverCita(db, cita, { colaboradoraId, fecha, inicio, quien: quien(sesion), forzar });
       enSegundoPlano(avisarEquipo(env, cita.id, 'movida', { excluirId: sesion.id }));
+      enSegundoPlano(avisarClienta(env, cita.id, 'movida'));
     } else {
       falla(400, 'Acción inválida.');
     }
@@ -456,8 +460,14 @@ export function rutasPanel(r) {
       if (body[k] === undefined) continue;
       let val = v.texto(body[k], k, { max, opcional: k !== 'nombre_spa' });
       if (k === 'whatsapp') val = v.celular(val, 'WhatsApp');
+      if (k === 'bienvenida_titulo' && !val) val = 'Reserva tu momento';
       sentencias.push(up(k, val));
     }
+    if (body.color_acento !== undefined) {
+      if (!ACENTOS.includes(body.color_acento)) falla(400, 'Color de acento inválido.');
+      sentencias.push(up('color_acento', body.color_acento));
+    }
+    if (body.portada_url) { const p = String(body.portada_url); if (!/^\/(img|api\/medios)\/[\w./-]+$/.test(p)) v.url(p, 'portada'); }
     if (body.intervalo_min !== undefined && Number(body.intervalo_min) % 5) falla(400, 'El intervalo debe ser múltiplo de 5.');
     if (sentencias.length) await db.batch(sentencias);
     return { ok: true };

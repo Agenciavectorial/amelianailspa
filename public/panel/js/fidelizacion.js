@@ -1,8 +1,8 @@
 // Fidelización: a quién le toca volver (ciclo de retorno del servicio), cumpleaños e inactivas para recuperar.
-import { api, html, crudo, pintar, $, $$, fechaLarga, celularBonito, ICONOS } from '/app-citas/js/util.js';
-import { S } from './estado.js';
-import { enviar, textoPlantilla } from './mensajes.js';
-import { enlaceRepetir } from './inicio.js';
+import { api, html, crudo, pintar, $, $$, fechaLarga, celularBonito, ICONOS, SITIO } from '/app-citas/js/util.js?v=14671ef4de';
+import { S } from './estado.js?v=14671ef4de';
+import { enviar, textoPlantilla } from './mensajes.js?v=14671ef4de';
+import { enlaceRepetir } from './inicio.js?v=14671ef4de';
 
 let pestana = 'contactar';
 
@@ -34,7 +34,7 @@ export async function vista(v) {
     const c = listas[pestana][Number(b.dataset.i)];
     const nombre = c.nombre.split(' ')[0];
     let texto;
-    if (c.tipo === 'cumpleanos') texto = `¡Feliz cumpleaños, ${nombre}! 🎂💜 Todo el equipo de ${S.ajustes.nombre_spa || 'Amelia Nail Spa'} te desea un día precioso. Te esperamos para consentirte: ${location.origin}/reservar/`;
+    if (c.tipo === 'cumpleanos') texto = `¡Feliz cumpleaños, ${nombre}! 🎂💜 Todo el equipo de ${S.ajustes.nombre_spa || 'Amelia Nail Spa'} te desea un día precioso. Te esperamos para consentirte: ${SITIO}/reservar/`;
     else if (c.tipo === 'recuperar') texto = `¡Hola ${nombre}! 💜 Te extrañamos en ${S.ajustes.nombre_spa || 'Amelia Nail Spa'}. ¿Te animas a consentirte esta semana? Reserva en un toque: ${enlaceRepetir(c)}`;
     else texto = textoPlantilla('vuelve', { nombre, servicio: c.servicios, colaboradora: c.colaboradora, enlace: enlaceRepetir(c), spa: S.ajustes.nombre_spa });
     enviar(c.celular, texto, { clienta_id: c.clienta_id, tipo: c.tipo });

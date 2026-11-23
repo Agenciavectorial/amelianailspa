@@ -197,13 +197,40 @@ con cron (recordatorios a clientas cada 15 min), porque Pages Functions no ejecu
    `curl -X POST https://amelianailspa.com/api/interno/recordatorios -H "X-Cron-Clave: <clave>" -H "Content-Type: application/json" -d "{}"`.
    Sin ese secreto, la ruta responde 404.
 
-Qué se envía:
+Qué se envía (horas de Colombia):
 
 | A quién | Cuándo |
 |---|---|
-| La colaboradora y Erika | Cita nueva (en línea o desde el panel), movida o cancelada. No le llega a quien hizo el cambio. |
-| La clienta (si tocó "Avísame antes de mi cita") | 24 h antes (entre 20 y 24 h) y 2 h antes. |
+| La colaboradora y Erika | Cita nueva (en línea o desde el panel), movida o cancelada, al instante. No le llega a quien hizo el cambio. |
+| La colaboradora | **1 hora antes** de cada cita suya. |
+| Cada colaboradora (Erika: el total del spa) | **Resumen del día** entre 7:00 y 10:00 a. m., si tiene citas. |
+| La clienta (si tocó "Avísame antes de mi cita") | **Confirmación** apenas agenda; **la víspera** entre 6:00 y 9:00 p. m.; **la mañana del mismo día** (desde 7:30 a. m.) solo si no recibió la de la víspera; y **1 hora antes**. |
+| La clienta | Si el spa le **mueve o cancela** la cita desde el panel. |
 | La clienta | "Te toca volver" cuando se cumple el ciclo de retorno de su último servicio, entre 10:00 y 19:00. |
+
+Las chicas activan sus avisos en Inicio ("Activar avisos") o en Mi cuenta. En iPhone primero deben
+descargar la app (botón "Descargar la app") y abrirla desde el ícono.
 
 Cada recordatorio sale una sola vez (tabla `push_enviados`). Las suscripciones vencidas se borran solas.
 En iPhone las notificaciones web solo funcionan con la app instalada en la pantalla de inicio (iOS 16.4+).
+
+## 14. Subir fotos y videos desde el celular (opcional, R2)
+
+Hoy Erika arma las galerías eligiendo entre las fotos publicadas del spa o pegando un enlace (por
+ejemplo de Cloudinary). Para que pueda **subir desde el celular**, hay que conectar un bucket R2:
+
+1. Cloudflare → **R2** → activar R2 en la cuenta (el plan gratuito incluye 10 GB) → **Create bucket**
+   con el nombre `amelia-medios`.
+2. Agregar el binding a `wrangler.toml` y desplegar:
+
+   ```toml
+   [[r2_buckets]]
+   binding = "MEDIOS"
+   bucket_name = "amelia-medios"
+   ```
+
+3. Listo: en Panel → Servicios → Galería → Agregar → **Subir del celular** aparece la cámara/galería.
+   Los archivos se sirven desde `/api/medios/…` (JPG, PNG, WebP hasta 6 MB; MP4 hasta 30 MB).
+
+Cuando se agreguen fotos nuevas a `public/img/`, correr `node dev/listar-fotos.mjs` para que aparezcan
+en "Fotos del spa".

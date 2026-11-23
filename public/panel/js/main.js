@@ -1,7 +1,7 @@
 // Arranque del panel: sesión, navegación (dock en celular, barra lateral en computador) y rutas por hash.
-import { api, html, crudo, pintar, $, $$, toast, inicial, ICONOS } from '/app-citas/js/util.js';
-import { S, recargar, esDuena, puede } from './estado.js';
-import { pantallaIngreso } from './login.js';
+import { api, html, crudo, pintar, $, $$, toast, inicial, ICONOS, cerrarHoja } from '/app-citas/js/util.js?v=14671ef4de';
+import { S, recargar, esDuena, puede } from './estado.js?v=14671ef4de';
+import { pantallaIngreso } from './login.js?v=14671ef4de';
 
 const raiz = $('#raiz');
 
@@ -41,11 +41,11 @@ function secciones() {
 }
 
 const MODULOS = {
-  inicio: () => import('./inicio.js'), agenda: () => import('./agenda.js'), clientas: () => import('./clientas.js'),
-  servicios: () => import('./servicios.js'), equipo: () => import('./equipo.js'), spa: () => import('./ajustes.js'),
-  ajustes: () => import('./ajustes.js'), importar: () => import('./importar.js'), cuenta: () => import('./ajustes.js'),
-  fidelizacion: () => import('./fidelizacion.js'), analitica: () => import('./analitica.js'), notas: () => import('./notas.js'),
-  promociones: () => import('./promociones.js'), mensajes: () => import('./plantillas.js'),
+  inicio: () => import('./inicio.js?v=14671ef4de'), agenda: () => import('./agenda.js?v=14671ef4de'), clientas: () => import('./clientas.js?v=14671ef4de'),
+  servicios: () => import('./servicios.js?v=14671ef4de'), equipo: () => import('./equipo.js?v=14671ef4de'), spa: () => import('./ajustes.js?v=14671ef4de'),
+  ajustes: () => import('./ajustes.js?v=14671ef4de'), importar: () => import('./importar.js?v=14671ef4de'), cuenta: () => import('./ajustes.js?v=14671ef4de'),
+  fidelizacion: () => import('./fidelizacion.js?v=14671ef4de'), analitica: () => import('./analitica.js?v=14671ef4de'), notas: () => import('./notas.js?v=14671ef4de'),
+  promociones: () => import('./promociones.js?v=14671ef4de'), mensajes: () => import('./plantillas.js?v=14671ef4de'),
   mas: null,
 };
 
@@ -63,6 +63,7 @@ function shell() {
         </div>
       </nav>
       <main id="vista" class="vista"></main>
+      ${puede('gestionar_citas') ? html`<button class="fab" id="fab" aria-label="Agendar cita">${crudo(ICONOS.mas)}</button>` : ''}
       <nav class="dock" aria-label="Secciones">
         ${dock.map((s) => html`<a href="#/${s.id}" data-sec="${s.id}">${crudo(IC[s.id])}<span>${s.nombre}</span></a>`)}
         <a href="#/mas" data-sec="mas">${crudo(IC.mas)}<span>Más</span></a>
@@ -85,6 +86,8 @@ async function navegar() {
   const [, sec = 'inicio', ...resto] = location.hash.replace(/^#/, '').split('/');
   const valida = sec === 'mas' || secciones().some((s) => s.id === sec);
   const id = valida ? sec : 'inicio';
+  // Al cambiar de sección se cierra la hoja que hubiera abierta (si no, tapa la pantalla nueva).
+  if (id !== rutaActual && document.body.classList.contains('con-hoja')) cerrarHoja(true);
   rutaActual = id;
   for (const a of $$('[data-sec]')) a.classList.toggle('activo', a.dataset.sec === id || (id !== 'mas' && a.dataset.sec === 'mas' && !secciones().find((s) => s.id === id)?.dock && window.innerWidth < 900));
   const v = $('#vista');
@@ -118,6 +121,12 @@ async function entrar() {
     return;
   }
   shell();
+  $('#fab')?.addEventListener('click', async () => {
+    const { nuevaCita } = await import('./citas.js?v=14671ef4de');
+    const m = /^#\/agenda\/(\d{4}-\d{2}-\d{2})/.exec(location.hash);
+    nuevaCita({ fecha: m ? m[1] : S.hoy, colaboradoraId: esDuena() ? undefined : S.yo.id }, () => navegar());
+  });
+  setTimeout(() => import('./tour.js?v=14671ef4de').then((t) => t.tourSiEsPrimeraVez()), 700);
   window.removeEventListener('hashchange', navegar);
   window.addEventListener('hashchange', navegar);
   navegar();

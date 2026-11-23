@@ -366,6 +366,141 @@ document.addEventListener('DOMContentLoaded', function () {
     promo.querySelector('.promo-cta').addEventListener('click', hidePromo);
   }
 
+  /* ===== Portadas de los videos: se cargan al acercarse ===== */
+  var conPortada = document.querySelectorAll('video[data-poster]');
+  if ('IntersectionObserver' in window) {
+    var obsPortada = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        en.target.poster = en.target.dataset.poster;
+        obsPortada.unobserve(en.target);
+      });
+    }, { rootMargin: '400px 0px' });
+    conPortada.forEach(function (v) { obsPortada.observe(v); });
+  } else {
+    conPortada.forEach(function (v) { v.poster = v.dataset.poster; });
+  }
+
+  /* ===== Fotos 2-4 del inicio: se cargan cuando la página ya está lista ===== */
+  function cargarHeroDiferidas() {
+    document.querySelectorAll('.hero-right img[data-src]').forEach(function (img) {
+      if (img.dataset.srcset) img.srcset = img.dataset.srcset;
+      img.src = img.dataset.src;
+      img.removeAttribute('data-src'); img.removeAttribute('data-srcset');
+    });
+  }
+  if (!window.matchMedia('(max-width: 768px)').matches) cargarHeroDiferidas();
+  else if (document.readyState === 'complete') setTimeout(cargarHeroDiferidas, 1200);
+  else window.addEventListener('load', function () { setTimeout(cargarHeroDiferidas, 1200); });
+
+  /* ===== REDISEÑO: inicio con fotos que se alternan (celular) ===== */
+  var movil = window.matchMedia('(max-width: 768px)');
+  var heroImgs = document.querySelectorAll('.hero-right .hero-img');
+  if (heroImgs.length > 1 && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    var heroIdx = 0;
+    heroImgs[0].classList.add('activa');
+    setInterval(function () {
+      if (!movil.matches || document.hidden) return;
+      heroImgs[heroIdx].classList.remove('activa');
+      heroImgs[heroIdx].classList.add('apagada');
+      heroIdx = (heroIdx + 1) % heroImgs.length;
+      heroImgs[heroIdx].classList.remove('apagada');
+      heroImgs[heroIdx].classList.add('activa');
+    }, 4500);
+  }
+
+  /* ===== REDISEÑO: accesos por categoría abren su pestaña de servicios ===== */
+  document.querySelectorAll('.cat-chip[data-cat]').forEach(function (chip) {
+    chip.addEventListener('click', function () {
+      var tab = document.querySelector('.tab-btn[data-cat="' + chip.getAttribute('data-cat') + '"]');
+      if (tab) tab.click();
+    });
+  });
+
+  /* ===== REDISEÑO: la galería se muestra completa en celular (se desliza) ===== */
+  if (movil.matches && verMasBtn && !expanded) { verMasBtn.click(); }
+
+  /* ===== REDISEÑO: "Reservar con ella" no abre la ficha del equipo ===== */
+  document.querySelectorAll('.team-reservar').forEach(function (a) {
+    a.addEventListener('click', function (e) { e.stopPropagation(); });
+    a.addEventListener('keydown', function (e) { e.stopPropagation(); });
+  });
+
+  /* ===== REDISEÑO: datos en vivo de la plataforma de citas ===== */
+  var HORARIO_PAGINA = [[11, 17], [9, 19], [9, 19], [9, 19], [9, 19], [9, 19], [10, 19]]; // dom..sáb (respaldo)
+  function horaTexto(min) {
+    var h = Math.floor(min / 60), m = min % 60, suf = h >= 12 ? 'p. m.' : 'a. m.';
+    var h12 = h % 12 || 12;
+    return h12 + (m ? ':' + String(m).padStart(2, '0') : '') + ' ' + suf;
+  }
+  function pintarEstado(horario) {
+    var el = document.getElementById('heroEstado');
+    if (!el) return;
+    // Hora de Medellín (UTC-5, sin horario de verano)
+    var ahora = new Date(Date.now() - 5 * 3600e3);
+    var dia = ahora.getUTCDay(), min = ahora.getUTCHours() * 60 + ahora.getUTCMinutes();
+    var hoy = horario[dia];
+    if (hoy && min >= hoy[0] && min < hoy[1]) {
+      el.textContent = 'Abierto ahora · hasta las ' + horaTexto(hoy[1]);
+      el.classList.remove('cerrado');
+    } else {
+      var d = dia, txt = '';
+      for (var i = 0; i < 7; i++) {
+        var h2 = horario[d];
+        if (h2 && (i > 0 || min < h2[0])) {
+          txt = (i === 0 ? 'hoy' : i === 1 ? 'mañana' : ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][d]) + ' a las ' + horaTexto(h2[0]);
+          break;
+        }
+        d = (d + 1) % 7;
+      }
+      el.textContent = 'Cerrado · abrimos ' + txt;
+      el.classList.add('cerrado');
+    }
+    el.hidden = false;
+  }
+  pintarEstado(HORARIO_PAGINA.map(function (r) { return r && [r[0] * 60, r[1] * 60]; }));
+
+  function esc(t) { var d = document.createElement('div'); d.textContent = t == null ? '' : String(t); return d.innerHTML; }
+  function pesos(n) { return '$' + Number(n).toLocaleString('es-CO'); }
+
+  if (window.fetch) {
+    fetch('/api/public/catalogo', { headers: { accept: 'application/json' } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (!d) return;
+        // Horario real de la plataforma (lo edita Erika en el panel)
+        if (Array.isArray(d.horario) && d.horario.length) {
+          var hz = [];
+          d.horario.forEach(function (x) { hz[x.dia] = x.abierto ? [x.abre, x.cierra] : null; });
+          pintarEstado(hz);
+        }
+        // Promociones vigentes
+        var cont = document.getElementById('destPromos');
+        if (cont && Array.isArray(d.promociones) && d.promociones.length) {
+          cont.innerHTML = d.promociones.slice(0, 4).map(function (p) {
+            var serv = p.servicio_slug || p.slug || '';
+            var href = '/reservar/' + (serv ? '?servicio=' + encodeURIComponent(serv) : '');
+            return '<a class="promo-card" href="' + href + '">' +
+              (p.foto ? '<img loading="lazy" decoding="async" src="' + esc(p.foto) + '" alt="">' : '') +
+              '<div><small>Promoción</small><strong>' + esc(p.titulo) + '</strong>' +
+              (p.descripcion ? '<p>' + esc(p.descripcion) + '</p>' : '') +
+              (p.precio_promo ? '<span class="precio">' + pesos(p.precio_promo) + '</span>' : '') + '</div></a>';
+          }).join('');
+          cont.hidden = false;
+        }
+        // Lo más pedido primero
+        var rail = document.getElementById('destRail');
+        if (rail && Array.isArray(d.populares) && Array.isArray(d.servicios)) {
+          d.populares.slice().reverse().forEach(function (id) {
+            var s = d.servicios.filter(function (x) { return x.id === id; })[0];
+            var card = s && rail.querySelector('[data-servicio="' + s.slug + '"]');
+            if (card) rail.insertBefore(card, rail.firstChild);
+          });
+        }
+      })
+      .catch(function () {});
+  }
+
   /* ===== Smooth scroll para anclas internas ===== */
   document.querySelectorAll('a[href^="#"]').forEach(function (a) {
     a.addEventListener('click', function (e) {

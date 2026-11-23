@@ -2,7 +2,7 @@
 import { falla, ipDe } from '../http.js';
 import { sha256, revisarBloqueo, sumarIntento } from '../auth.js';
 import { endpointValido, vapidDe, enviarPush } from '../push.js';
-import { ejecutarRecordatorios } from '../notificaciones.js';
+import { ejecutarRecordatorios, confirmarProxima } from '../notificaciones.js';
 
 function leerSuscripcion(env, s) {
   const endpoint = s?.endpoint, p256dh = s?.keys?.p256dh, auth = s?.keys?.auth;
@@ -31,7 +31,7 @@ export function rutasPush(r) {
   });
 
   // La clienta se suscribe con los enlaces privados de sus citas (no hay cuenta).
-  r.post('/api/public/push/suscribir', 'publico', async ({ db, env, body, request }) => {
+  r.post('/api/public/push/suscribir', 'publico', async ({ db, env, body, request, enSegundoPlano }) => {
     if (!vapidDe(env)) falla(404, 'Las notificaciones no están configuradas.');
     const claveIp = 'push-ip:' + ipDe(request);
     await revisarBloqueo(db, claveIp);
@@ -43,6 +43,7 @@ export function rutasPush(r) {
     const c = await db.prepare(`SELECT clienta_id FROM citas WHERE token IN (${marcas}) ORDER BY id DESC LIMIT 1`).bind(...tokens).first();
     if (!c) falla(404, 'No encontramos tus citas.');
     await guardar(db, sub, { tipo: 'clienta', clientaId: c.clienta_id });
+    enSegundoPlano(confirmarProxima(env, c.clienta_id));
     return { ok: true };
   });
 

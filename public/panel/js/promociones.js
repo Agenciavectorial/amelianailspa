@@ -1,6 +1,7 @@
 // Promociones (Erika): aparecen arriba en la app/página de reservas mientras estén vigentes.
-import { api, html, crudo, pintar, $, toast, ocupado, confirmar, abrirHoja, cerrarHoja, dinero, fechaLarga, ICONOS } from '/app-citas/js/util.js';
-import { S } from './estado.js';
+import { api, html, crudo, pintar, $, toast, ocupado, confirmar, abrirHoja, cerrarHoja, dinero, fechaLarga, ICONOS, foto } from '/app-citas/js/util.js?v=14671ef4de';
+import { S } from './estado.js?v=14671ef4de';
+import { elegirMedio } from './galeria.js?v=14671ef4de';
 
 export async function vista(v) {
   const { promociones } = await api('/api/panel/promociones');
@@ -13,7 +14,7 @@ export async function vista(v) {
     <p class="muted">Las promociones vigentes salen de primeras en la reserva y en la app de la clienta, con botón para agendar.</p>
     <div class="lista-servicios-panel espacio-arriba">${promociones.length ? promociones.map((p) => html`
       <button class="fila-servicio tarjeta ${vigente(p) ? '' : 'oculto'}" data-id="${p.id}">
-        <span class="fs-foto">${p.foto ? html`<img src="${p.foto}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}</span>
+        <span class="fs-foto">${foto(p.foto, { sizes: '58px', ancho: 58 })}</span>
         <span class="fs-cuerpo"><strong>${p.titulo}</strong><span>${p.precio_promo != null ? dinero(p.precio_promo) + ' · ' : ''}${p.hasta ? `hasta el ${fechaLarga(p.hasta)}` : 'sin fecha de fin'}</span></span>
         ${vigente(p) ? html`<span class="pastilla ok">Vigente</span>` : html`<span class="pastilla aviso">No visible</span>`}
       </button>`) : html`<div class="vacio">${crudo(ICONOS.chispa)}<p>Crea tu primera promoción (ej. "Semipermanente + Pedi Spa en combo").</p></div>`}</div>`);
@@ -21,8 +22,8 @@ export async function vista(v) {
   v.querySelector('.lista-servicios-panel').onclick = (e) => { const b = e.target.closest('[data-id]'); if (b) editar(promociones.find((p) => p.id === Number(b.dataset.id)), v); };
 }
 
-function editar(p, v) {
-  const nueva = !p;
+function editar(p, v, forzarNueva) {
+  const nueva = forzarNueva ?? !p?.id;
   p = p || { titulo: '', descripcion: '', foto: '', servicio_id: null, precio_promo: null, desde: '', hasta: '', activa: 1, orden: 0 };
   const h = abrirHoja(html`
     <div class="cabeza-hoja"><div><span class="script">${nueva ? 'Nueva' : 'Editar'}</span><h2>Promoción</h2></div><button class="icono-btn" data-cerrar aria-label="Cerrar">${crudo(ICONOS.cerrar)}</button></div>
@@ -38,7 +39,7 @@ function editar(p, v) {
         <label class="campo"><span>Desde</span><input name="desde" type="date" value="${p.desde}"></label>
         <label class="campo"><span>Hasta</span><input name="hasta" type="date" value="${p.hasta}"></label>
       </div>
-      <label class="campo"><span>Foto (enlace https)</span><input name="foto" type="url" value="${p.foto}"></label>
+      <div class="campo"><span>Foto</span><div class="fila-forzar"><input name="foto" class="input" value="${p.foto}" placeholder="Elige o pega un enlace"><button type="button" class="btn sec chico" id="elegirFotoPromo">Elegir</button></div></div>
       <label class="interruptor"><input type="checkbox" name="activa" ${p.activa ? crudo('checked') : ''}> Activa</label>
       <p class="muted small">El precio promocional se muestra como referencia; el valor final se cobra en el spa.</p>
       <p class="aviso error" id="errPromo" hidden></p>
@@ -46,6 +47,11 @@ function editar(p, v) {
       ${nueva ? '' : html`<button type="button" class="btn ghost bloque" id="borrarPromo">Eliminar</button>`}
     </form>`);
   const f = $('#formPromo', h);
+  $('#elegirFotoPromo', h).onclick = async () => {
+    const datos = { titulo: f.titulo.value, descripcion: f.descripcion.value, servicio_id: f.servicio_id.value ? Number(f.servicio_id.value) : null, precio_promo: f.precio_promo.value === '' ? null : Number(f.precio_promo.value), desde: f.desde.value, hasta: f.hasta.value, activa: f.activa.checked ? 1 : 0, orden: p.orden, id: p.id };
+    const m = await elegirMedio({ titulo: 'Foto de la promoción' });
+    editar({ ...p, ...datos, foto: m ? m.url : f.foto.value }, v, nueva);
+  };
   f.onsubmit = (e) => {
     e.preventDefault();
     ocupado($('#guardarPromo', h), async () => {

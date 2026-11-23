@@ -1,5 +1,6 @@
 // Ingreso por persona con PIN (patrón MaxCool) y configuración del primer PIN de Erika.
-import { api, html, crudo, pintar, $, $$, toast, inicial, ICONOS } from '/app-citas/js/util.js';
+import { api, html, crudo, pintar, $, $$, toast, inicial, ICONOS, foto } from '/app-citas/js/util.js?v=14671ef4de';
+import { botonDescarga, activarDescarga } from './descargar.js?v=14671ef4de';
 
 export async function pantallaIngreso(raiz, alEntrar) {
   let datos;
@@ -17,13 +18,15 @@ export async function pantallaIngreso(raiz, alEntrar) {
       <div class="personas">
         ${datos.personas.map((p) => html`
           <button class="persona" data-id="${p.id}" data-nombre="${p.nombre}">
-            ${p.foto ? html`<img src="${p.foto}" alt="" loading="lazy">` : html`<span class="avatar inicial">${inicial(p.nombre)}</span>`}
+            ${p.foto ? foto(p.foto, { sizes: '96px', ancho: 96 }) : html`<span class="avatar inicial">${inicial(p.nombre)}</span>`}
             <strong>${p.nombre}</strong>${p.rol === 'propietaria' ? html`<span class="pastilla">Propietaria</span>` : ''}
           </button>`)}
       </div>
       ${!datos.personas.length ? html`<p class="aviso info">Aún no hay personas con PIN.</p>` : ''}
+      ${botonDescarga()}
       <p class="muted small ingreso-pie">¿Olvidaste tu PIN? Pídele a Erika que te asigne uno nuevo.</p>
     </div>`);
+  activarDescarga(raiz);
   for (const b of $$('.persona', raiz)) b.onclick = () => pedirPin(raiz, { id: Number(b.dataset.id), nombre: b.dataset.nombre, foto: b.querySelector('img')?.src }, alEntrar);
 }
 

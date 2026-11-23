@@ -1,7 +1,7 @@
 // Gestionar la cita con el enlace privado (/reservar/cita/#<token>): ver, reprogramar, cancelar.
-import { api, html, crudo, pintar, $, toast, ocupado, confirmar, hora, duracion, dinero, fechaLarga, ICONOS, hoyBogota } from '/app-citas/js/util.js';
-import { crearSelector } from './selector.js';
-import { estadoPush, activarPush } from '/app-citas/js/push.js';
+import { api, html, crudo, pintar, $, toast, ocupado, confirmar, hora, duracion, dinero, fechaLarga, ICONOS, hoyBogota } from '/app-citas/js/util.js?v=14671ef4de';
+import { crearSelector } from './selector.js?v=14671ef4de';
+import { estadoPush, activarPush } from '/app-citas/js/push.js?v=14671ef4de';
 
 const app = $('#app');
 const bandeja = $('#bandeja');
@@ -81,7 +81,7 @@ async function avisos() {
   $('.gestion')?.prepend(caja);
   if (estado === 'activo') { caja.innerHTML = '<p class="avisos-ok">🔔 Te avisaremos un día antes y 2 horas antes.</p>'; return; }
   if (estado !== 'inactivo') return;
-  caja.innerHTML = '<button class="tarjeta avisos" id="activarAvisos"><strong>🔔 Avísame antes de mi cita</strong><span>Un recordatorio un día antes y 2 horas antes.</span></button>';
+  caja.innerHTML = '<button class="tarjeta avisos" id="activarAvisos"><strong>🔔 Avísame antes de mi cita</strong><span>Te recordamos la víspera y 1 hora antes.</span></button>';
   $('#activarAvisos').onclick = async () => {
     try {
       await activarPush({ ...PUSH, ruta: '/api/public/push/suscribir', extra: { tokens: [token] } });

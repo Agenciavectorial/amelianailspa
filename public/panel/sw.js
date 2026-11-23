@@ -1,18 +1,20 @@
 // Service worker del panel: cachea solo la "cáscara" (HTML/CSS/JS/fuentes) para abrir rápido.
 // La API (/api/*) siempre va a la red: los datos viven en D1 y nunca se sirven viejos.
-const VERSION = 'amelia-panel-v3';
+// Subir VERSION cuando cambie la lista de la cáscara. La red va primero, así que un cambio de CSS/JS
+// llega sin subirla; la versión solo limpia copias viejas de los celulares.
+const VERSION = 'amelia-panel-v7';
 const CASCARA = [
   '/panel/', '/panel/panel.css', '/panel/instalar.js', '/panel/manifest.webmanifest',
   '/panel/js/main.js', '/panel/js/estado.js', '/panel/js/login.js', '/panel/js/inicio.js', '/panel/js/agenda.js',
   '/panel/js/citas.js', '/panel/js/clientas.js', '/panel/js/equipo.js', '/panel/js/servicios.js', '/panel/js/ajustes.js',
   '/panel/js/importar.js', '/panel/js/mensajes.js', '/panel/js/analitica.js', '/panel/js/fidelizacion.js', '/panel/js/notas.js',
-  '/panel/js/promociones.js', '/panel/js/plantillas.js', '/app-citas/base.css', '/app-citas/js/util.js', '/app-citas/js/csv.js', '/app-citas/js/push.js',
+  '/panel/js/promociones.js', '/panel/js/plantillas.js', '/panel/js/galeria.js', '/panel/js/tour.js', '/panel/js/descargar.js', '/app-citas/base.css', '/app-citas/js/util.js', '/app-citas/js/csv.js', '/app-citas/js/push.js',
   '/app-citas/fonts/dmsans.woff2', '/app-citas/fonts/playfair.woff2', '/app-citas/fonts/playfair-italic.woff2',
   '/app-citas/fonts/greatvibes.woff2', '/app-citas/img/logo.webp', '/app-citas/img/icono-192.png',
 ];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(CASCARA)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(CASCARA.map((u) => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (e) => {
@@ -24,7 +26,7 @@ self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET' || url.origin !== location.origin || url.pathname.startsWith('/api/')) return;
   // Red primero (para recibir actualizaciones), caché si no hay conexión.
   e.respondWith(
-    fetch(e.request).then((r) => {
+    fetch(e.request, { cache: 'no-cache' }).then((r) => {
       if (r.ok && CASCARA.includes(url.pathname)) {
         const copia = r.clone();
         caches.open(VERSION).then((c) => c.put(e.request, copia));

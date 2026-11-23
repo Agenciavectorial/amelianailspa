@@ -1,8 +1,9 @@
 // Inicio: resumen del negocio, citas por gestionar (¿asistió?), próxima cita, hoy/mañana y clientas a contactar.
-import { api, html, crudo, pintar, $, toast, hora, dinero, fechaLarga, fechaCorta, sumarDias, inicial, ICONOS } from '/app-citas/js/util.js';
-import { S, esDuena, puede, colab, aplicarEstilos } from './estado.js';
-import { verCita, nuevaCita, nuevoBloqueo, pastillaEstado, cobrar } from './citas.js';
-import { enviar, textoPlantilla } from './mensajes.js';
+import { api, html, crudo, pintar, $, toast, hora, dinero, fechaLarga, fechaCorta, sumarDias, inicial, ICONOS, SITIO } from '/app-citas/js/util.js?v=14671ef4de';
+import { tarjetaDescarga, activarDescarga, tarjetaAvisos } from './descargar.js?v=14671ef4de';
+import { S, esDuena, puede, colab, aplicarEstilos } from './estado.js?v=14671ef4de';
+import { verCita, nuevaCita, nuevoBloqueo, pastillaEstado, cobrar } from './citas.js?v=14671ef4de';
+import { enviar, textoPlantilla } from './mensajes.js?v=14671ef4de';
 
 function saludo() {
   const h = new Date(Date.now() - 5 * 3600000).getUTCHours();
@@ -14,6 +15,8 @@ export async function vista(v) {
     <header class="cabeza-vista">
       <div><span class="script">${saludo()}</span><h1>${S.yo.nombre.split(' ')[0]}, <em>${esDuena() ? 'así va tu negocio' : 'así va tu día'}</em></h1></div>
     </header>
+    ${tarjetaDescarga()}
+    <div id="tarjetaAvisos"></div>
     <div class="stats" id="stats">${[1, 2, 3, 4].map(() => html`<div class="stat esqueleto"></div>`)}</div>
     <div class="acciones-rapidas">
       ${puede('gestionar_citas') ? html`<button class="btn" id="irNueva">${crudo(ICONOS.mas)} Agendar cita</button>` : ''}
@@ -29,6 +32,8 @@ export async function vista(v) {
     </div>
     ${puede('ver_clientas') ? html`<section class="bloque-inicio" id="bloqueContactar" hidden><h2>Clientas a contactar hoy <a class="muted" href="#/fidelizacion">ver todo</a></h2><div id="listaContactar"></div></section>` : ''}`);
   const recargar = () => vista(v);
+  activarDescarga(v);
+  tarjetaAvisos($('#tarjetaAvisos', v));
   $('#irNueva')?.addEventListener('click', () => nuevaCita({}, recargar));
   $('#irBloq')?.addEventListener('click', () => nuevoBloqueo({}, recargar));
 
@@ -118,7 +123,7 @@ export async function vista(v) {
       if (!b) return;
       const c = lista[Number(b.dataset.i)];
       const texto = c.tipo === 'cumple'
-        ? `¡Feliz cumpleaños, ${c.nombre.split(' ')[0]}! 🎂💜 Todo el equipo de Amelia Nail Spa te desea un día precioso. Te esperamos para consentirte: ${location.origin}/reservar/`
+        ? `¡Feliz cumpleaños, ${c.nombre.split(' ')[0]}! 🎂💜 Todo el equipo de Amelia Nail Spa te desea un día precioso. Te esperamos para consentirte: ${SITIO}/reservar/`
         : textoPlantilla('vuelve', { nombre: c.nombre.split(' ')[0], servicio: c.servicios, colaboradora: c.colaboradora, enlace: enlaceRepetir(c), spa: S.ajustes.nombre_spa });
       enviar(c.celular, texto, { clienta_id: c.clienta_id, tipo: c.tipo === 'cumple' ? 'cumpleanos' : 'vuelve' });
       b.closest('.fila-gestionar').classList.add('hecha');
@@ -130,5 +135,5 @@ export function enlaceRepetir(c) {
   const p = new URLSearchParams();
   if (c.slugs) p.set('servicio', c.slugs.split(',')[0]);
   if (c.colab_slug) p.set('con', c.colab_slug);
-  return `${location.origin}/reservar/?${p}`;
+  return `${SITIO}/reservar/?${p}`;
 }

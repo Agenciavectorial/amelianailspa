@@ -1,9 +1,10 @@
 // Reserva de citas para clientas (sin cuenta). Pasos: servicios → profesional → horario → datos → listo.
 import {
-  api, html, crudo, pintar, $, $$, toast, ocupado, hora, duracion, dinero, fechaLarga, ICONOS, inicial, celularBonito, abrirHoja,
-} from '/app-citas/js/util.js';
-import { crearSelector } from './selector.js';
-import { estadoPush, activarPush } from '/app-citas/js/push.js';
+  api, html, crudo, pintar, $, $$, toast, ocupado, hora, duracion, dinero, fechaLarga, ICONOS, inicial, celularBonito, abrirHoja, cerrarHoja,
+  SITIO, aplicarAcento, foto, fotoAncho, videoLiviano, verFotos,
+} from '/app-citas/js/util.js?v=14671ef4de';
+import { crearSelector } from './selector.js?v=14671ef4de';
+import { estadoPush, activarPush } from '/app-citas/js/push.js?v=14671ef4de';
 
 const PUSH = { sw: '/reservar/sw.js', scope: '/reservar/' };
 
@@ -111,23 +112,19 @@ function pasoServicios() {
   const conColab = E.con && E.con !== 'cualquiera' ? colabPorSlug(E.con) : null;
   pintar(app, html`
     <section class="paso paso-servicios">
-      <div class="saludo">
-        <span class="script">Bienvenida</span>
-        <h1>Reserva tu <em>momento</em></h1>
-        <p class="muted">Elige uno o varios servicios. Verás los horarios realmente disponibles.</p>
-      </div>
+      ${portada()}
       ${proxima ? html`<a class="proxima" href="/reservar/cita/#${proxima.token}">
           ${crudo(ICONOS.calendario)}<span><strong>Tu próxima cita</strong>${fechaLarga(proxima.fecha)} · ${hora(proxima.inicio)}</span><span class="flecha">Ver</span></a>` : ''}
       <div id="misCitas"></div>
       <div id="avisosInicio"></div>
       ${!conColab && C.promociones?.length ? html`<h2 class="titulo-bloque">Promociones</h2><div class="promos">${C.promociones.map((p) => html`
         <button class="promo" data-promo="${p.id}">
-          ${p.foto ? html`<img src="${p.foto}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}
+          ${foto(p.foto, { sizes: '(min-width: 760px) 320px, 80vw' })}
           <span class="promo-texto"><strong>${p.titulo}</strong>${p.descripcion ? html`<span>${p.descripcion}</span>` : ''}
             <span class="promo-pie">${p.precio_promo != null ? html`<b>${dinero(p.precio_promo)}</b>` : ''}${p.hasta ? html`<small>hasta ${fechaLarga(p.hasta).replace(/^\S+ /, '')}</small>` : ''}</span></span>
         </button>`)}</div>` : ''}
       ${!conColab && populares().length ? html`<h2 class="titulo-bloque">Lo más pedido</h2><div class="populares">${populares().map((s) => html`
-        <button class="popular" data-pop="${s.id}">${s.foto ? html`<img src="${s.foto}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}<span>${s.nombre}</span></button>`)}</div>
+        <button class="popular" data-pop="${s.id}">${foto(s.foto, { sizes: '116px', ancho: 116 })}<span>${s.nombre}</span></button>`)}</div>
         <h2 class="titulo-bloque">Todos los servicios</h2>` : ''}
       ${conColab ? html`<div class="con-colab"><img class="avatar" src="${conColab.foto}" alt=""><span>Reservando con <strong>${conColab.nombre}</strong></span><button class="btn ghost chico" id="quitarCon">Cambiar</button></div>` : ''}
       <div class="categorias" role="tablist">
@@ -150,7 +147,13 @@ function pasoServicios() {
   }
   pintarMisCitas();
   if (tokensGuardados().length) ofrecerAvisos($('#avisosInicio'));
-  for (const b of $$('.servicio', app)) b.onclick = () => alternar(Number(b.dataset.id));
+  aplicarPortada();
+  $('.lista-servicios', app).onclick = (e) => {
+    const t = e.target.closest('[data-alternar]');
+    if (t) return alternar(Number(t.dataset.alternar));
+    const a = e.target.closest('[data-abrir]');
+    if (a) abrirFicha(Number(a.dataset.abrir));
+  };
   $('#quitarCon', app)?.addEventListener('click', () => { E.con = null; pasoServicios(); });
   // Centra la categoría activa moviendo solo la fila de chips (sin desplazar la página)
   const chipActivo = $('.categorias .chip[aria-pressed="true"]', app);
@@ -200,8 +203,9 @@ function tarjetaServicio(s) {
   const conColab = E.con && E.con !== 'cualquiera' ? colabPorSlug(E.con) : null;
   const noHace = conColab && !conColab.servicios.includes(s.id);
   return html`
-    <button class="servicio ${marcado ? 'marcado' : ''}" data-id="${s.id}" aria-pressed="${marcado}" ${noHace ? crudo('disabled') : ''}>
-      <span class="servicio-foto">${s.foto ? html`<img src="${s.foto}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}</span>
+    <div class="servicio ${marcado ? 'marcado' : ''} ${noHace ? 'no-disponible' : ''}" data-id="${s.id}">
+      <button type="button" class="servicio-abrir" data-abrir="${s.id}" ${noHace ? crudo('disabled') : ''} aria-label="Ver ${s.nombre}">
+      <span class="servicio-foto">${foto(s.foto, { sizes: '112px', ancho: 112 })}${s.medios?.length > 1 ? html`<span class="servicio-num">${s.medios.length} ${crudo(s.medios.some((m) => m.tipo === 'video') ? '▶' : '')}</span>` : ''}</span>
       <span class="servicio-cuerpo">
         <span class="servicio-nombre">${s.nombre}</span>
         <span class="servicio-desc">${noHace ? `${conColab.nombre} no hace este servicio` : s.descripcion}</span>
@@ -210,8 +214,9 @@ function tarjetaServicio(s) {
           <span class="precio">${s.precio != null ? (s.precio_desde ? 'Desde ' : '') + dinero(s.precio) : 'Precio en el spa'}</span>
         </span>
       </span>
-      <span class="servicio-marca" aria-hidden="true">${crudo(marcado ? ICONOS.check : ICONOS.mas)}</span>
-    </button>`;
+      </button>
+      <button type="button" class="servicio-marca" data-alternar="${s.id}" aria-pressed="${marcado}" aria-label="${marcado ? 'Quitar' : 'Agregar'} ${s.nombre}" ${noHace ? crudo('disabled') : ''}>${crudo(marcado ? ICONOS.check : ICONOS.mas)}</button>
+    </div>`;
 }
 
 function alternar(id) {
@@ -223,9 +228,85 @@ function alternar(id) {
   }
   E.turno = null;
   const b = app.querySelector(`.servicio[data-id="${id}"]`);
-  b.outerHTML = String(tarjetaServicio(porId(id)));
-  app.querySelector(`.servicio[data-id="${id}"]`).onclick = () => alternar(id);
+  if (b) b.outerHTML = String(tarjetaServicio(porId(id)));
   pintarBandeja();
+}
+
+// ---------- portada y ficha de servicio ----------
+function portada() {
+  const titulo = (C.ajustes.bienvenida_titulo || 'Reserva tu momento').trim();
+  const partes = titulo.split(' ');
+  const ultima = partes.pop();
+  return html`<div class="hero-reserva ${C.ajustes.portada_url ? 'con-foto' : ''}" id="heroReserva">
+    <span class="script">Bienvenida</span>
+    <h1>${partes.join(' ')} <em>${ultima}</em></h1>
+    <p>${C.ajustes.bienvenida_texto || 'Elige tu servicio y la hora que te quede mejor. Sin crear cuenta.'}</p>
+  </div>`;
+}
+function aplicarPortada() {
+  const h = $('#heroReserva');
+  const url = C.ajustes.portada_url;
+  if (h && url && /^(https:\/\/|\/)[^"'()\s]+$/.test(url)) h.style.setProperty('--portada', `url("${fotoAncho(url, Math.min(1080, innerWidth * (devicePixelRatio || 1)))}")`);
+}
+
+function abrirFicha(id) {
+  const s = porId(id);
+  if (!s) return;
+  const medios = s.medios?.length ? s.medios : (s.foto ? [{ tipo: 'foto', url: s.foto }] : []);
+  const marcado = E.sel.includes(s.id);
+  const reducido = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const h = abrirHoja(html`
+    ${medios.length ? html`<div class="ficha-carrusel" id="fichaCarrusel">
+      ${medios.map((m, i) => m.tipo === 'video'
+        ? html`<div class="ficha-medio"><video muted loop playsinline preload="none" ${crudo(reducido ? 'controls' : '')} poster="${fotoAncho(m.portada || '', 720)}" aria-label="Video de ${s.nombre}"><source src="${videoLiviano(m.url)}" type="video/mp4"></video></div>`
+        : html`<div class="ficha-medio" data-ver="${m.url}" title="Toca para ver en grande">${foto(m.url, { sizes: '(min-width: 760px) 600px, 100vw', ancho: 720, alto: 900, alt: `${s.nombre} ${i + 1}`, prioridad: !i })}</div>`)}
+    </div>
+    ${medios.length > 1 ? html`<div class="ficha-puntos" aria-hidden="true">${medios.map((_, i) => html`<span class="${i ? '' : 'activo'}"></span>`)}</div>` : ''}` : ''}
+    <div class="ficha-cuerpo">
+      <div class="cabeza-hoja"><div><p class="muted small">${s.categoria}</p><h2>${s.nombre}</h2></div><button class="icono-btn" data-cerrar aria-label="Cerrar">${crudo(ICONOS.cerrar)}</button></div>
+      <div class="ficha-meta"><span>${crudo(ICONOS.reloj)} ${duracion(s.duracion)}</span><span class="precio">${s.precio != null ? (s.precio_desde ? 'Desde ' : '') + dinero(s.precio) : 'Precio en el spa'}</span></div>
+      ${s.descripcion ? html`<p class="ficha-desc">${s.descripcion}</p>` : ''}
+    </div>
+    <div class="ficha-acciones">
+      <button class="btn bloque grande" id="fichaAgendar">Agendar este servicio</button>
+      <button class="btn ghost bloque" id="fichaAlternar">${marcado ? 'Quitar de mi cita' : 'Agregar y seguir viendo'}</button>
+    </div>`, { clase: 'ficha' });
+  const car = $('#fichaCarrusel', h);
+  if (car) {
+    const items = $$('.ficha-medio', car);
+    const puntos = $$('.ficha-puntos span', h);
+    const obs = new IntersectionObserver((entradas) => {
+      for (const en of entradas) {
+        const i = items.indexOf(en.target);
+        if (en.isIntersecting && en.intersectionRatio > 0.6) {
+          puntos.forEach((p, k) => p.classList.toggle('activo', k === i));
+          const v = en.target.querySelector('video');
+          if (v && !reducido) v.play().catch(() => {});
+        } else {
+          en.target.querySelector('video')?.pause();
+        }
+      }
+    }, { root: car, threshold: [0, 0.6, 1] });
+    items.forEach((it) => obs.observe(it));
+    // Tocar una foto la abre en grande (se desliza entre todas las fotos del servicio)
+    car.addEventListener('click', (e) => {
+      const m = e.target.closest('[data-ver]');
+      if (!m) return;
+      const fotos = medios.filter((x) => x.tipo !== 'video');
+      verFotos(fotos.map((x, k) => ({ url: x.url, titulo: s.nombre, texto: fotos.length > 1 ? `Foto ${k + 1} de ${fotos.length}` : '' })),
+        Math.max(0, fotos.findIndex((x) => x.url === m.dataset.ver)));
+    });
+  }
+  $('#fichaAgendar', h).onclick = () => {
+    if (!E.sel.includes(s.id)) {
+      if (E.sel.length >= 4) return toast('Puedes elegir hasta 4 servicios por cita.');
+      E.sel.push(s.id);
+    }
+    E.turno = null;
+    cerrarHoja(true);
+    irA(siguienteDespuesDeServicios());
+  };
+  $('#fichaAlternar', h).onclick = () => { cerrarHoja(); alternar(s.id); };
 }
 
 // ---------- paso 2: profesional ----------
@@ -243,14 +324,21 @@ function pasoProfesional() {
           <span class="flecha-pro">${crudo(ICONOS.atras)}</span>
         </button>
         ${aptas.map((c) => html`
-        <button class="pro" data-slug="${c.slug}">
-          ${c.foto ? html`<img class="avatar" src="${c.foto}" alt="" loading="lazy">` : html`<span class="avatar inicial">${inicial(c.nombre)}</span>`}
-          <span class="pro-texto"><strong>${c.nombre}</strong><span>${c.cargo || 'Manicurista'}</span></span>
-          <span class="flecha-pro">${crudo(ICONOS.atras)}</span>
-        </button>`)}
+        <div class="pro-caja">
+          <button class="pro" data-slug="${c.slug}">
+            ${c.foto ? foto(c.foto, { sizes: '66px', ancho: 66, clase: 'avatar', lazy: false }) : html`<span class="avatar inicial">${inicial(c.nombre)}</span>`}
+            <span class="pro-texto"><strong>${c.nombre}</strong><span>${c.cargo || 'Manicurista'}</span>${c.foto ? html`<small class="pro-ver">Toca su foto para verla en grande</small>` : ''}</span>
+            <span class="flecha-pro">${crudo(ICONOS.atras)}</span>
+          </button>
+          ${c.foto ? html`<button type="button" class="pro-foto" data-foto-de="${c.slug}" aria-label="Ver la foto de ${c.nombre} en grande"></button>` : ''}
+        </div>`)}
       </div>` : html`<p class="aviso">Ninguna de nuestras chicas hace todos esos servicios en una misma cita. Quita alguno o escríbenos por WhatsApp.</p>`}
     </section>`);
   for (const b of $$('.pro', app)) b.onclick = () => { E.con = b.dataset.slug; E.turno = null; irA('horario'); };
+  for (const b of $$('.pro-foto', app)) b.onclick = () => {
+    const c = aptas.find((x) => x.slug === b.dataset.fotoDe);
+    if (c) verFotos([{ url: c.foto, titulo: c.nombre, texto: c.cargo || 'Manicurista' }]);
+  };
 }
 
 function resumenServicios() {
@@ -313,7 +401,7 @@ function pasoDatos() {
         <label class="sr" aria-hidden="true">No llenar <input name="sitio_web" tabindex="-1" autocomplete="off"></label>
         <label class="check"><input type="checkbox" name="politica" required><span>${C.ajustes.politica_texto} Autorizo a Amelia Nail Spa a usar mi nombre y celular solo para gestionar mis citas (Ley 1581 de 2012).</span></label>
         <p class="aviso error" id="errorDatos" hidden></p>
-        <button class="btn bloque" type="submit" id="btnReservar">Confirmar reserva</button>
+        <div class="accion-fija"><button class="btn bloque grande" type="submit" id="btnReservar">Confirmar reserva</button></div>
       </form>
     </section>`);
   $('#formDatos').onsubmit = reservar;
@@ -369,7 +457,7 @@ function proximaGuardada() {
 // ---------- paso 5: listo ----------
 function pasoListo() {
   const r = E.reserva;
-  const enlace = `${location.origin}/reservar/cita/#${r.token}`;
+  const enlace = `${SITIO}/reservar/cita/#${r.token}`;
   const servicios = r.servicios.map((s) => s.nombre).join(' + ');
   const msg = `¡Hola! Acabo de reservar en Amelia Nail Spa 💅\n\n` +
     `• Código: ${r.codigo}\n• Servicio: ${servicios}\n• Fecha: ${r.fecha_texto}\n• Hora: ${r.hora_texto}\n• Con: ${r.colaboradora.nombre}\n• A nombre de: ${r.clienta}`;
@@ -416,7 +504,7 @@ export async function ofrecerAvisos(caja) {
     return;
   }
   if (estado !== 'inactivo') return;
-  pintar(caja, html`<button class="tarjeta avisos" id="activarAvisos"><strong>🔔 Avísame antes de mi cita</strong><span>Un recordatorio un día antes y 2 horas antes. Sin mensajes de más.</span></button>`);
+  pintar(caja, html`<button class="tarjeta avisos" id="activarAvisos"><strong>🔔 Avísame antes de mi cita</strong><span>Te confirmamos al instante y te recordamos la víspera y 1 hora antes. Sin mensajes de más.</span></button>`);
   $('#activarAvisos').onclick = async () => {
     let tokens = [];
     try { tokens = JSON.parse(localStorage.getItem('amelia_citas') || '[]').map((x) => x.token); } catch { /* sin almacenamiento */ }
@@ -438,7 +526,7 @@ function googleCalendar(r) {
     action: 'TEMPLATE',
     text: `Cita en Amelia Nail Spa (${r.codigo})`,
     dates: `${z(r.fecha, r.inicio)}/${z(r.fecha, r.fin)}`,
-    details: `${r.servicios.map((s) => s.nombre).join(' + ')} con ${r.colaboradora.nombre}. Gestiona tu cita: ${location.origin}/reservar/cita/#${r.token}`,
+    details: `${r.servicios.map((s) => s.nombre).join(' + ')} con ${r.colaboradora.nombre}. Gestiona tu cita: ${SITIO}/reservar/cita/#${r.token}`,
     location: C.ajustes.direccion,
   });
   return `https://calendar.google.com/calendar/render?${p}`;
@@ -448,6 +536,7 @@ function googleCalendar(r) {
 async function iniciar() {
   try {
     C = await api('/api/public/catalogo');
+    aplicarAcento(C.ajustes.color_acento);
   } catch (e) {
     pintar(app, html`<div class="vacio"><p>${e.message}</p><p>También puedes reservar por WhatsApp: <a href="https://wa.me/573107027012">${celularBonito('573107027012')}</a></p><button class="btn" id="reintentar">Reintentar</button></div>`);
     $('#reintentar').onclick = () => location.reload();
