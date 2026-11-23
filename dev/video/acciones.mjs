@@ -41,7 +41,7 @@ export const TOQUE = `(() => {
     let permiso = 'default', sub = null;
     Object.defineProperty(Notification, 'permission', { get: () => permiso });
     Notification.requestPermission = async () => (permiso = 'granted');
-    const b64u = (u) => btoa(String.fromCharCode(...new Uint8Array(u))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        const b64u = (u) => btoa(String.fromCharCode(...new Uint8Array(u))).replace(/[+]/g, '-').replace(/[/]/g, '_').replace(/=+$/, '');
     const falsa = async () => {
       const par = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits']);
       const p256dh = b64u(await crypto.subtle.exportKey('raw', par.publicKey));
