@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es-CO">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Reserva tu cita | Amelia Nail Spa</title>
+<meta name="description" content="Agenda en segundos tu cita de uñas, pestañas, cejas o faciales en Amelia Nail Spa, C.C. Bosque Plaza, Medellín. Ve los horarios disponibles y reserva sin crear cuenta.">
+<meta name="theme-color" content="#F7F4FA">
+<link rel="canonical" href="https://amelianailspa.com/reservar">
+<meta property="og:title" content="Reserva tu cita | Amelia Nail Spa">
+<meta property="og:description" content="Elige tu servicio, tu manicurista y el horario que te quede mejor.">
+<meta property="og:image" content="https://res.cloudinary.com/deyyiwil0/image/upload/v1776809816/Amelia_Nail_Spa_kuxwvh.png">
+<meta property="og:locale" content="es_CO">
+<link rel="icon" type="image/png" href="/app-citas/img/icono-192.png">
+<link rel="apple-touch-icon" href="/app-citas/img/apple-touch.png">
+<link rel="preload" href="/app-citas/fonts/dmsans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/app-citas/fonts/playfair.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preconnect" href="https://res.cloudinary.com">
+<link rel="stylesheet" href="/app-citas/base.css">
+<link rel="stylesheet" href="/reservar/reservar.css">
+<script type="module" src="/reservar/reservar.js"></script>
+</head>
+<body class="reservar">
+<aside class="lateral" aria-hidden="true">
+  <div class="lateral-texto">
+    <span class="script">Amelia</span>
+    <p>Uñas, pestañas y faciales<br>en el corazón de Aranjuez</p>
+  </div>
+</aside>
+
+<div class="marco">
+  <header class="barra">
+    <button class="icono-btn" id="btnAtras" aria-label="Volver" hidden></button>
+    <a class="marca" href="/" aria-label="Ir a la página de Amelia Nail Spa">
+      <img src="/app-citas/img/logo.webp" alt="" width="40" height="40">
+      <span><strong>Amelia</strong> Nail Spa</span>
+    </a>
+    <span class="barra-espacio"></span>
+  </header>
+  <div class="progreso" id="progreso" hidden>
+    <div class="progreso-barra"><span id="progresoRelleno"></span></div>
+    <p id="progresoTexto"></p>
+  </div>
+
+  <main id="app" aria-live="polite">
+    <div class="cargando-inicial">
+      <div class="esqueleto alto"></div>
+      <div class="esqueleto"></div><div class="esqueleto"></div><div class="esqueleto"></div>
+    </div>
+    <noscript><p class="aviso">Para reservar necesitas activar JavaScript. También puedes escribirnos al WhatsApp +57 310 702 7012.</p></noscript>
+  </main>
+</div>
+
+<div class="bandeja" id="bandeja" hidden>
+  <div class="bandeja-info" id="bandejaInfo"></div>
+  <button class="btn" id="btnSeguir">Continuar</button>
+</div>
+</body>
+</html>
