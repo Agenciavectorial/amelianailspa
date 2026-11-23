@@ -1,18 +1,26 @@
 // Importa voces grabadas a mano (celular, grabadora…) en lugar de la voz generada.
 //   node dev/video/importar-audios.mjs <video> <carpeta-con-audios>
-// Cada archivo se llama como la escena del guion: e01.m4a, e02.mp3, saludo-leidy.ogg, p05.wav…
+// Cada archivo se llama como la escena del guion: e01.m4a, e02.opus (WhatsApp), saludo-leidy.ogg, p05.wav…
+// La carpeta también puede ser un .zip.
 // (la lista está en docs/capacitacion/GUIONES.md). Se convierte a WAV mono, se le quita el silencio
 // del inicio y del final, se normaliza el volumen y se guarda en dev/video/audio/<video>/<escena>.wav.
 // Luego basta con volver a grabar y armar: node dev/video/grabar.mjs <video> && node dev/video/armar.mjs <video>
-import { readdirSync, mkdirSync } from 'node:fs';
+import { readdirSync, mkdirSync, mkdtempSync } from 'node:fs';
+import os from 'node:os';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cargarGuion } from './voz.mjs';
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
-const [video, carpeta] = process.argv.slice(2);
+let [video, carpeta] = process.argv.slice(2);
 if (!video || !carpeta) { console.log('Uso: node dev/video/importar-audios.mjs <erika|chicas|pagina> <carpeta>'); process.exit(1); }
+// También acepta un .zip (por ejemplo, el chat de WhatsApp exportado con las notas de voz renombradas).
+if (carpeta && /\.zip$/i.test(carpeta)) {
+  const tmp = mkdtempSync(path.join(os.tmpdir(), 'voces-'));
+  execFileSync('python3', ['-c', 'import sys,zipfile;zipfile.ZipFile(sys.argv[1]).extractall(sys.argv[2])', carpeta, tmp]);
+  carpeta = tmp;
+}
 const guion = await cargarGuion(video);
 const ids = new Set(guion.escenas.map((e) => e.id));
 const dest = path.join(AQUI, 'audio', video);

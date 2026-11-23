@@ -22,15 +22,15 @@ al inicio y al final. Luego: `node dev/video/importar-audios.mjs erika carpeta-c
 
 > En Agenda ves el día con una columna por cada chica. Con las flechas cambias de día, y en Semana ves los siete días de una sola persona. Los bloques grises a rayas son horas bloqueadas, y la línea roja es la hora en que vas.
 
-**`e05`** — Crear una cita · sin voz todavía
+**`e05`** — Crear una cita · 16 s
 
 > Para crear una cita, tocas el botón Cita, o un espacio libre en la agenda. Eliges el servicio, la chica, el día y una hora libre. Escribes el celular y el nombre de la clienta, y guardas. El sistema nunca deja encimar dos citas.
 
-**`e06`** — Mover y cancelar · sin voz todavía
+**`e06`** — Mover y cancelar · 11 s
 
 > Si la clienta necesita cambiar, tocas la cita y le das Mover: solo te muestra horas libres. Y si cancela, le das Cancelar cita, y ese turno queda libre de una para otra clienta.
 
-**`e07`** — Asistencia y cobro · sin voz todavía
+**`e07`** — Asistencia y cobro · 14 s
 
 > Cuando termina el servicio, marcas si asistió. Al tocar Sí, se abre el cobro: el valor viene sugerido, eliges efectivo, Nequi, Daviplata, tarjeta o transferencia, y si hubo propina, también la anotas. Así tus ingresos se suman solitos.
 
@@ -162,4 +162,4 @@ al inicio y al final. Luego: `node dev/video/importar-audios.mjs erika carpeta-c
 
 > Todo esto ya está funcionando en amelianailspa punto com. ¡Quedó divina, Erika!
 
-Total de voz generada: 7.3 minutos.
+Total de voz generada: 8.0 minutos.

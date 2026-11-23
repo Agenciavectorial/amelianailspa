@@ -114,7 +114,7 @@ function htmlCortinilla(g, horizontal, { tipo, titulo, subtitulo, para, foto }) 
 
 /** Parte el texto de una escena en subtítulos cortos (≤ maxCar), cortando en puntuación. */
 export function partirSubtitulos(texto, maxCar = 78) {
-  const frases = texto.replace(/\s+/g, ' ').match(/[^.!?…:;]+[.!?…:;]*\s*/g) || [texto];
+  const frases = texto.replace(/\s+/g, ' ').match(/.+?(?:[.!?…:;]+(?=\s|$)|$)\s*/g) || [texto]; // no corta "amelianailspa.com"
   const out = [];
   for (let f of frases) {
     f = f.trim();
