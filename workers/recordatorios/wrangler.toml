@@ -11,7 +11,7 @@ crons = ["*/15 * * * *"]   # cada 15 minutos (UTC; la lógica usa hora de Colomb
 [[d1_databases]]
 binding = "DB"
 database_name = "amelia-citas"
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "426435a8-c159-4f56-9b7d-a7ea37f9df1d"
 
 # Secretos (no van aquí): VAPID_PUBLICA, VAPID_PRIVADA, VAPID_SUJETO
 #   npx wrangler secret put VAPID_PRIVADA --config workers/recordatorios/wrangler.toml
