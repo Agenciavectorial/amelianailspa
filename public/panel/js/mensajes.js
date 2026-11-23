@@ -6,7 +6,7 @@ import { S } from './estado.js';
 export const VARIABLES = ['nombre', 'servicio', 'fecha', 'hora', 'colaboradora', 'codigo', 'enlace', 'resena', 'spa', 'direccion'];
 
 export function rellenar(texto, datos) {
-  return String(texto || '').replace(/\{(\w+)\}/g, (m, k) => (datos[k] != null && datos[k] !== '' ? String(datos[k]) : m === '{enlace}' ? `${location.origin}/reservar` : ''));
+  return String(texto || '').replace(/\{(\w+)\}/g, (m, k) => (datos[k] != null && datos[k] !== '' ? String(datos[k]) : m === '{enlace}' ? `${location.origin}/reservar/` : ''));
 }
 
 /** Datos de una cita para las plantillas. */
@@ -18,7 +18,7 @@ export function datosCita(c) {
     hora: c.inicio != null ? hora(c.inicio) : '',
     colaboradora: c.colaboradora_nombre || '',
     codigo: c.codigo || '',
-    enlace: c.token ? `${location.origin}/reservar/cita/#${c.token}` : `${location.origin}/reservar`,
+    enlace: c.token ? `${location.origin}/reservar/cita/#${c.token}` : `${location.origin}/reservar/`,
     resena: S.ajustes.resena_url || '',
     spa: S.ajustes.nombre_spa || 'Amelia Nail Spa',
     direccion: S.ajustes.direccion || '',

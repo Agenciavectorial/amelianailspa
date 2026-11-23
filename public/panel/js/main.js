@@ -58,7 +58,7 @@ function shell() {
         <div class="lp-marca"><img src="/app-citas/img/logo.webp" alt="" width="42" height="42"><span><strong>Amelia</strong><em>Panel</em></span></div>
         ${secs.map((s) => html`<a href="#/${s.id}" data-sec="${s.id}">${crudo(IC[s.id])}<span>${s.nombre}</span></a>`)}
         <div class="lp-pie">
-          <a class="ver-reservas" href="/reservar" target="_blank" rel="noopener">Ver página de reservas ↗</a>
+          <a class="ver-reservas" href="/reservar/" target="_blank" rel="noopener">Ver página de reservas ↗</a>
           <div class="lp-yo">${S.yo.foto ? html`<img class="avatar" src="${S.yo.foto}" alt="">` : html`<span class="avatar inicial">${inicial(S.yo.nombre)}</span>`}<span><strong>${S.yo.nombre}</strong><small>${esDuena() ? 'Propietaria' : 'Colaboradora'}</small></span></div>
         </div>
       </nav>
@@ -76,7 +76,7 @@ function pantallaMas(v) {
     <header class="cabeza-vista"><div><span class="script">Amelia</span><h1>Más <em>opciones</em></h1></div></header>
     <div class="lista-mas">
       ${secs.map((s) => html`<a class="fila-mas tarjeta" href="#/${s.id}">${crudo(IC[s.id])}<span>${s.nombre}</span><span class="flecha-mas">›</span></a>`)}
-      <a class="fila-mas tarjeta" href="/reservar" target="_blank" rel="noopener">${crudo(ICONOS.calendario)}<span>Ver página de reservas</span><span class="flecha-mas">↗</span></a>
+      <a class="fila-mas tarjeta" href="/reservar/" target="_blank" rel="noopener">${crudo(ICONOS.calendario)}<span>Ver página de reservas</span><span class="flecha-mas">↗</span></a>
     </div>`);
 }
 

@@ -118,7 +118,7 @@ export async function vista(v) {
       if (!b) return;
       const c = lista[Number(b.dataset.i)];
       const texto = c.tipo === 'cumple'
-        ? `¡Feliz cumpleaños, ${c.nombre.split(' ')[0]}! 🎂💜 Todo el equipo de Amelia Nail Spa te desea un día precioso. Te esperamos para consentirte: ${location.origin}/reservar`
+        ? `¡Feliz cumpleaños, ${c.nombre.split(' ')[0]}! 🎂💜 Todo el equipo de Amelia Nail Spa te desea un día precioso. Te esperamos para consentirte: ${location.origin}/reservar/`
         : textoPlantilla('vuelve', { nombre: c.nombre.split(' ')[0], servicio: c.servicios, colaboradora: c.colaboradora, enlace: enlaceRepetir(c), spa: S.ajustes.nombre_spa });
       enviar(c.celular, texto, { clienta_id: c.clienta_id, tipo: c.tipo === 'cumple' ? 'cumpleanos' : 'vuelve' });
       b.closest('.fila-gestionar').classList.add('hecha');
@@ -130,5 +130,5 @@ export function enlaceRepetir(c) {
   const p = new URLSearchParams();
   if (c.slugs) p.set('servicio', c.slugs.split(',')[0]);
   if (c.colab_slug) p.set('con', c.colab_slug);
-  return `${location.origin}/reservar?${p}`;
+  return `${location.origin}/reservar/?${p}`;
 }

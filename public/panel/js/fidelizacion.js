@@ -34,7 +34,7 @@ export async function vista(v) {
     const c = listas[pestana][Number(b.dataset.i)];
     const nombre = c.nombre.split(' ')[0];
     let texto;
-    if (c.tipo === 'cumpleanos') texto = `¡Feliz cumpleaños, ${nombre}! 🎂💜 Todo el equipo de ${S.ajustes.nombre_spa || 'Amelia Nail Spa'} te desea un día precioso. Te esperamos para consentirte: ${location.origin}/reservar`;
+    if (c.tipo === 'cumpleanos') texto = `¡Feliz cumpleaños, ${nombre}! 🎂💜 Todo el equipo de ${S.ajustes.nombre_spa || 'Amelia Nail Spa'} te desea un día precioso. Te esperamos para consentirte: ${location.origin}/reservar/`;
     else if (c.tipo === 'recuperar') texto = `¡Hola ${nombre}! 💜 Te extrañamos en ${S.ajustes.nombre_spa || 'Amelia Nail Spa'}. ¿Te animas a consentirte esta semana? Reserva en un toque: ${enlaceRepetir(c)}`;
     else texto = textoPlantilla('vuelve', { nombre, servicio: c.servicios, colaboradora: c.colaboradora, enlace: enlaceRepetir(c), spa: S.ajustes.nombre_spa });
     enviar(c.celular, texto, { clienta_id: c.clienta_id, tipo: c.tipo });

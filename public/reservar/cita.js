@@ -21,7 +21,7 @@ async function cargar() {
 }
 
 function error(m) {
-  pintar(app, html`<div class="vacio">${crudo(ICONOS.calendario)}<p>${m}</p><a class="btn" href="/reservar">Reservar una cita</a></div>`);
+  pintar(app, html`<div class="vacio">${crudo(ICONOS.calendario)}<p>${m}</p><a class="btn" href="/reservar/">Reservar una cita</a></div>`);
 }
 
 function ver() {
@@ -61,8 +61,8 @@ function ver() {
             <p class="muted small politica">${cat.ajustes.politica_texto}</p>`
           : html`<p class="aviso">Faltan menos de ${cita.cancelacion_horas} horas para tu cita, así que los cambios se hacen por WhatsApp.</p>`}
         </div>` : ''}
-      ${cita.estado === 'cancelada' ? html`<a class="btn bloque" href="/reservar">Reservar otra cita</a>` : ''}
-      ${pasada && cita.estado !== 'cancelada' ? html`<a class="btn bloque" href="/reservar">Volver a reservar</a>` : ''}
+      ${cita.estado === 'cancelada' ? html`<a class="btn bloque" href="/reservar/">Reservar otra cita</a>` : ''}
+      ${pasada && cita.estado !== 'cancelada' ? html`<a class="btn bloque" href="/reservar/">Volver a reservar</a>` : ''}
     </section>`);
   $('#reprogramar')?.addEventListener('click', reprogramar);
   // Guarda la cita en este celular (para "Mis citas") y ofrece recordatorios
