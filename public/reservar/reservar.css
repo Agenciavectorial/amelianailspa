@@ -7,15 +7,15 @@ body.con-bandeja .marco { padding-bottom: calc(120px + var(--seguro-abajo)); }
 .lateral { display: none; }
 @media (min-width: 1080px) {
   .lateral {
-    display: block; position: fixed; inset: 0 auto 0 0; width: calc(50vw - 300px);
+    display: block; position: fixed; inset: 0 auto 0 0; width: 40vw;
     background: linear-gradient(180deg, rgba(34, 30, 40, .05), rgba(34, 30, 40, .55)),
       url('https://res.cloudinary.com/deyyiwil0/image/upload/q_auto,f_auto,w_1200/Sede_Amelia_Nail_Spa_1_bleirt.jpg') center / cover;
   }
   .lateral-texto { position: absolute; left: 48px; bottom: 56px; color: #fff; }
   .lateral-texto .script { color: #fff; font-size: 5rem; line-height: 1; }
   .lateral-texto p { font-family: var(--serif); font-size: 1.3rem; font-style: italic; opacity: .95; }
-  .marco { margin-left: calc(50vw - 300px); margin-right: auto; max-width: 640px; padding-inline: 20px; }
-  .bandeja { left: calc(50vw - 300px) !important; right: auto !important; width: 640px; }
+  .marco { margin-left: calc(40vw + (60vw - 640px) / 2); margin-right: 0; max-width: 640px; padding-inline: 20px; }
+  .bandeja { left: calc(40vw + (60vw - 640px) / 2) !important; right: auto !important; transform: none !important; width: 640px !important; }
 }
 
 /* barra superior */

@@ -240,7 +240,7 @@ function pasoDatos() {
         <label class="campo"><span>¿Algo que debamos saber? <em class="muted">(opcional)</em></span>
           <textarea name="notas" maxlength="400" placeholder="Ej. diseño que quieres, alergias…"></textarea></label>
         <label class="sr" aria-hidden="true">No llenar <input name="sitio_web" tabindex="-1" autocomplete="off"></label>
-        <label class="check"><input type="checkbox" name="politica" required><span>${C.ajustes.politica_texto}</span></label>
+        <label class="check"><input type="checkbox" name="politica" required><span>${C.ajustes.politica_texto} Autorizo a Amelia Nail Spa a usar mi nombre y celular solo para gestionar mis citas (Ley 1581 de 2012).</span></label>
         <p class="aviso error" id="errorDatos" hidden></p>
         <button class="btn bloque" type="submit" id="btnReservar">Confirmar reserva</button>
       </form>
@@ -261,7 +261,7 @@ async function reservar(e) {
   const fallo = (m) => { err.textContent = m; err.hidden = false; };
   if ((datos.nombre || '').trim().length < 2) return fallo('Escribe tu nombre.');
   if ((datos.celular || '').replace(/\D/g, '').length < 10) return fallo('Escribe tu número de celular completo.');
-  if (!f.politica.checked) return fallo('Acepta la política de cancelación para continuar.');
+  if (!f.politica.checked) return fallo('Acepta la política y la autorización de datos para continuar.');
   await ocupado($('#btnReservar'), async () => {
     try {
       const r = await api('/api/public/reservar', {
