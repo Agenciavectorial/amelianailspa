@@ -1,0 +1,14 @@
+{
+  "name": "amelianailspa",
+  "private": true,
+  "description": "Página y plataforma de citas de Amelia Nail Spa (Cloudflare Pages + D1)",
+  "scripts": {
+    "db:local": "wrangler d1 migrations apply amelia-citas --local",
+    "dev": "wrangler pages dev public --d1 DB=amelia-citas --port 8788",
+    "test:unit": "node --test tests/",
+    "test:e2e": "node dev/e2e.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4.166.0"
+  }
+}

@@ -6,3 +6,13 @@ pages_build_output_dir = "public"
 
 # La base de datos D1 de citas y los secretos se agregan con la plataforma de citas
 # (los secretos van en el panel de Cloudflare, nunca en el repositorio).
+
+# Base de datos de la plataforma de citas (ver docs/plataforma/CONFIGURACION.md).
+# IMPORTANTE: reemplazar database_id por el ID real que entrega
+#   npx wrangler d1 create amelia-citas
+# El ID no es secreto. El valor de ceros solo sirve para desarrollo local.
+[[d1_databases]]
+binding = "DB"
+database_name = "amelia-citas"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"
