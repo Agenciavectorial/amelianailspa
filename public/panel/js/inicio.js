@@ -1,5 +1,6 @@
 // Inicio: resumen del negocio, citas por gestionar (¿asistió?), próxima cita, hoy/mañana y clientas a contactar.
 import { api, html, crudo, pintar, $, toast, hora, dinero, fechaLarga, fechaCorta, sumarDias, inicial, ICONOS, SITIO } from '/app-citas/js/util.js';
+import { tarjetaDescarga, activarDescarga } from './descargar.js';
 import { S, esDuena, puede, colab, aplicarEstilos } from './estado.js';
 import { verCita, nuevaCita, nuevoBloqueo, pastillaEstado, cobrar } from './citas.js';
 import { enviar, textoPlantilla } from './mensajes.js';
@@ -14,6 +15,7 @@ export async function vista(v) {
     <header class="cabeza-vista">
       <div><span class="script">${saludo()}</span><h1>${S.yo.nombre.split(' ')[0]}, <em>${esDuena() ? 'así va tu negocio' : 'así va tu día'}</em></h1></div>
     </header>
+    ${tarjetaDescarga()}
     <div class="stats" id="stats">${[1, 2, 3, 4].map(() => html`<div class="stat esqueleto"></div>`)}</div>
     <div class="acciones-rapidas">
       ${puede('gestionar_citas') ? html`<button class="btn" id="irNueva">${crudo(ICONOS.mas)} Agendar cita</button>` : ''}
@@ -29,6 +31,7 @@ export async function vista(v) {
     </div>
     ${puede('ver_clientas') ? html`<section class="bloque-inicio" id="bloqueContactar" hidden><h2>Clientas a contactar hoy <a class="muted" href="#/fidelizacion">ver todo</a></h2><div id="listaContactar"></div></section>` : ''}`);
   const recargar = () => vista(v);
+  activarDescarga(v);
   $('#irNueva')?.addEventListener('click', () => nuevaCita({}, recargar));
   $('#irBloq')?.addEventListener('click', () => nuevoBloqueo({}, recargar));
 

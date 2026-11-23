@@ -607,7 +607,16 @@ for (const ancho of [360, 390]) {
         await p.click('#entrar');
         await p.waitForSelector('.dock');
       };
+      // Botón "Descargar la app" apenas se abre el panel (sin instalador del sistema → muestra los pasos)
+      await p.goto(`${base}/panel/`, { waitUntil: 'networkidle' });
+      await p.click('.ingreso [data-descargar]');
+      await p.waitForSelector('.pasos-descarga li');
+      if (ancho === 390) await p.screenshot({ path: CAPTURAS + 'movil-panel-9-descargar.png' });
+      await p.click('.hoja-descarga .btn.bloque');
       await entrar('Erika', '2468');
+      await p.waitForSelector('#tarjetaDescarga [data-descargar]');
+      await p.click('#tdOcultar');
+      await p.waitForSelector('#tarjetaDescarga', { state: 'detached' });
       for (const sec of ['inicio', `agenda/${DIA}/lista/`, `agenda/${DIA}/dia/`, `agenda/${DIA}/semana/`, 'clientas', 'fidelizacion', 'analitica', 'notas',
         'servicios', 'promociones', 'equipo', 'mensajes', 'spa', 'ajustes', 'importar', 'cuenta', 'mas']) {
         await p.goto(`${base}/panel/#/${sec}`);

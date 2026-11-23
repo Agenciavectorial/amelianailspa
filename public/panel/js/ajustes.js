@@ -250,8 +250,7 @@ async function vistaCuenta(v) {
     <section class="tarjeta bloque-ajustes instalar-app">
       <h2>App en tu celular</h2>
       <p class="muted small">Instala el panel como una app: abre más rápido y queda en tu pantalla de inicio.</p>
-      <button class="btn sec" id="instalar">${crudo(ICONOS.chispa)} Instalar app</button>
-      <p class="muted small" id="pasosIos" hidden>En iPhone: toca el botón <strong>Compartir</strong> de Safari y luego <strong>"Agregar a inicio"</strong>.</p>
+      <button class="btn sec" id="instalar" data-descargar>${crudo(ICONOS.chispa)} Descargar la app</button>
     </section>
     <section class="tarjeta bloque-ajustes">
       <h2>Mi perfil</h2>
@@ -304,12 +303,7 @@ async function vistaCuenta(v) {
       try { await api('/api/auth/cambiar-pin', { metodo: 'POST', datos: Object.fromEntries(new FormData(e.target)) }); e.target.reset(); toast('PIN cambiado', 'ok'); } catch (x) { toast(x.message, 'error'); }
     });
   };
-  $('#instalar').onclick = async () => {
-    const r = window.ameliaInstalar ? await window.ameliaInstalar() : 'manual';
-    if (r === 'instalada') toast('¡Listo! Ya tienes la app.', 'ok');
-    else if (r === 'ios') $('#pasosIos').hidden = false;
-    else if (r === 'manual') toast('Abre el menú del navegador y elige "Instalar app" o "Agregar a pantalla de inicio".');
-  };
+  import('./descargar.js').then((d) => d.activarDescarga(v));
   $('#salir').onclick = salir;
   $('#verTour').onclick = () => import('./tour.js').then((t) => t.mostrarTour());
   const { aplicarEstilos } = await import('./estado.js');
