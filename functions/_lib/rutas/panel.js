@@ -8,6 +8,7 @@ import {
   cancelarCita, cambiarEstado, detalleCita, ESTADOS_ACTIVOS,
 } from '../reservas.js';
 import { ahoraBogota, difDias, sumarDias, aMinutos } from '../tiempo.js';
+import { avisarEquipo } from '../notificaciones.js';
 
 const PERMISOS = ['gestionar_citas', 'gestionar_bloqueos', 'editar_horario', 'ver_agenda_equipo', 'ver_clientas'];
 const AJUSTES_EDITABLES = {
@@ -148,7 +149,7 @@ export function rutasPanel(r) {
     return { ...c, registro: results };
   });
 
-  r.post('/api/panel/citas', 'sesion', async ({ db, sesion, body }) => {
+  r.post('/api/panel/citas', 'sesion', async ({ db, env, sesion, body, enSegundoPlano }) => {
     exigir(sesion, 'gestionar_citas');
     const colaboradoraId = v.entero(body.colaboradora_id, 'colaboradora', { min: 1 });
     exigirPropia(sesion, colaboradoraId);
@@ -173,10 +174,11 @@ export function rutasPanel(r) {
     }
     const clientaId = await clientaPorCelular(db, nombre, celular);
     const c = await insertarCita(db, { clientaId, colaboradoraId, fecha, inicio, servicios, origen: 'panel', notas, quien: quien(sesion), forzar });
+    enSegundoPlano(avisarEquipo(env, c.id, 'nueva', { excluirId: sesion.id }));
     return { id: c.id, codigo: c.codigo };
   });
 
-  r.patch('/api/panel/citas/:id', 'sesion', async ({ db, sesion, params, body }) => {
+  r.patch('/api/panel/citas/:id', 'sesion', async ({ db, env, sesion, params, body, enSegundoPlano }) => {
     exigir(sesion, 'gestionar_citas');
     const cita = await citaDe(db, params.id);
     exigirPropia(sesion, cita.colaboradora_id);
@@ -184,6 +186,7 @@ export function rutasPanel(r) {
     if (accion === 'cancelar') {
       if (cita.estado === 'cancelada') return { ok: true };
       await cancelarCita(db, cita.id, quien(sesion), v.texto(body.motivo, 'motivo', { max: 200, opcional: true }));
+      enSegundoPlano(avisarEquipo(env, cita.id, 'cancelada', { excluirId: sesion.id }));
     } else if (accion === 'estado') {
       const estado = body.estado;
       if (!['asistio', 'no_asistio', 'confirmada'].includes(estado)) falla(400, 'Estado inválido.');
@@ -211,6 +214,7 @@ export function rutasPanel(r) {
         if (!libre) falla(409, 'Ese horario no está libre (fuera de horario, bloqueado u ocupado).', { codigo: 'ocupado', puede_forzar: sesion.esPropietaria });
       }
       await moverCita(db, cita, { colaboradoraId, fecha, inicio, quien: quien(sesion), forzar });
+      enSegundoPlano(avisarEquipo(env, cita.id, 'movida', { excluirId: sesion.id }));
     } else {
       falla(400, 'Acción inválida.');
     }

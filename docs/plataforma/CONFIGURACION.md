@@ -160,3 +160,49 @@ La base local vive en `dev/.estado/` (ignorada por git). Las capturas de las pru
 Sobran para un spa: Workers/Pages Functions 100 000 peticiones al día; D1 5 millones de filas leídas
 y 100 000 escritas al día, 5 GB. El importador CSV envía lotes pequeños (10 citas o 100 servicios o
 clientas por llamada) para no pasar el límite de consultas por petición.
+
+## 13. Notificaciones push (recordatorios y avisos al equipo)
+
+Gratis y sin cupos. Dos piezas: el proyecto Pages (avisos al equipo al instante) y un Worker pequeño
+con cron (recordatorios a clientas cada 15 min), porque Pages Functions no ejecuta crons.
+
+1. **Generar las llaves VAPID** (una sola vez):
+
+   ```bash
+   node dev/vapid.mjs
+   ```
+
+   Imprime `VAPID_PUBLICA`, `VAPID_PRIVADA` y los comandos para guardarlas. La privada es secreta.
+
+2. **Guardar los secretos en el proyecto Pages** (`amelianailspa`): `VAPID_PUBLICA`, `VAPID_PRIVADA`
+   y `VAPID_SUJETO` (`mailto:` + correo del spa), con los comandos que imprime el script o en
+   Settings → Variables and Secrets. Volver a desplegar.
+
+3. **Publicar el Worker de recordatorios:**
+
+   ```bash
+   # poner el mismo database_id de wrangler.toml en workers/recordatorios/wrangler.toml
+   npx wrangler deploy --config workers/recordatorios/wrangler.toml
+   npx wrangler secret put VAPID_PUBLICA --config workers/recordatorios/wrangler.toml
+   npx wrangler secret put VAPID_PRIVADA --config workers/recordatorios/wrangler.toml
+   npx wrangler secret put VAPID_SUJETO  --config workers/recordatorios/wrangler.toml
+   ```
+
+   Corre cada 15 minutos. En Cloudflare → Workers → `amelia-recordatorios` → *Logs* se ve qué envió.
+
+4. **Aplicar la migración nueva** (si la base ya existía): `npx wrangler d1 migrations apply amelia-citas --remote`.
+
+5. Opcional, `CRON_CLAVE` (16+ caracteres) en Pages: permite disparar los recordatorios a mano con
+   `curl -X POST https://amelianailspa.com/api/interno/recordatorios -H "X-Cron-Clave: <clave>" -H "Content-Type: application/json" -d "{}"`.
+   Sin ese secreto, la ruta responde 404.
+
+Qué se envía:
+
+| A quién | Cuándo |
+|---|---|
+| La colaboradora y Erika | Cita nueva (en línea o desde el panel), movida o cancelada. No le llega a quien hizo el cambio. |
+| La clienta (si tocó "Avísame antes de mi cita") | 24 h antes (entre 20 y 24 h) y 2 h antes. |
+| La clienta | "Te toca volver" cuando se cumple el ciclo de retorno de su último servicio, entre 10:00 y 19:00. |
+
+Cada recordatorio sale una sola vez (tabla `push_enviados`). Las suscripciones vencidas se borran solas.
+En iPhone las notificaciones web solo funcionan con la app instalada en la pantalla de inicio (iOS 16.4+).

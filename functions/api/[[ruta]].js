@@ -6,6 +6,7 @@ import { rutasPanel } from '../_lib/rutas/panel.js';
 import { rutasImportar } from '../_lib/rutas/importar.js';
 import { rutasFeed } from '../_lib/rutas/feed.js';
 import { rutasNegocio } from '../_lib/rutas/negocio.js';
+import { rutasPush } from '../_lib/rutas/push.js';
 
 const router = crearRouter();
 rutasPublicas(router);
@@ -14,6 +15,7 @@ rutasPanel(router);
 rutasImportar(router);
 rutasFeed(router);
 rutasNegocio(router);
+rutasPush(router);
 
 export async function onRequest(context) {
   const res = await router.manejar(context);

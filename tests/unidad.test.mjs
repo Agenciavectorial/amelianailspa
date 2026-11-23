@@ -173,3 +173,45 @@ test('importador: horario de colaboradoras (formato del Agente 3) y cumpleaños'
   assert.equal(cumpleDe('15/03'), '03-15');
   assert.equal(cumpleDe('32/13'), '');
 });
+
+// ---------- Web Push (RFC 8291 / 8292) ----------
+import { cifrar, cabeceraVapid, generarVapid, b64u, deB64u, endpointValido } from '../functions/_lib/push.js';
+import { descifrarPush } from './ayuda-push.mjs';
+
+test('push: el mensaje cifrado se descifra con la llave del navegador', async () => {
+  const ua = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits']);
+  const auth = crypto.getRandomValues(new Uint8Array(16));
+  const p256dh = b64u(await crypto.subtle.exportKey('raw', ua.publicKey));
+  const datos = JSON.stringify({ titulo: 'Recordatorio 💅', cuerpo: 'Mañana a las 10:30 a. m. con Karla', url: '/reservar/cita/#x' });
+  const cuerpo = await cifrar(datos, p256dh, b64u(auth));
+  assert.equal(cuerpo[16] * 2 ** 24 + cuerpo[17] * 2 ** 16 + cuerpo[18] * 256 + cuerpo[19], 4096);
+  assert.equal(await descifrarPush(cuerpo, ua, auth), datos);
+  // dos envíos del mismo texto no se parecen (sal y llave efímera nuevas)
+  assert.notDeepEqual(await cifrar(datos, p256dh, b64u(auth)), cuerpo);
+});
+
+test('push: cabecera VAPID es un JWT ES256 válido para el origen del servicio', async () => {
+  const v = await generarVapid();
+  const cab = await cabeceraVapid('https://fcm.googleapis.com/fcm/send/abc', { ...v, sujeto: 'mailto:prueba@example.com' }, Date.UTC(2026, 0, 1));
+  const m = /^vapid t=([^.]+)\.([^.]+)\.([^,]+), k=(.+)$/.exec(cab);
+  assert.ok(m);
+  assert.equal(m[4], v.publica);
+  const carga = JSON.parse(new TextDecoder().decode(deB64u(m[2])));
+  assert.equal(carga.aud, 'https://fcm.googleapis.com');
+  assert.equal(carga.sub, 'mailto:prueba@example.com');
+  assert.equal(carga.exp, Date.UTC(2026, 0, 1) / 1000 + 12 * 3600);
+  const pub = await crypto.subtle.importKey('raw', deB64u(v.publica), { name: 'ECDSA', namedCurve: 'P-256' }, false, ['verify']);
+  const ok = await crypto.subtle.verify({ name: 'ECDSA', hash: 'SHA-256' }, pub, deB64u(m[3]), new TextEncoder().encode(`${m[1]}.${m[2]}`));
+  assert.ok(ok, 'la firma verifica con la llave pública');
+});
+
+test('push: solo se aceptan servicios de push reales', () => {
+  assert.ok(endpointValido('https://fcm.googleapis.com/fcm/send/x'));
+  assert.ok(endpointValido('https://web.push.apple.com/QG...'));
+  assert.ok(endpointValido('https://updates.push.services.mozilla.com/wpush/v2/x'));
+  assert.ok(!endpointValido('https://evil.example.com/x'));
+  assert.ok(!endpointValido('https://fcm.googleapis.com.evil.com/x'));
+  assert.ok(!endpointValido('http://fcm.googleapis.com/x'));
+  assert.ok(!endpointValido('http://127.0.0.1:9/x'));
+  assert.ok(endpointValido('http://127.0.0.1:9/x', { permitirLocal: true }));
+});

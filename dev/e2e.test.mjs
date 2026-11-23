@@ -6,7 +6,9 @@ import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync } from 'node:fs';
 import { createRequire } from 'node:module';
+import { createServer } from 'node:http';
 import { levantar, cliente, proximoDiaHabil, CLAVE_INICIAL } from './servidor.mjs';
+import { generarVapid, b64u, deB64u } from '../functions/_lib/push.js';
 
 const require = createRequire(import.meta.url);
 let chromium, devices;
@@ -15,15 +17,32 @@ try { ({ chromium, devices } = require('playwright')); } catch { /* sin Playwrig
 const CAPTURAS = new URL(process.env.CAPTURAS_DOCS ? '../docs/plataforma/capturas/' : './test-results/capturas/', import.meta.url).pathname;
 mkdirSync(CAPTURAS, { recursive: true });
 
-let srv, base, erika, ids = {};
+let srv, base, erika, ids = {}, VAPID;
 const DIA = proximoDiaHabil(3);
+const CRON_CLAVE = 'clave-cron-de-pruebas-123456';
+// Servicio de push simulado: recibe lo que enviaría Google/Apple/Mozilla para poder descifrarlo.
+const PUSH = { recibidos: [], base: '' };
+const servidorPush = createServer((req, res) => {
+  const partes = [];
+  req.on('data', (d) => partes.push(d));
+  req.on('end', () => {
+    PUSH.recibidos.push({ ruta: req.url, cabeceras: req.headers, cuerpo: Buffer.concat(partes) });
+    res.writeHead(req.url.includes('expirada') ? 410 : 201).end();
+  });
+});
 
 before(async () => {
-  srv = await levantar({ puerto: 8799, estado: 'dev/.estado-e2e', variables: { LIMITE_RESERVAS_HORA: 500 } });
+  await new Promise((r) => servidorPush.listen(0, '127.0.0.1', r));
+  PUSH.base = `http://127.0.0.1:${servidorPush.address().port}`;
+  VAPID = await generarVapid();
+  srv = await levantar({ puerto: 8799, estado: 'dev/.estado-e2e', variables: {
+    LIMITE_RESERVAS_HORA: 500, VAPID_PUBLICA: VAPID.publica, VAPID_PRIVADA: VAPID.privada, VAPID_SUJETO: 'mailto:pruebas@example.com',
+    PUSH_PERMITIR_LOCAL: '1', CRON_CLAVE,
+  } });
   base = srv.base;
   erika = cliente(base);
 });
-after(() => srv?.cerrar());
+after(() => { srv?.cerrar(); servidorPush.close(); });
 
 const reservar = (datos) => cliente(base).pedir('/api/public/reservar', { metodo: 'POST', datos });
 
@@ -318,6 +337,87 @@ test('mis citas (app de la clienta) con los enlaces guardados en el celular', as
   assert.equal(m.cuerpo.citas.length, 1);
   assert.equal(m.cuerpo.citas[0].codigo, r.cuerpo.codigo);
   assert.ok(!('clienta_celular' in m.cuerpo.citas[0]), 'no expone el celular');
+});
+
+test('notificaciones push: equipo avisado de citas nuevas, recordatorios 24 h / 2 h a la clienta, sin duplicados', async () => {
+  const { descifrarPush } = await import('../tests/ayuda-push.mjs');
+  const navegador = async (nombre) => {
+    const par = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits']);
+    const auth = crypto.getRandomValues(new Uint8Array(16));
+    return {
+      par, auth, nombre,
+      sub: { endpoint: `${PUSH.base}/push/${nombre}`, keys: { p256dh: b64u(await crypto.subtle.exportKey('raw', par.publicKey)), auth: b64u(auth) } },
+      recibidos: () => PUSH.recibidos.filter((r) => r.ruta === `/push/${nombre}`),
+      async ultimo() { const l = this.recibidos(); return JSON.parse(await descifrarPush(new Uint8Array(l.at(-1).cuerpo), par, auth)); },
+    };
+  };
+  const esperar = async (fn, ms = 6000) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { if (fn()) return true; await new Promise((r) => setTimeout(r, 100)); } return false; };
+
+  assert.equal((await cliente(base).pedir('/api/public/push/clave')).cuerpo.clave, VAPID.publica);
+  const karla = cliente(base);
+  await karla.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.karla, pin: '1357' } });
+  const navK = await navegador('karla'), navE = await navegador('erika');
+  assert.equal((await karla.pedir('/api/panel/push/suscribir', { metodo: 'POST', datos: { suscripcion: navK.sub } })).status, 200);
+  assert.equal((await erika.pedir('/api/panel/push/suscribir', { metodo: 'POST', datos: { suscripcion: navE.sub } })).status, 200);
+  const mala = await karla.pedir('/api/panel/push/suscribir', { metodo: 'POST', datos: { suscripcion: { ...navK.sub, endpoint: 'https://evil.example.com/x' } } });
+  assert.equal(mala.status, 400, 'no acepta URLs que no sean servicios de push');
+
+  // 1) Reserva en línea con Karla → avisa a Karla y a Erika
+  const r = await reservar({ servicios: [ids.semipermanente], con: 'karla', fecha: DIA, inicio: 780, nombre: 'Push Ficticia', celular: '3005550800' });
+  assert.equal(r.status, 200, JSON.stringify(r.cuerpo));
+  assert.ok(await esperar(() => navK.recibidos().length >= 1 && navE.recibidos().length >= 1), 'llegan los avisos');
+  const msgK = await navK.ultimo();
+  assert.match(msgK.titulo, /Nueva reserva en línea/);
+  assert.match(msgK.cuerpo, /Push Ficticia/);
+  assert.match(msgK.url, /^\/panel\/#\/agenda\//);
+  // la petición lleva VAPID válido y cifrado aes128gcm
+  const req = navK.recibidos().at(-1);
+  assert.equal(req.cabeceras['content-encoding'], 'aes128gcm');
+  const m = /^vapid t=([^.]+)\.([^.]+)\.([^,]+), k=(.+)$/.exec(req.cabeceras.authorization);
+  const pub = await crypto.subtle.importKey('raw', deB64u(VAPID.publica), { name: 'ECDSA', namedCurve: 'P-256' }, false, ['verify']);
+  assert.ok(await crypto.subtle.verify({ name: 'ECDSA', hash: 'SHA-256' }, pub, deB64u(m[3]), new TextEncoder().encode(`${m[1]}.${m[2]}`)));
+
+  // 2) Erika crea una cita para Karla desde el panel → avisa a Karla, no a Erika (ella hizo el cambio)
+  const antesE = navE.recibidos().length, antesK = navK.recibidos().length;
+  const cp = await erika.pedir('/api/panel/citas', { metodo: 'POST', datos: { servicios: [ids.forrado], colaboradora_id: ids.karla, fecha: DIA, inicio: 900, nombre: 'Panel Ficticia', celular: '3005550801', forzar: true } });
+  assert.equal(cp.status, 200, JSON.stringify(cp.cuerpo));
+  assert.ok(await esperar(() => navK.recibidos().length > antesK));
+  await new Promise((s) => setTimeout(s, 500));
+  assert.equal(navE.recibidos().length, antesE, 'quien hace el cambio no se auto-notifica');
+
+  // 3) Suscripción vencida (410) se borra sola
+  const leidy = cliente(base);
+  await leidy.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.leidy, pin: '1357' } });
+  const navL = await navegador('expirada');
+  await leidy.pedir('/api/panel/push/suscribir', { metodo: 'POST', datos: { suscripcion: navL.sub } });
+  const cv = await erika.pedir('/api/panel/citas', { metodo: 'POST', datos: { servicios: [ids.forrado], colaboradora_id: ids.leidy, fecha: DIA, inicio: 1200, nombre: 'Vence Ficticia', celular: '3005550802', forzar: true } });
+  assert.equal(cv.status, 200, JSON.stringify(cv.cuerpo));
+  assert.ok(await esperar(() => navL.recibidos().length >= 1));
+  await new Promise((s) => setTimeout(s, 400));
+  assert.equal((await leidy.pedir('/api/panel/push/prueba', { metodo: 'POST', datos: {} })).status, 404, 'la suscripción vencida se eliminó');
+
+  // 4) La clienta activa recordatorios con su enlace privado
+  const cita = await reservar({ servicios: [ids.forrado], con: 'daily', fecha: DIA, inicio: 600, nombre: 'Recuerda Ficticia', celular: '3005550803' });
+  assert.equal(cita.status, 200, JSON.stringify(cita.cuerpo));
+  const navC = await navegador('clienta');
+  assert.equal((await cliente(base).pedir('/api/public/push/suscribir', { metodo: 'POST', datos: { suscripcion: navC.sub, tokens: ['token-falso-que-no-existe-000'] } })).status, 404);
+  assert.equal((await cliente(base).pedir('/api/public/push/suscribir', { metodo: 'POST', datos: { suscripcion: navC.sub, tokens: [cita.cuerpo.token] } })).status, 200);
+
+  const disparar = (ahora_ms, clave = CRON_CLAVE) => fetch(base + '/api/interno/recordatorios', {
+    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Cron-Clave': clave }, body: JSON.stringify({ ahora_ms }),
+  });
+  assert.equal((await disparar(Date.now(), 'clave-equivocada-1234567')).status, 404, 'sin la clave no se puede disparar');
+  const inicioMs = Date.parse(DIA + 'T00:00:00Z') + (600 + 300) * 60000; // 10:00 Bogotá en UTC
+  const r24 = await (await disparar(inicioMs - 23 * 3600000)).json();
+  assert.equal(r24.r24, 1, JSON.stringify(r24));
+  assert.equal((await (await disparar(inicioMs - 22 * 3600000)).json()).r24, 0, 'no se repite');
+  const r2 = await (await disparar(inicioMs - 60 * 60000)).json();
+  assert.equal(r2.r2, 1, JSON.stringify(r2));
+  assert.ok(await esperar(() => navC.recibidos().length >= 2));
+  const msgC = await navC.ultimo();
+  assert.match(msgC.titulo, /Recuerda/);
+  assert.match(msgC.cuerpo, /Forrado a las 10:00 a\. m\. con Daily/);
+  assert.equal(msgC.url, `/reservar/cita/#${cita.cuerpo.token}`);
 });
 
 test('navegador: reserva en celular desde un botón "Agendar" de la página', { skip: !chromium && 'Playwright no disponible' }, async () => {

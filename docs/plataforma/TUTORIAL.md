@@ -16,8 +16,10 @@ solo lugar.
 3. Para tenerla como app: **Más → Mi cuenta → Instalar app**.
    - En **iPhone** (Safari): botón **Compartir** ⬆️ → **Agregar a inicio**.
    - En **Android** (Chrome): aparece "Instalar"; si no, menú ⋮ → **Instalar app**.
-4. Si te equivocas 5 veces de PIN, el ingreso se bloquea 15 minutos.
-5. ¿Olvidaste el PIN? Erika te pone uno nuevo.
+4. **Activa las notificaciones:** Más → Mi cuenta → *Activar notificaciones*. Te llegará un aviso
+   en el celular cada vez que te agenden, muevan o cancelen una cita (en iPhone, primero instala la app).
+5. Si te equivocas 5 veces de PIN, el ingreso se bloquea 15 minutos.
+6. ¿Olvidaste el PIN? Erika te pone uno nuevo.
 
 Abajo tienes el menú: **Inicio**, **Agenda**, (Clientas) y **Más**. En el computador el menú está a
 la izquierda.
@@ -169,6 +171,8 @@ dos citas de la misma persona.
 Compartir → Agregar a inicio). Ahí ve las **promociones**, **lo más pedido**, su **próxima cita**, su
 **historial** y el botón **"Repetir mi último servicio"**, que la lleva directo a elegir la hora con su
 servicio y su chica de siempre. No necesita cuenta: su celular recuerda sus reservas.
+Al confirmar puede tocar **🔔 Avísame antes de mi cita** y le llega una notificación un día antes y
+2 horas antes; cuando le toca volver (según el ciclo del servicio) también le llega un aviso.
 
 
 1. Elige uno o varios servicios (con foto, duración y precio).

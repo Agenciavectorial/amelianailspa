@@ -218,6 +218,9 @@ body.con-bandeja .marco { padding-bottom: calc(120px + var(--seguro-abajo)); }
 .bandeja-info strong, .resumen-dia, .ticket-fila strong { display: block; }
 
 /* ---------- app de la clienta: instalar, promociones, más pedido, repetir ---------- */
+.avisos { display: grid; gap: 4px; width: 100%; text-align: left; margin-bottom: 16px; border: 1.5px dashed var(--lila); background: #FBF8FD; }
+.avisos span { font-size: .86rem; color: var(--gris); }
+.avisos-ok { font-size: .9rem; color: var(--exito); background: var(--exito-soft); padding: 10px 14px; border-radius: 14px; margin-bottom: 16px; }
 .btn-instalar { display: none; }
 html.puede-instalar:not(.instalada) .btn-instalar { display: inline-flex; }
 .titulo-bloque { font-size: 1.2rem; margin: 18px 2px 10px; }

@@ -1,0 +1,17 @@
+# Worker con cron para los recordatorios de Amelia Nail Spa (ver docs/plataforma/CONFIGURACION.md §13).
+name = "amelia-recordatorios"
+main = "index.js"
+compatibility_date = "2026-10-01"
+workers_dev = false
+
+[triggers]
+crons = ["*/15 * * * *"]   # cada 15 minutos (UTC; la lógica usa hora de Colombia)
+
+# La MISMA base que la página (copiar el database_id real de ../../wrangler.toml).
+[[d1_databases]]
+binding = "DB"
+database_name = "amelia-citas"
+database_id = "00000000-0000-0000-0000-000000000000"
+
+# Secretos (no van aquí): VAPID_PUBLICA, VAPID_PRIVADA, VAPID_SUJETO
+#   npx wrangler secret put VAPID_PRIVADA --config workers/recordatorios/wrangler.toml

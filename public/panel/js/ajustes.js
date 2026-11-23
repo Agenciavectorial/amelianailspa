@@ -3,6 +3,9 @@ import { api, html, crudo, pintar, $, $$, toast, ocupado, abrirHoja, cerrarHoja,
 import { S, recargar, esDuena, puede, colab } from './estado.js';
 import { editorHorario, urlFeed } from './equipo.js';
 import { salir } from './main.js';
+import { estadoPush, activarPush, desactivarPush } from '/app-citas/js/push.js';
+
+const PUSH = { sw: '/panel/sw.js', scope: '/panel/' };
 
 // Festivos de Colombia (Ley Emiliani). Solo sugerencias: el spa puede abrir en festivos.
 const FESTIVOS_CO = [
@@ -166,6 +169,30 @@ function ayudaCalendario() {
     <p class="muted small">Es de solo lectura: las citas se crean y mueven en este panel.</p></details>`;
 }
 
+// ---------- notificaciones del equipo ----------
+async function pintarPush() {
+  const caja = $('#estadoPush');
+  if (!caja) return;
+  const estado = await estadoPush(PUSH).catch(() => 'no-soportado');
+  const textos = {
+    activo: html`<p class="pastilla ok">Activas en este celular</p>
+      <div class="fila-botones"><button class="btn sec chico" id="pushPrueba">Enviar prueba</button><button class="btn ghost chico" id="pushApagar">Desactivar</button></div>`,
+    inactivo: html`<button class="btn" id="pushActivar">${crudo(ICONOS.chispa)} Activar notificaciones</button>`,
+    bloqueado: html`<p class="aviso">Las bloqueaste en este navegador. Actívalas en los ajustes del navegador para este sitio y vuelve aquí.</p>`,
+    'ios-instalar': html`<p class="aviso info">En iPhone primero instala el panel (Compartir → Agregar a inicio), ábrelo desde el ícono y vuelve aquí.</p>`,
+    'no-soportado': html`<p class="muted small">Este navegador no permite notificaciones. Prueba con Chrome o Safari actualizados.</p>`,
+    'sin-configurar': html`<p class="muted small">Las notificaciones aún no están configuradas en el servidor (llaves VAPID, ver CONFIGURACION.md).</p>`,
+  };
+  pintar(caja, textos[estado] || textos['no-soportado']);
+  $('#pushActivar')?.addEventListener('click', (e) => ocupado(e.currentTarget, async () => {
+    try { await activarPush({ ...PUSH, ruta: '/api/panel/push/suscribir' }); toast('¡Notificaciones activas!', 'ok'); pintarPush(); } catch (x) { toast(x.message, 'error'); }
+  }));
+  $('#pushApagar')?.addEventListener('click', async () => { await desactivarPush(PUSH); pintarPush(); });
+  $('#pushPrueba')?.addEventListener('click', (e) => ocupado(e.currentTarget, async () => {
+    try { await api('/api/panel/push/prueba', { metodo: 'POST', datos: {} }); toast('Enviada. Debería llegarte en segundos.', 'ok'); } catch (x) { toast(x.message, 'error'); }
+  }));
+}
+
 // ---------- mi cuenta ----------
 async function vistaCuenta(v) {
   await recargar();
@@ -178,6 +205,11 @@ async function vistaCuenta(v) {
       <p class="muted small">Instala el panel como una app: abre más rápido y queda en tu pantalla de inicio.</p>
       <button class="btn sec" id="instalar">${crudo(ICONOS.chispa)} Instalar app</button>
       <p class="muted small" id="pasosIos" hidden>En iPhone: toca el botón <strong>Compartir</strong> de Safari y luego <strong>"Agregar a inicio"</strong>.</p>
+    </section>
+    <section class="tarjeta bloque-ajustes">
+      <h2>Notificaciones en este celular</h2>
+      <p class="muted small">Te avisamos al instante de citas nuevas, cambios y cancelaciones${S.yo.esPropietaria ? ' de todo el spa' : ''}.</p>
+      <div id="estadoPush"><span class="girando oscuro"></span></div>
     </section>
     ${S.yo.agenda ? html`
     <section class="tarjeta bloque-ajustes">
@@ -222,5 +254,6 @@ async function vistaCuenta(v) {
     else if (r === 'manual') toast('Abre el menú del navegador y elige "Instalar app" o "Agregar a pantalla de inicio".');
   };
   $('#salir').onclick = salir;
+  pintarPush();
   void aMin; void cerrarHoja;
 }

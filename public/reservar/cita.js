@@ -1,6 +1,7 @@
 // Gestionar la cita con el enlace privado (/reservar/cita/#<token>): ver, reprogramar, cancelar.
 import { api, html, crudo, pintar, $, toast, ocupado, confirmar, hora, duracion, dinero, fechaLarga, ICONOS, hoyBogota } from '/app-citas/js/util.js';
 import { crearSelector } from './selector.js';
+import { estadoPush, activarPush } from '/app-citas/js/push.js';
 
 const app = $('#app');
 const bandeja = $('#bandeja');
@@ -64,7 +65,29 @@ function ver() {
       ${pasada && cita.estado !== 'cancelada' ? html`<a class="btn bloque" href="/reservar">Volver a reservar</a>` : ''}
     </section>`);
   $('#reprogramar')?.addEventListener('click', reprogramar);
+  // Guarda la cita en este celular (para "Mis citas") y ofrece recordatorios
+  try {
+    const lista = JSON.parse(localStorage.getItem('amelia_citas') || '[]');
+    if (!lista.some((x) => x.token === token)) { lista.push({ token, fecha: cita.fecha, inicio: cita.inicio }); localStorage.setItem('amelia_citas', JSON.stringify(lista.slice(-12))); }
+  } catch { /* sin almacenamiento */ }
+  if (cita.estado === 'confirmada' && !pasada) avisos();
   $('#cancelar')?.addEventListener('click', cancelar);
+}
+
+async function avisos() {
+  const PUSH = { sw: '/reservar/sw.js', scope: '/reservar/' };
+  const estado = await estadoPush(PUSH).catch(() => 'no-soportado');
+  const caja = document.createElement('div');
+  $('.gestion')?.prepend(caja);
+  if (estado === 'activo') { caja.innerHTML = '<p class="avisos-ok">🔔 Te avisaremos un día antes y 2 horas antes.</p>'; return; }
+  if (estado !== 'inactivo') return;
+  caja.innerHTML = '<button class="tarjeta avisos" id="activarAvisos"><strong>🔔 Avísame antes de mi cita</strong><span>Un recordatorio un día antes y 2 horas antes.</span></button>';
+  $('#activarAvisos').onclick = async () => {
+    try {
+      await activarPush({ ...PUSH, ruta: '/api/public/push/suscribir', extra: { tokens: [token] } });
+      caja.innerHTML = '<p class="avisos-ok">🔔 ¡Listo! Te avisaremos antes de tu cita.</p>';
+    } catch (x) { toast(x.message, 'error'); }
+  };
 }
 
 async function cancelar() {

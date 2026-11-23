@@ -188,8 +188,16 @@ toques y no hay datos que robar con un número de teléfono.
 - Si cambia de celular: el enlace de cada cita sigue sirviendo (lo tiene en WhatsApp y en su
   calendario); al abrirlo se vuelve a guardar en el dispositivo.
 
-### Notificaciones push
+### Notificaciones push (Web Push + VAPID)
 
-Pendiente (ver `PENDIENTES.md`): Web Push con VAPID firmado en el Worker. Mientras tanto: WhatsApp
-prellenado desde el panel, `.ics` con alarma 2 h antes en el calendario de la clienta y feeds `.ics`
-para las chicas (Google Calendar/iPhone avisan de citas nuevas al sincronizar).
+- `functions/_lib/push.js`: cifrado aes128gcm (RFC 8291) y JWT VAPID ES256 (RFC 8292) con Web Crypto,
+  sin dependencias. Solo acepta endpoints de servicios de push reales (FCM, Mozilla, Apple, Windows).
+- `migrations/0004_push.sql`: `push_suscripciones` (clienta o equipo) y `push_enviados` (anti duplicados).
+- Rutas (`rutas/push.js`): `GET /api/public/push/clave`, `POST /api/public/push/suscribir` (clienta,
+  con los tokens de sus citas), `POST /api/public/push/cancelar`, `POST /api/panel/push/suscribir` y
+  `/prueba` (equipo), `POST /api/interno/recordatorios` (protegida con `CRON_CLAVE`).
+- `functions/_lib/notificaciones.js`: `avisarEquipo()` se llama en segundo plano (`waitUntil`) al
+  crear, mover o cancelar citas; `ejecutarRecordatorios()` (24 h, 2 h, te toca volver) la corre el Worker
+  `workers/recordatorios/` cada 15 min con la misma base D1. Tope de 10 envíos por ejecución.
+- Los service workers de `/panel` y `/reservar` muestran la notificación y abren la cita al tocarla.
+- `enviarWhatsAppAutomatico()` es el punto de integración para WhatsApp Business API (hoy no envía).

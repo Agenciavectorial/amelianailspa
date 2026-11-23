@@ -1,12 +1,12 @@
 // Service worker del panel: cachea solo la "cáscara" (HTML/CSS/JS/fuentes) para abrir rápido.
 // La API (/api/*) siempre va a la red: los datos viven en D1 y nunca se sirven viejos.
-const VERSION = 'amelia-panel-v2';
+const VERSION = 'amelia-panel-v3';
 const CASCARA = [
   '/panel/', '/panel/panel.css', '/panel/instalar.js', '/panel/manifest.webmanifest',
   '/panel/js/main.js', '/panel/js/estado.js', '/panel/js/login.js', '/panel/js/inicio.js', '/panel/js/agenda.js',
   '/panel/js/citas.js', '/panel/js/clientas.js', '/panel/js/equipo.js', '/panel/js/servicios.js', '/panel/js/ajustes.js',
   '/panel/js/importar.js', '/panel/js/mensajes.js', '/panel/js/analitica.js', '/panel/js/fidelizacion.js', '/panel/js/notas.js',
-  '/panel/js/promociones.js', '/panel/js/plantillas.js', '/app-citas/base.css', '/app-citas/js/util.js', '/app-citas/js/csv.js',
+  '/panel/js/promociones.js', '/panel/js/plantillas.js', '/app-citas/base.css', '/app-citas/js/util.js', '/app-citas/js/csv.js', '/app-citas/js/push.js',
   '/app-citas/fonts/dmsans.woff2', '/app-citas/fonts/playfair.woff2', '/app-citas/fonts/playfair-italic.woff2',
   '/app-citas/fonts/greatvibes.woff2', '/app-citas/img/logo.webp', '/app-citas/img/icono-192.png',
 ];
@@ -32,4 +32,25 @@ self.addEventListener('fetch', (e) => {
       return r;
     }).catch(() => caches.match(e.request).then((r) => r || caches.match('/panel/')))
   );
+});
+
+// ---------- notificaciones push ----------
+self.addEventListener('push', (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch { d = { cuerpo: e.data ? e.data.text() : '' }; }
+  e.waitUntil(self.registration.showNotification(d.titulo || 'Amelia Nail Spa', {
+    body: d.cuerpo || '', icon: '/app-citas/img/icono-192.png', badge: '/app-citas/img/icono-192.png',
+    tag: d.tag, renotify: !!d.tag, data: { url: d.url || self.registration.scope },
+  }));
+});
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const url = new URL(e.notification.data?.url || '/', self.location.origin).href;
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((lista) => {
+    for (const c of lista) {
+      if (c.url.split('#')[0] === url.split('#')[0] && 'focus' in c) return c.navigate(url).then((x) => (x || c).focus());
+    }
+    return self.clients.openWindow(url);
+  }));
 });

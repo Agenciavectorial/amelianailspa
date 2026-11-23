@@ -8,6 +8,7 @@ import {
 } from '../reservas.js';
 import { ahoraBogota, aUTC, fechaTexto, horaTexto, sumarDias } from '../tiempo.js';
 import { generarICS, respuestaICS } from '../ics.js';
+import { avisarEquipo } from '../notificaciones.js';
 
 const AJUSTES_PUBLICOS = ['anticipacion_min', 'ventana_dias', 'cancelacion_horas', 'whatsapp', 'nombre_spa', 'direccion', 'politica_texto', 'intervalo_min'];
 
@@ -88,7 +89,7 @@ export function rutasPublicas(r) {
     };
   });
 
-  r.post('/api/public/reservar', 'publico', async ({ db, env, request, body: datos }) => {
+  r.post('/api/public/reservar', 'publico', async ({ db, env, request, body: datos, enSegundoPlano }) => {
     const ip = ipDe(request);
     await revisarBloqueo(db, 'reserva-ip:' + ip);
     if (datos.sitio_web) falla(400, 'No pudimos procesar la reserva.');
@@ -140,6 +141,7 @@ export function rutasPublicas(r) {
       }
     }
     if (!creada) throw ultimoError;
+    enSegundoPlano(avisarEquipo(env, creada.id, 'nueva'));
     const c = await detalleCita(db, 'id', creada.id);
     return { ...citaPublica(c, d.ajustes), token: creada.token };
   });
@@ -165,16 +167,17 @@ export function rutasPublicas(r) {
     return citaPublica(c, ajustes);
   });
 
-  r.post('/api/public/cita/cancelar', 'publico', async ({ db, body }) => {
+  r.post('/api/public/cita/cancelar', 'publico', async ({ db, env, body, enSegundoPlano }) => {
     const c = await detalleCita(db, 'token', tokenValido(body.token));
     if (!c) falla(404, 'No encontramos esta cita.');
     const ajustes = await leerAjustes(db);
     if (!puedeModificar(c, ajustes)) falla(409, `Ya no es posible cancelar en línea (menos de ${ajustes.cancelacion_horas} h). Escríbenos por WhatsApp.`);
     await cancelarCita(db, c.id, 'clienta', 'cancelada desde el enlace');
+    enSegundoPlano(avisarEquipo(env, c.id, 'cancelada'));
     return citaPublica(await detalleCita(db, 'id', c.id), ajustes);
   });
 
-  r.post('/api/public/cita/reprogramar', 'publico', async ({ db, body }) => {
+  r.post('/api/public/cita/reprogramar', 'publico', async ({ db, env, body, enSegundoPlano }) => {
     const c = await detalleCita(db, 'token', tokenValido(body.token));
     if (!c) falla(404, 'No encontramos esta cita.');
     const ajustes = await leerAjustes(db);
@@ -187,6 +190,7 @@ export function rutasPublicas(r) {
     const turno = d.porFecha[fecha].find((t) => t.inicio === inicio);
     if (!turno) falla(409, 'Ese horario ya no está disponible.', { codigo: 'ocupado' });
     await moverCita(db, c, { colaboradoraId: c.colaboradora_id, fecha, inicio, quien: 'clienta' });
+    enSegundoPlano(avisarEquipo(env, c.id, 'movida'));
     return citaPublica(await detalleCita(db, 'id', c.id), ajustes);
   });
 

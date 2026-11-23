@@ -41,7 +41,8 @@ export function crearRouter() {
         if (ruta.acceso === 'propietaria' && !sesion.esPropietaria) throw new HttpError(403, 'Solo la propietaria puede hacer esto.');
       }
       const body = ['POST', 'PUT', 'PATCH'].includes(request.method) ? await leerJSON(request) : {};
-      const r = await ruta.manejador({ request, env, db: env.DB, url, params, sesion, body, q: url.searchParams, context });
+      const enSegundoPlano = (p) => { const seguro = Promise.resolve(p).catch((e) => console.error('segundo plano', e?.message || e)); if (context.waitUntil) context.waitUntil(seguro); };
+      const r = await ruta.manejador({ request, env, db: env.DB, url, params, sesion, body, q: url.searchParams, context, enSegundoPlano });
       return r instanceof Response ? r : json(r ?? { ok: true });
     } catch (e) {
       if (e instanceof HttpError) return json({ error: e.message, ...e.extra }, e.status);

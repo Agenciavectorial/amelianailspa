@@ -3,6 +3,9 @@ import {
   api, html, crudo, pintar, $, $$, toast, ocupado, hora, duracion, dinero, fechaLarga, ICONOS, inicial, celularBonito, abrirHoja,
 } from '/app-citas/js/util.js';
 import { crearSelector } from './selector.js';
+import { estadoPush, activarPush } from '/app-citas/js/push.js';
+
+const PUSH = { sw: '/reservar/sw.js', scope: '/reservar/' };
 
 const PASOS = ['servicios', 'profesional', 'horario', 'datos', 'listo'];
 const TITULOS = {
@@ -111,6 +114,7 @@ function pasoServicios() {
       ${proxima ? html`<a class="proxima" href="/reservar/cita/#${proxima.token}">
           ${crudo(ICONOS.calendario)}<span><strong>Tu próxima cita</strong>${fechaLarga(proxima.fecha)} · ${hora(proxima.inicio)}</span><span class="flecha">Ver</span></a>` : ''}
       <div id="misCitas"></div>
+      <div id="avisosInicio"></div>
       ${!conColab && C.promociones?.length ? html`<h2 class="titulo-bloque">Promociones</h2><div class="promos">${C.promociones.map((p) => html`
         <button class="promo" data-promo="${p.id}">
           ${p.foto ? html`<img src="${p.foto}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}
@@ -140,6 +144,7 @@ function pasoServicios() {
     b.onclick = () => { const s = porId(Number(b.dataset.pop)); if (!E.sel.includes(s.id)) E.sel.push(s.id); E.cat = s.categoria; irA(siguienteDespuesDeServicios()); };
   }
   pintarMisCitas();
+  if (tokensGuardados().length) ofrecerAvisos($('#avisosInicio'));
   for (const b of $$('.servicio', app)) b.onclick = () => alternar(Number(b.dataset.id));
   $('#quitarCon', app)?.addEventListener('click', () => { E.con = null; pasoServicios(); });
   $('.categorias .chip[aria-pressed="true"]', app)?.scrollIntoView({ inline: 'center', block: 'nearest' });
@@ -384,11 +389,36 @@ function pasoListo() {
         </div>
         <button class="btn ghost bloque" id="copiarEnlace">${crudo(ICONOS.copiar)} Copiar enlace para cancelar o cambiar</button>
       </div>
+      <div id="avisoPush"></div>
       <p class="muted small politica">${C.ajustes.politica_texto}</p>
       <a class="btn ghost" href="/">Volver a la página</a>
     </section>`);
+  ofrecerAvisos($('#avisoPush'));
   $('#copiarEnlace').onclick = async () => {
     try { await navigator.clipboard.writeText(enlace); toast('Enlace copiado. Guárdalo en tus notas.', 'ok'); } catch { prompt('Copia tu enlace:', enlace); }
+  };
+}
+
+/** Botón "Avísame antes de mi cita" (notificación push). */
+export async function ofrecerAvisos(caja) {
+  if (!caja) return;
+  const estado = await estadoPush(PUSH).catch(() => 'no-soportado');
+  if (estado === 'activo') { pintar(caja, html`<p class="avisos-ok">🔔 Te avisaremos un día antes y 2 horas antes de tu cita.</p>`); return; }
+  if (estado === 'ios-instalar') {
+    pintar(caja, html`<div class="tarjeta avisos"><strong>🔔 ¿Quieres recordatorios?</strong><span>En iPhone, instala la app de Amelia (Compartir → Agregar a inicio) y actívalos desde ahí.</span></div>`);
+    return;
+  }
+  if (estado !== 'inactivo') return;
+  pintar(caja, html`<button class="tarjeta avisos" id="activarAvisos"><strong>🔔 Avísame antes de mi cita</strong><span>Un recordatorio un día antes y 2 horas antes. Sin mensajes de más.</span></button>`);
+  $('#activarAvisos').onclick = async () => {
+    let tokens = [];
+    try { tokens = JSON.parse(localStorage.getItem('amelia_citas') || '[]').map((x) => x.token); } catch { /* sin almacenamiento */ }
+    if (E.reserva?.token && !tokens.includes(E.reserva.token)) tokens.push(E.reserva.token);
+    try {
+      await activarPush({ ...PUSH, ruta: '/api/public/push/suscribir', extra: { tokens } });
+      toast('¡Listo! Te avisaremos antes de tu cita 💜', 'ok');
+      ofrecerAvisos(caja);
+    } catch (x) { toast(x.message, 'error'); }
   };
 }
 

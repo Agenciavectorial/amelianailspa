@@ -81,14 +81,11 @@ publicación.
   día siguiente y "te toca volver". Requiere **WhatsApp Business API** (Meta Cloud API o un proveedor
   como Twilio/360dialog: cuenta verificada, plantillas aprobadas por Meta y costo por conversación) o
   un proveedor de correo (Resend, Brevo; solo si la clienta deja su correo). **Decisión del usuario.**
-  Punto de integración listo: las plantillas ya existen en D1; faltaría un Cron Trigger de Cloudflare
-  que lea las citas, rellene la plantilla (la misma función de `public/panel/js/mensajes.js`,
-  llevada al servidor) y la envíe, registrando cada envío en la tabla `mensajes` para no duplicar.
-- **Notificaciones push web (VAPID):** a la clienta que instaló la app y a las chicas por citas nuevas
-  o cambios. Requiere generar llaves VAPID (secreto en Cloudflare), guardar suscripciones en D1 y
-  firmar/cifrar en el Worker (RFC 8291). En iPhone solo funciona con la app instalada (iOS 16.4+).
-  No se implementó en esta fase para no entregar algo a medias; hoy cubren el caso el WhatsApp
-  prellenado y los calendarios `.ics`.
+  Punto de integración listo: el Worker con cron ya existe (`workers/recordatorios/`) y decide qué
+  recordatorio toca; bastaría implementar `enviarWhatsAppAutomatico()` en
+  `functions/_lib/notificaciones.js` (Meta Cloud API con plantillas aprobadas) y llamarla junto al push.
+- **Notificaciones push web: HECHAS** (avisos al equipo, recordatorios 24 h / 2 h y "te toca volver").
+  Falta solo crear las llaves VAPID y publicar el Worker de recordatorios (`CONFIGURACION.md` §13).
 - **Identificar a la clienta con celular + código:** depende del mismo proveedor de mensajería. Hoy
   se identifica por los enlaces guardados en su celular (ver `ARQUITECTURA.md` §8).
 - **Enlace de reseñas de Google:** quedó una búsqueda genérica. Erika debe pegar el enlace real
