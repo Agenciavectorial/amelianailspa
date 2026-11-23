@@ -215,3 +215,8 @@ test('push: solo se aceptan servicios de push reales', () => {
   assert.ok(!endpointValido('http://127.0.0.1:9/x'));
   assert.ok(endpointValido('http://127.0.0.1:9/x', { permitirLocal: true }));
 });
+
+test('los JS y CSS de la plataforma tienen la versión al día (node dev/versionar.mjs)', async () => {
+  const { execFileSync } = await import('node:child_process');
+  execFileSync(process.execPath, [new URL('../dev/versionar.mjs', import.meta.url).pathname, '--revisar'], { stdio: 'pipe' });
+});

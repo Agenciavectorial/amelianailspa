@@ -1,6 +1,6 @@
 // Ingreso por persona con PIN (patrón MaxCool) y configuración del primer PIN de Erika.
-import { api, html, crudo, pintar, $, $$, toast, inicial, ICONOS, foto } from '/app-citas/js/util.js';
-import { botonDescarga, activarDescarga } from './descargar.js';
+import { api, html, crudo, pintar, $, $$, toast, inicial, ICONOS, foto } from '/app-citas/js/util.js?v=14671ef4de';
+import { botonDescarga, activarDescarga } from './descargar.js?v=14671ef4de';
 
 export async function pantallaIngreso(raiz, alEntrar) {
   let datos;

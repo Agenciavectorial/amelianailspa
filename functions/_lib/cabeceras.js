@@ -29,7 +29,8 @@ export function conCabeceras({ noindex = false } = {}) {
       r.headers.set('Content-Security-Policy', CSP);
       r.headers.set('X-Frame-Options', 'DENY');
     }
-    r.headers.set('Cache-Control', cacheDe(new URL(context.request.url).pathname, tipo, r.headers.get('Cache-Control')));
+    const u = new URL(context.request.url);
+    r.headers.set('Cache-Control', cacheDe(u.pathname, tipo, r.headers.get('Cache-Control'), u.searchParams.has('v')));
     if (noindex) r.headers.set('X-Robots-Tag', 'noindex, nofollow');
     return r;
   };
@@ -38,7 +39,9 @@ export function conCabeceras({ noindex = false } = {}) {
 // Caché: el dominio pasa por el edge de Cloudflare, que respeta Cache-Control. HTML, CSS, JS, manifiestos
 // y service workers se revalidan SIEMPRE (no-cache + ETag: si no cambió, responde 304 sin bajar nada),
 // así nadie ve una versión vieja después de un despliegue. Fuentes: un año. Imágenes de la app: un día.
-export function cacheDe(ruta, tipo = '', actual = '') {
+export function cacheDe(ruta, tipo = '', actual = '', versionado = false) {
+  // Archivos con ?v=<huella> (dev/versionar.mjs): su contenido nunca cambia en esa dirección → un año.
+  if (versionado && !tipo.includes('text/html') && /\.(js|css|webmanifest)$/.test(ruta)) return 'public, max-age=31536000, immutable';
   if (ruta.startsWith('/app-citas/fonts/')) return 'public, max-age=31536000, immutable';
   if (ruta.startsWith('/app-citas/img/') && !tipo.includes('text/html')) return 'public, max-age=86400';
   if (ruta.startsWith('/api/')) return actual || 'no-store';

@@ -547,6 +547,9 @@ test('caché: HTML/CSS/JS de la plataforma siempre se revalidan; fuentes por un 
     if (etag) assert.equal((await fetch(base + ruta, { headers: { 'If-None-Match': etag } })).status, 304, `${ruta} responde 304 si no cambió`);
   }
   assert.match((await fetch(base + '/app-citas/fonts/dmsans.woff2')).headers.get('cache-control'), /max-age=31536000/);
+  const conVersion = (await (await fetch(base + '/reservar/')).text()).match(/\/reservar\/reservar\.js\?v=[0-9a-f]{10}/);
+  assert.ok(conVersion, 'la página carga sus archivos con ?v=<huella>');
+  assert.match((await fetch(base + conVersion[0])).headers.get('cache-control'), /max-age=31536000, immutable/, 'lo versionado se guarda un año');
   const cat = await cliente(base).pedir('/api/public/catalogo');
   for (const slug of ['lifting-pestanas', 'pestanas-punto-a-punto', 'laminado-cejas', 'sombreado-cejas']) {
     const s = cat.cuerpo.servicios.find((x) => x.slug === slug);
