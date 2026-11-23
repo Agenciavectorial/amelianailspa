@@ -37,7 +37,7 @@ database_id = "00000000-0000-0000-0000-000000000000"   ← poner aquí el ID rea
 El ID no es secreto: se puede subir al repositorio. Haz commit de ese cambio.
 
 > ⚠️ Mientras el ID siga en ceros, los despliegues de Cloudflare Pages fallarán al publicar las
-> funciones. Por eso este paso va antes de unir la rama `claude/plataforma-citas` a `main`.
+> funciones. Por eso este paso va antes de unir la rama de la plataforma a `main`.
 
 ## 3. Crear las tablas y los datos iniciales
 
@@ -80,7 +80,8 @@ La clave solo sirve mientras Erika no tenga PIN. Después de configurarlo puedes
 
 ## 5. Publicar
 
-Haz merge de la rama `claude/plataforma-citas` (con el `database_id` real) y Cloudflare Pages
+Une la rama de la plataforma a `main` (con el `database_id` real) usando **"Squash and merge"** y un
+mensaje propio de la agencia (así `main` queda con un historial limpio), y borra la rama después. Cloudflare Pages
 despliega solo. El build sigue siendo **sin comando** y con salida `public` (ver `README.md`).
 
 Comprueba en `https://amelianailspa.pages.dev` (o el dominio):
@@ -105,7 +106,7 @@ npx wrangler pages secret put CLAVE_INICIAL --project-name amelianailspa   # una
 
 ## 7. Conectar la página principal
 
-El Agente 1 (página) debe cambiar los botones "Agendar" de Kumbio por `/reservar`. Los detalles
+En la página principal hay que cambiar los botones "Agendar" de Kumbio por `/reservar`. Los detalles
 están en `docs/plataforma/PARA-LA-PAGINA.md`.
 
 ## 8. Dominio

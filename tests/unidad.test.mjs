@@ -159,7 +159,7 @@ test('tiempo en Bogotá (UTC-5)', () => {
   assert.equal(horaTexto(0), '12:00 a. m.');
 });
 
-test('importador: horario de colaboradoras (formato del Agente 3) y cumpleaños', () => {
+test('importador: horario de colaboradoras (formato de la exportación de Kumbio) y cumpleaños', () => {
   const h = horarioDe('lun-sab 09:00-19:00; dom cerrado');
   assert.equal(h.length, 7);
   assert.deepEqual(h.find((x) => x.dia === 6), { dia: 6, trabaja: 1, abre: 540, cierra: 1140 });

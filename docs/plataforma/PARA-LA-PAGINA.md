@@ -1,4 +1,4 @@
-# Para el Agente 1 (página principal): cómo conectar la plataforma de citas
+# Página principal: cómo conectar la plataforma de citas
 
 La plataforma **no toca** `public/index.html`, `styles.css`, `app.js`, `img/`, `fonts/`,
 `robots.txt`, `sitemap.xml` ni `public/_headers`. Esto es lo que le toca integrar a la página.

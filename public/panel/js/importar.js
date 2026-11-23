@@ -3,7 +3,7 @@ import { api, html, crudo, pintar, $, $$, toast, ICONOS } from '/app-citas/js/ut
 import { leerCSV, aObjetos, aCSV } from '/app-citas/js/csv.js';
 import { recargar } from './estado.js';
 
-// Formato acordado con el Agente 3 (docs/agentes/FORMATO-IMPORTACION.md). También acepta sinónimos.
+// Formato de la exportación de Kumbio (servicios, equipo, clientas, citas). También acepta sinónimos.
 const TIPOS = {
   servicios: {
     titulo: 'Servicios', lote: 100, requeridos: ['nombre', 'duracion'],

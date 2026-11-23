@@ -8,15 +8,15 @@ publicación.
 - ⚠️ **Crear la base D1 y poner su `database_id` en `wrangler.toml`.** Mientras tenga ceros, los
   despliegues fallarán. Ver `CONFIGURACION.md` §2.
 - ⚠️ **Crear el secreto `CLAVE_INICIAL`** y dársela a Erika en persona (§4).
-- ⚠️ **Agente 1:** cambiar los botones de Kumbio por `/reservar` y agregar `robots.txt`/`sitemap`
+- ⚠️ **Página principal:** cambiar los botones de Kumbio por `/reservar` y agregar `robots.txt`/`sitemap`
   (ver `PARA-LA-PAGINA.md`).
 - Recomendado: base D1 aparte para despliegues de vista previa (§10), para no mezclar pruebas con
   citas reales.
 
 ## Datos del spa (confirmar con Erika)
 
-- **Precios:** la página no los publica, así que todos quedaron "Precio en el spa". → El Agente 3
-  los extrae de Kumbio y Erika los carga con **Importar CSV → Servicios** (o a mano en Servicios).
+- **Precios:** la página no los publica, así que todos quedaron "Precio en el spa". → Se extraen
+  de Kumbio y Erika los carga con **Importar CSV → Servicios** (o a mano en Servicios).
 - **Duraciones:** se tomó el valor alto de los rangos de la página (p. ej. Acrílicas "90–120 min" →
   120). → Confirmar o corregir con lo de Kumbio.
 - **Quién hace qué:** por defecto Leidy, Karla, Julieth y Daily hacen **todos** los servicios
@@ -59,7 +59,7 @@ publicación.
 - **No se modelan recursos físicos** (sillas de pedicure, camilla de faciales). Si dos chicas no
   pueden hacer Pedi Spa a la vez por falta de silla, hay que decirlo y se agrega.
 - **Cabeceras de seguridad por middleware** y no en `public/_headers` para no chocar con el
-  Agente 1.
+  la página principal.
 - **Sesión de 30 días** en el dispositivo (cómodo en el celular personal). En un dispositivo compartido
   hay que usar "Cerrar sesión". Cambiar el PIN cierra las demás sesiones.
 - **PIN de 4 a 8 números**, por eso el teclado no entra solo al cuarto dígito: hay que tocar "Entrar".
@@ -75,9 +75,9 @@ publicación.
 - **Fuentes locales** en `public/app-citas/fonts/` (licencia OFL de Google Fonts) en vez de cargar
   Google Fonts: más rápido y permite `font-src 'self'`.
 
-## Fase 2 (lo pidió el usuario vía Agente 1): qué falta
+## Fase 2: qué falta
 
-- **Decisión (2026-11-23, comunicada por el Agente 1): NO se usará WhatsApp Business API por ahora.**
+- **Decisión (2026-11-23): NO se usará WhatsApp Business API por ahora.**
   Los avisos automáticos van por notificaciones push, y los mensajes por WhatsApp se envían prellenados
   con un toque desde el panel. `enviarWhatsAppAutomatico()` en `functions/_lib/notificaciones.js`
   queda como punto de integración futuro, sin activar. Si algún día se quiere, requiere cuenta
@@ -91,9 +91,9 @@ publicación.
 - **Ciclos de retorno** cargados por defecto (semipermanente/acrílicas/poligel 21 días, pestañas punto
   a punto 18, lifting y laminado 45, faciales 30…). Erika debe confirmarlos en Servicios.
 - **Fuentes:** la página tiene las suyas en `public/fonts/`; la plataforma usa su copia en
-  `public/app-citas/fonts/` (mismos tipos de letra) para no depender de archivos que mantiene otro
-  agente. Se pueden unificar más adelante.
-- **Cabeceras:** el Agente 1 ofreció agregar bloques al final de `public/_headers`. No hace falta:
+  `public/app-citas/fonts/` (mismos tipos de letra) para no depender de archivos de la página
+  principal. Se pueden unificar más adelante.
+- **Cabeceras:** se podían agregar bloques al final de `public/_headers`. No hace falta:
   los middlewares de `functions/` ya las ponen en `/reservar`, `/panel`, `/app-citas` y `/api`.
 
 ## Ideas para una siguiente fase
@@ -106,7 +106,7 @@ publicación.
 - **Exportar** la analítica a CSV/Excel y comisiones por colaboradora.
 - **Política de privacidad** completa en la página (Ley 1581 de 2012). La reserva ya pide
   autorización explícita para usar nombre y celular solo para gestionar la cita; falta la página con
-  la política (Agente 1 / asesoría legal).
+  la política (página principal / asesoría legal).
 - Formato real de la exportación de Kumbio: el importador reconoce muchos encabezados (cliente,
   teléfono, profesional, fecha, hora, servicio, estado…). Si el archivo de Kumbio trae otros nombres,
   basta renombrar las columnas o agregar sinónimos en `public/app-citas/js/csv.js` (`ALIAS`).

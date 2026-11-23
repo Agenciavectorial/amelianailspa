@@ -155,7 +155,7 @@ datos, escribir notas internas y crearle una cita.
    citas repetidas se omiten.
 
 Orden recomendado: **Servicios** (con precios, duraciones y quién lo hace), **Equipo** (horarios),
-**Clientas** y al final **Citas**. Los archivos que entrega el Agente 3 (`servicios.csv`,
+**Clientas** y al final **Citas**. Los archivos exportados de Kumbio (`servicios.csv`,
 `colaboradoras.csv`, `clientas.csv`, `citas.csv`) se suben tal cual.
 
 ### Si una clienta llama o escribe
