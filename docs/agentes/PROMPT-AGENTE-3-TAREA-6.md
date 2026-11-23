@@ -20,7 +20,7 @@ Resumen:
      `migrations/0001_esquema.sql` y luego el de `migrations/0002_datos_iniciales.sql`.
    - Comprueba con `SELECT nombre, duracion FROM servicios;`: deben salir 16 servicios.
 4. **Conectar la base al proyecto:** Workers & Pages → `amelianailspa` → Settings → Bindings → Add → D1 database →
-   Variable name `DB` → base `amelia-citas`. Hazlo para Production y Preview.
+   Variable name `DB` → base `amelia-citas`. Hazlo para Production y Preview. Si Cloudflare dice que la configuración la maneja `wrangler.toml`, sáltate este paso: el ID del paso 2 ya la conecta.
 5. **Clave inicial de Erika:** Settings → Variables and Secrets → Add → tipo **Secret** → nombre `CLAVE_INICIAL` → una clave de 8
    o más caracteres que inventes. **No la escribas en GitHub ni en el chat con los agentes**: guárdala para dársela a Erika en persona.
 6. **Si el Agente 2 ya publicó las notificaciones push**, sigue también la sección de llaves VAPID y del Worker de recordatorios
