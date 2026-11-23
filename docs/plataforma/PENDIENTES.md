@@ -77,13 +77,11 @@ publicación.
 
 ## Fase 2 (lo pidió el usuario vía Agente 1): qué falta
 
-- **Envío automático de mensajes (sin tocar nada):** recordatorios 24 h y 2 h antes, "gracias" al
-  día siguiente y "te toca volver". Requiere **WhatsApp Business API** (Meta Cloud API o un proveedor
-  como Twilio/360dialog: cuenta verificada, plantillas aprobadas por Meta y costo por conversación) o
-  un proveedor de correo (Resend, Brevo; solo si la clienta deja su correo). **Decisión del usuario.**
-  Punto de integración listo: el Worker con cron ya existe (`workers/recordatorios/`) y decide qué
-  recordatorio toca; bastaría implementar `enviarWhatsAppAutomatico()` en
-  `functions/_lib/notificaciones.js` (Meta Cloud API con plantillas aprobadas) y llamarla junto al push.
+- **Decisión (2026-11-23, comunicada por el Agente 1): NO se usará WhatsApp Business API por ahora.**
+  Los avisos automáticos van por notificaciones push, y los mensajes por WhatsApp se envían prellenados
+  con un toque desde el panel. `enviarWhatsAppAutomatico()` en `functions/_lib/notificaciones.js`
+  queda como punto de integración futuro, sin activar. Si algún día se quiere, requiere cuenta
+  verificada de Meta, plantillas aprobadas y tiene costo por conversación.
 - **Notificaciones push web: HECHAS** (avisos al equipo, recordatorios 24 h / 2 h y "te toca volver").
   Falta solo crear las llaves VAPID y publicar el Worker de recordatorios (`CONFIGURACION.md` §13).
 - **Identificar a la clienta con celular + código:** depende del mismo proveedor de mensajería. Hoy
