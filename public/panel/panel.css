@@ -282,7 +282,6 @@ body.con-hoja .dock { visibility: hidden; }
 .barra-progreso span { display: block; height: 100%; background: var(--grad); transition: width .3s; }
 .lista-errores { font-size: .85rem; padding-left: 18px; display: grid; gap: 4px; margin-top: 8px; max-height: 320px; overflow: auto; }
 .lista-errores.ok { color: var(--gris); }
-html:not(.puede-instalar) .instalar-app #instalar { display: none; }
 html.instalada .instalar-app { display: none; }
 
 .ag-grilla[data-modo="semana"] { --ancho-col: 86px; }
@@ -455,3 +454,14 @@ body.con-hoja .fab { visibility: hidden; }
 @media (min-width: 520px) { #apariencia .fila-botones { grid-template-columns: 1fr 1fr; } }
 .fila-botones .btn { min-width: 0; white-space: normal; }
 @media (max-width: 899px) { .ag-colab.atenuado { display: none; } }
+
+/* Descargar la app (ingreso, Inicio y Mi cuenta) */
+.descargar-app { margin-top: 18px; width: 100%; max-width: 320px; min-height: 52px; gap: 8px; }
+.descargar-app svg, .td-icono svg { width: 22px; height: 22px; }
+.tarjeta-descarga { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: start; margin-bottom: 14px; border: 1.5px solid var(--rosa-soft); }
+.td-icono { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; background: var(--rosa-soft); color: var(--rosa-deep); }
+.tarjeta-descarga p { margin: 4px 0 0; }
+.td-botones { grid-column: 1 / -1; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.td-botones .btn:first-child { flex: 1; min-height: 48px; }
+.pasos-descarga { margin: 8px 0 14px; padding-left: 22px; display: grid; gap: 10px; font-size: 1rem; line-height: 1.45; }
+html.instalada .descargar-app, html.instalada .tarjeta-descarga { display: none; }

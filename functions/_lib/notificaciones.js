@@ -1,5 +1,8 @@
-// Notificaciones: avisos al equipo (cita nueva, cambio, cancelación) y recordatorios a clientas
-// (24 h y 2 h antes, "te toca volver"). Canal hoy: Web Push. Punto de integración: WhatsApp Business API.
+// Notificaciones (Web Push):
+// - Equipo: cita nueva, movida o cancelada al instante; resumen del día por la mañana; "en 1 hora" antes de cada cita.
+// - Clienta: confirmación al agendar; recordatorio la víspera (o la mañana del mismo día) y 1 hora antes;
+//   aviso si el spa le mueve o cancela la cita; "te toca volver" según el ciclo del servicio.
+// Punto de integración futuro: WhatsApp Business API.
 import { enviarPush, vapidDe } from './push.js';
 import { ahoraBogota, aUTC, sumarDias, difDias, horaTexto, fechaTexto } from './tiempo.js';
 
@@ -76,49 +79,152 @@ async function primeraVez(db, clave) {
   const r = await db.prepare('INSERT OR IGNORE INTO push_enviados (clave) VALUES (?)').bind(clave).run();
   return r.meta.changes > 0;
 }
+const yaEnviado = async (db, clave) => !!(await db.prepare('SELECT 1 FROM push_enviados WHERE clave = ?').bind(clave).first());
+
+const SQL_CITA = `SELECT ci.id, ci.token, ci.fecha, ci.inicio, ci.estado, ci.clienta_id, ci.colaboradora_id, cl.nombre AS clienta, co.nombre AS colaboradora,
+        (SELECT GROUP_CONCAT(nombre, ' + ') FROM cita_servicios cs WHERE cs.cita_id = ci.id) AS servicios
+   FROM citas ci JOIN clientas cl ON cl.id = ci.clienta_id JOIN colaboradoras co ON co.id = ci.colaboradora_id`;
+
+const subsClienta = async (db, clientaId) => (await db.prepare('SELECT * FROM push_suscripciones WHERE clienta_id = ?').bind(clientaId).all()).results;
+
+function diaRelativo(fecha, hoy) {
+  if (fecha === hoy) return 'hoy';
+  if (fecha === sumarDias(hoy, 1)) return 'mañana';
+  return `el ${fechaTexto(fecha)}`;
+}
 
 /**
- * Tarea programada (cada 15 min): recordatorios a clientas con notificaciones activas.
- * - r24: la cita empieza entre 20 y 24 h desde ahora.
- * - r2: la cita empieza en menos de 2 h 15 min.
- * - vuelve: según el ciclo de retorno del último servicio (solo entre 10:00 y 19:00).
+ * Aviso a la clienta (si activó las notificaciones) cuando se agenda, o cuando el spa le mueve o cancela la cita.
+ * La confirmación sale una sola vez por cita.
+ * @param {'nueva'|'movida'|'cancelada'} tipo
  */
-export async function ejecutarRecordatorios(env, { ahoraMs = Date.now(), maxEnvios = 10 } = {}) {
+export async function avisarClienta(env, citaId, tipo, { ahoraMs = Date.now() } = {}) {
+  const db = env.DB;
+  if (!vapidDe(env)) return { enviados: 0 };
+  const c = await db.prepare(`${SQL_CITA} WHERE ci.id = ?`).bind(citaId).first();
+  if (!c) return { enviados: 0 };
+  const subs = await subsClienta(db, c.clienta_id);
+  if (!subs.length) return { enviados: 0 };
+  if (tipo === 'nueva' && !(await primeraVez(db, `conf:${c.id}`))) return { enviados: 0 };
+  const { fecha: hoy } = ahoraBogota(ahoraMs);
+  const nombre = c.clienta.split(' ')[0];
+  const cuando = `${diaRelativo(c.fecha, hoy)} a las ${horaTexto(c.inicio)}`;
+  const datos = {
+    nueva: { titulo: `¡Listo, ${nombre}! Tu cita quedó agendada ✅`, cuerpo: `${c.servicios} ${cuando} con ${c.colaboradora}. Te recordaremos antes de tu cita.` },
+    movida: { titulo: `${nombre}, tu cita cambió 🔁`, cuerpo: `Ahora es ${cuando} con ${c.colaboradora} (${c.servicios}). Toca para ver los detalles.` },
+    cancelada: { titulo: `${nombre}, tu cita fue cancelada`, cuerpo: `${c.servicios} ${cuando}. Si quieres, agenda otra hora en un toque.` },
+  }[tipo];
+  if (!datos) return { enviados: 0 };
+  return enviarA(env, db, subs, { ...datos, url: tipo === 'cancelada' ? '/reservar/' : `/reservar/cita/#${c.token}`, tag: `cita-${c.id}` },
+    { urgencia: 'high', ttl: 12 * 3600 });
+}
+
+/** Confirma a la clienta su próxima cita al activar las notificaciones (si no se le había confirmado ya). */
+export async function confirmarProxima(env, clientaId, { ahoraMs = Date.now() } = {}) {
+  const { fecha: hoy } = ahoraBogota(ahoraMs);
+  const c = await env.DB.prepare(`SELECT id FROM citas WHERE clienta_id = ? AND estado = 'confirmada' AND fecha >= ? ORDER BY id DESC LIMIT 1`)
+    .bind(clientaId, hoy).first();
+  return c ? avisarClienta(env, c.id, 'nueva', { ahoraMs }) : { enviados: 0 };
+}
+
+/**
+ * Tarea programada (cada 15 min). Horas de Colombia.
+ * Clientas con notificaciones:
+ * - vispera: la cita es mañana y son entre las 6:00 y las 9:00 p. m.
+ * - dia: la cita es hoy, ya son las 7:30 a. m., faltan más de 2 h y no recibió la de la víspera (agendó el mismo día o tarde).
+ * - r1: falta 1 hora o menos (75 min de margen por el intervalo del cron).
+ * - vuelve: según el ciclo de retorno del último servicio (solo entre 10:00 y 19:00).
+ * Equipo (colaboradoras con la app y los avisos activos):
+ * - eq_dia: entre 7:00 y 10:00 a. m., resumen de sus citas del día (a Erika, el total del spa).
+ * - eq_r1: 1 hora antes de cada cita, a la colaboradora que la atiende.
+ */
+export async function ejecutarRecordatorios(env, { ahoraMs = Date.now(), maxEnvios = 25 } = {}) {
   // Tope por ejecución: el plan gratuito limita las consultas por invocación; lo que falte sale en la siguiente (15 min).
   const db = env.DB;
-  const res = { r24: 0, r2: 0, vuelve: 0, pendientes: false, sin_vapid: !vapidDe(env) };
+  const res = { vispera: 0, dia: 0, r1: 0, eq_dia: 0, eq_r1: 0, vuelve: 0, pendientes: false, sin_vapid: !vapidDe(env) };
   let presupuesto = maxEnvios;
   if (res.sin_vapid) return res;
   const { fecha: hoy, minuto } = ahoraBogota(ahoraMs);
   const manana = sumarDias(hoy, 1);
 
+  // ---------- clientas ----------
   const { results: citas } = await db.prepare(
-    `SELECT ci.id, ci.token, ci.fecha, ci.inicio, ci.clienta_id, co.nombre AS colaboradora, cl.nombre AS clienta,
-            (SELECT GROUP_CONCAT(nombre, ' + ') FROM cita_servicios cs WHERE cs.cita_id = ci.id) AS servicios
-       FROM citas ci JOIN colaboradoras co ON co.id = ci.colaboradora_id JOIN clientas cl ON cl.id = ci.clienta_id
+    `${SQL_CITA}
       WHERE ci.estado = 'confirmada' AND ci.fecha BETWEEN ? AND ?
         AND EXISTS (SELECT 1 FROM push_suscripciones s WHERE s.clienta_id = ci.clienta_id)`
-  ).bind(hoy, sumarDias(hoy, 2)).all();
+  ).bind(hoy, manana).all();
 
   for (const c of citas) {
     const faltanMin = (aUTC(c.fecha, c.inicio).getTime() - ahoraMs) / 60000;
     let tipo = null;
-    if (faltanMin > 20 * 60 && faltanMin <= 24 * 60) tipo = 'r24';
-    else if (faltanMin > 0 && faltanMin <= 135) tipo = 'r2';
+    if (faltanMin > 0 && faltanMin <= 75) tipo = 'r1';
+    else if (c.fecha === manana && minuto >= 1080 && minuto < 1260) tipo = 'vispera';
+    else if (c.fecha === hoy && minuto >= 450 && faltanMin > 120 && !(await yaEnviado(db, `vispera:${c.id}`))) tipo = 'dia';
     if (!tipo) continue;
     if (presupuesto <= 0) { res.pendientes = true; break; }
     if (!(await primeraVez(db, `${tipo}:${c.id}`))) continue;
     presupuesto--;
-    const { results: subs } = await db.prepare('SELECT * FROM push_suscripciones WHERE clienta_id = ?').bind(c.clienta_id).all();
     const nombre = c.clienta.split(' ')[0];
-    const dia = c.fecha === hoy ? 'hoy' : c.fecha === manana ? 'mañana' : fechaTexto(c.fecha);
-    const r = await enviarA(env, db, subs, {
-      titulo: tipo === 'r24' ? `${nombre}, te esperamos ${dia} 💅` : `¡Ya casi, ${nombre}! ✨`,
-      cuerpo: `${c.servicios} a las ${horaTexto(c.inicio)} con ${c.colaboradora}. Toca para ver o cambiar tu cita.`,
-      url: `/reservar/cita/#${c.token}`,
-      tag: `recordatorio-${c.id}`,
-    }, { urgencia: tipo === 'r2' ? 'high' : 'normal', ttl: tipo === 'r2' ? 2 * 3600 : 12 * 3600 });
+    const textos = {
+      vispera: [`${nombre}, mañana te esperamos 💅`, `${c.servicios} a las ${horaTexto(c.inicio)} con ${c.colaboradora}. Si necesitas cambiarla, toca aquí.`],
+      dia: [`¡Hoy es tu cita, ${nombre}! 💜`, `${c.servicios} a las ${horaTexto(c.inicio)} con ${c.colaboradora}. Te esperamos.`],
+      r1: [`${nombre}, tu cita es en 1 hora ✨`, `${c.servicios} a las ${horaTexto(c.inicio)} con ${c.colaboradora}. ¡Nos vemos pronto!`],
+    }[tipo];
+    const r = await enviarA(env, db, await subsClienta(db, c.clienta_id), {
+      titulo: textos[0], cuerpo: textos[1], url: `/reservar/cita/#${c.token}`, tag: `recordatorio-${c.id}`,
+    }, { urgencia: tipo === 'r1' ? 'high' : 'normal', ttl: tipo === 'r1' ? 3600 : 10 * 3600 });
     if (r.enviados) res[tipo]++;
+  }
+
+  // ---------- equipo ----------
+  const { results: subsEquipo } = await db.prepare(
+    `SELECT s.*, co.nombre AS nombre_colab, co.rol FROM push_suscripciones s JOIN colaboradoras co ON co.id = s.colaboradora_id
+      WHERE s.tipo = 'equipo' AND co.activa = 1`
+  ).all();
+  if (subsEquipo.length) {
+    const { results: deHoy } = await db.prepare(`${SQL_CITA} WHERE ci.estado = 'confirmada' AND ci.fecha = ? ORDER BY ci.inicio`).bind(hoy).all();
+    const porColab = new Map();
+    for (const s of subsEquipo) {
+      if (!porColab.has(s.colaboradora_id)) porColab.set(s.colaboradora_id, { nombre: s.nombre_colab, rol: s.rol, subs: [] });
+      porColab.get(s.colaboradora_id).subs.push(s);
+    }
+    // 1 hora antes, a quien atiende
+    for (const c of deHoy) {
+      const faltanMin = (aUTC(c.fecha, c.inicio).getTime() - ahoraMs) / 60000;
+      const q = porColab.get(c.colaboradora_id);
+      if (!q || !(faltanMin > 0 && faltanMin <= 75)) continue;
+      if (presupuesto <= 0) { res.pendientes = true; break; }
+      if (!(await primeraVez(db, `eq_r1:${c.id}`))) continue;
+      presupuesto--;
+      const r = await enviarA(env, db, q.subs, {
+        titulo: `⏰ En 1 hora: ${c.clienta}`,
+        cuerpo: `${c.servicios} a las ${horaTexto(c.inicio)}.`,
+        url: `/panel/#/agenda/${c.fecha}/lista/`, tag: `eq-r1-${c.id}`,
+      }, { urgencia: 'high', ttl: 3600 });
+      if (r.enviados) res.eq_r1++;
+    }
+    // Resumen de la mañana
+    if (minuto >= 420 && minuto < 600) {
+      for (const [id, q] of porColab) {
+        const duena = q.rol === 'propietaria';
+        const lista = duena ? deHoy : deHoy.filter((c) => c.colaboradora_id === id);
+        const proximas = lista.filter((c) => aUTC(c.fecha, c.inicio).getTime() > ahoraMs);
+        if (!proximas.length) continue;
+        if (presupuesto <= 0) { res.pendientes = true; break; }
+        if (!(await primeraVez(db, `eq_dia:${id}:${hoy}`))) continue;
+        presupuesto--;
+        const p = proximas[0];
+        const n = lista.length;
+        const r = await enviarA(env, db, q.subs, {
+          titulo: `☀️ Buenos días, ${q.nombre.split(' ')[0]}`,
+          cuerpo: duena
+            ? `Hoy hay ${n} ${n === 1 ? 'cita' : 'citas'} en el spa. La próxima: ${horaTexto(p.inicio)} · ${p.clienta} con ${p.colaboradora}.`
+            : `Hoy tienes ${n} ${n === 1 ? 'cita' : 'citas'}. La primera: ${horaTexto(p.inicio)} · ${p.clienta} (${p.servicios}).`,
+          url: `/panel/#/agenda/${hoy}/lista/`, tag: `eq-dia-${hoy}`,
+        }, { ttl: 4 * 3600 });
+        if (r.enviados) res.eq_dia++;
+      }
+    }
   }
 
   // "Te toca volver": solo en horario amable

@@ -1,5 +1,6 @@
 // Ingreso por persona con PIN (patrón MaxCool) y configuración del primer PIN de Erika.
 import { api, html, crudo, pintar, $, $$, toast, inicial, ICONOS, foto } from '/app-citas/js/util.js';
+import { botonDescarga, activarDescarga } from './descargar.js';
 
 export async function pantallaIngreso(raiz, alEntrar) {
   let datos;
@@ -22,8 +23,10 @@ export async function pantallaIngreso(raiz, alEntrar) {
           </button>`)}
       </div>
       ${!datos.personas.length ? html`<p class="aviso info">Aún no hay personas con PIN.</p>` : ''}
+      ${botonDescarga()}
       <p class="muted small ingreso-pie">¿Olvidaste tu PIN? Pídele a Erika que te asigne uno nuevo.</p>
     </div>`);
+  activarDescarga(raiz);
   for (const b of $$('.persona', raiz)) b.onclick = () => pedirPin(raiz, { id: Number(b.dataset.id), nombre: b.dataset.nombre, foto: b.querySelector('img')?.src }, alEntrar);
 }
 

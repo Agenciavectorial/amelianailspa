@@ -1,4 +1,4 @@
-// Worker programado: recordatorios por notificación push (24 h y 2 h antes, "te toca volver").
+// Worker programado: recordatorios por notificación push (víspera, mismo día, 1 h antes, resumen del equipo, "te toca volver").
 // Pages Functions no ejecuta crons, por eso vive aparte, con la MISMA base D1 y la misma lógica
 // (functions/_lib/notificaciones.js). Publicación: docs/plataforma/CONFIGURACION.md §13.
 import { ejecutarRecordatorios } from '../../functions/_lib/notificaciones.js';
