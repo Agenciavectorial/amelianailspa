@@ -14,4 +14,7 @@
     <image:image><image:loc>https://amelianailspa.com/img/antes-y-despues-1-960.webp</image:loc></image:image>
     <image:image><image:loc>https://amelianailspa.com/img/hidragloss-despues-900.webp</image:loc></image:image>
   </url>
+  <url>
+    <loc>https://amelianailspa.com/reservar</loc>
+  </url>
 </urlset>

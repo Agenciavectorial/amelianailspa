@@ -1,0 +1,7 @@
+-- Pestañas y cejas: arte de la marca en lugar de fotos externas, hasta tener fotos propias.
+-- Solo cambia la foto si sigue siendo la externa (no pisa una foto que Erika ya haya subido).
+UPDATE servicios SET foto = '/img/arte/pestanas-foto.svg' WHERE slug = 'lifting-pestanas' AND (foto LIKE '%catalinajaramillo%' OR foto LIKE '%maquillajeimportado%' OR foto LIKE '%esteticadelamirada%' OR foto LIKE '%wixstatic%' OR foto LIKE '%ytimg%');
+UPDATE servicios SET foto = '/img/arte/pestanas-foto.svg' WHERE slug = 'pestanas-punto-a-punto' AND (foto LIKE '%catalinajaramillo%' OR foto LIKE '%maquillajeimportado%' OR foto LIKE '%esteticadelamirada%' OR foto LIKE '%wixstatic%' OR foto LIKE '%ytimg%');
+UPDATE servicios SET foto = '/img/arte/cejas-foto.svg' WHERE slug = 'laminado-cejas' AND (foto LIKE '%catalinajaramillo%' OR foto LIKE '%maquillajeimportado%' OR foto LIKE '%esteticadelamirada%' OR foto LIKE '%wixstatic%' OR foto LIKE '%ytimg%');
+UPDATE servicios SET foto = '/img/arte/cejas-foto.svg' WHERE slug = 'sombreado-cejas' AND (foto LIKE '%catalinajaramillo%' OR foto LIKE '%maquillajeimportado%' OR foto LIKE '%esteticadelamirada%' OR foto LIKE '%wixstatic%' OR foto LIKE '%ytimg%');
+UPDATE servicios SET foto = '/img/arte/cejas-foto.svg' WHERE slug = 'depilacion-cejas-bozo' AND (foto LIKE '%catalinajaramillo%' OR foto LIKE '%maquillajeimportado%' OR foto LIKE '%esteticadelamirada%' OR foto LIKE '%wixstatic%' OR foto LIKE '%ytimg%');
