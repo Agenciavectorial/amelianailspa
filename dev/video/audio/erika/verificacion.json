@@ -18,5 +18,77 @@
   "b4": {
     "parecido": 0.987,
     "transcripcion": "En fidelización está la lista de clientas a las que les toca volver. Por ejemplo, si una se hizo semipermanente hace más de 3 semanas y no tiene cita, aparece aquí. Le das escribir y le llega tu mensaje con el enlace para reservar con su chica de siempre. En mi cuenta activas las notificaciones, así te llega un aviso al celular cada vez que una clienta reserva, cambia o cancela. Y con instalar app, el panel te queda en la pantalla de inicio como una aplicación. Por último, en importar CSV traes lo de Cumbio. Primero los servicios, luego las clientas y al final las citas. Antes de guardar, el sistema te muestra qué filas están bien, y si importas dos veces, no se duplica nada. Y eso es todo, Erika. Tu agenda, tus clientas y tu negocio en tu mano. Cualquier duda, nos escribes y te ayudamos. ¡Que te vaya muy bien!"
+  },
+  "e01": {
+    "parecido": 0.98,
+    "transcripcion": "Hola Erika, mira, esto es lo que ya te hicimos: tu propia plataforma de citas, para que ya no dependas de Cumbio. Tus clientas reservan en tu página y tú manejas todo desde el panel, en el celular. Te lo muestro parte por parte, tranquila que es muy fácil."
+  },
+  "e02": {
+    "parecido": 0.931,
+    "transcripcion": "Para entrar, abres amelianeilspa.com/panel. La primera vez creas tu PIN de cuatro números. Después, solo tocas tu foto, escribes el PIN y listo. Ya estás adentro."
+  },
+  "e03": {
+    "parecido": 1,
+    "transcripcion": "Este es el inicio de tu día. Arriba ves cuánto llevas en ingresos del mes, las citas de la semana, la asistencia y las clientas nuevas. Más abajo, tu próxima cita, las citas que te faltan por marcar y todo lo de hoy y de mañana."
+  },
+  "e04": {
+    "parecido": 1,
+    "transcripcion": "En agenda ves el día con una columna por cada chica. Con las flechas cambias de día. Y en semana ves los siete días de una sola persona. Los bloques grises a rayas son horas bloqueadas y la línea roja es la hora en que vas."
+  },
+  "e05": {
+    "parecido": 0.933,
+    "transcripcion": "Para crear una cita tocas el botón cita o un espacio libre en la agenda. Eliges el servicio, la chica, el día y una hora libre. Ecribes el celular y el nombre de la clienta y guardas. El sistema nunca deja agendar dos citas en simultáneo."
+  },
+  "e06": {
+    "parecido": 1,
+    "transcripcion": "Si la clienta necesita cambiar, tocas la cita y le das mover. Solo te muestra horas libres, y si cancela, le das cancelar cita y ese turno queda libre de una para otra clienta."
+  },
+  "e07": {
+    "parecido": 0.974,
+    "transcripcion": "Cuando termina el servicio marcas si asistió, al tocar sí se abre el cobro, el valor viene sugerido, eliges efectivo, Nequi, Daviplata, tarjeta o transferencia. Y si hubo propina, también la notas. Así tus ingresos se suman solitos."
+  },
+  "e08": {
+    "parecido": 1,
+    "transcripcion": "En clientas buscas por nombre o por celular. Ves sus visitas, sus faltas, cuánto ha gastado y tus notas, como el diseño que le gusta o si tiene alguna alergia. Desde ahí también le creas una cita."
+  },
+  "e09": {
+    "parecido": 0.975,
+    "transcripcion": "En servicios, cambias el precio, la duración, la foto y la descripción de cada uno, y quién lo hace. Esas fotos son las que ven tus clientas al reservar. Si dejas el precio vacío, sale como precio en el esta."
+  },
+  "e10": {
+    "parecido": 0.952,
+    "transcripcion": "En equipo están Leidy, Carla, Julieth y Deily. Tocas a una y le marcas los servicios que hace, su horario, sus permisos y su PIN. El PIN se lo entregas en persona y si se le olvida tú le pones uno nuevo."
+  },
+  "e11": {
+    "parecido": 0.954,
+    "transcripcion": "En horarios festivos pones a qué hora abre y cierra el spa cada día. Con ver festivos de Colombia cierras los festivos con un solo toque y esos días nadie puede reservar."
+  },
+  "e12": {
+    "parecido": 1,
+    "transcripcion": "En reglas de reserva decides con cuánta anticipación pueden reservar, hasta cuántos días adelante, cada cuánto se ofrecen las horas, y hasta cuándo pueden cancelar en línea."
+  },
+  "e13": {
+    "parecido": 1,
+    "transcripcion": "En promociones creas una con foto, precio especial y fechas. Las promociones vigentes salen de primeras en la página de reservas y en la app de tus clientas."
+  },
+  "e14": {
+    "parecido": 0.978,
+    "transcripcion": "En mensajes ajusta los textos de WhatsApp, la confirmación, el recordatorio, el cambio de cita y el de gracias con reseña. Las palabras entre llaves, como nombre o fecha, se llenan solas. Y en cada cita hay botones que abren WhatsApp con el mensaje ya escrito."
+  },
+  "e15": {
+    "parecido": 1,
+    "transcripcion": "En fidelización está la lista de clientas a las que les toca volver. Por ejemplo, si una se hizo semipermanente hace más de tres semanas y no tiene cita, aparece aquí. Le das escribir y le llega tu mensaje con el enlace para reservar con su chica de siempre."
+  },
+  "e16": {
+    "parecido": 1,
+    "transcripcion": "En mi cuenta activas las notificaciones, así te llega un aviso al celular cada vez que una clienta reserva, cambia o cancela. Y con instalar app, el panel te queda en la pantalla de inicio, como una aplicación."
+  },
+  "e17": {
+    "parecido": 0.975,
+    "transcripcion": "Por último, en importar CSV, traes lo de Cumbio, primero los servicios, luego las clientas y al final las citas. Antes de guardar, el sistema te muestra qué filas están bien y si importas dos veces no se duplica nada."
+  },
+  "e18": {
+    "parecido": 1,
+    "transcripcion": "Y eso es todo, Erika. Tu agenda, tus clientas y tu negocio en tu mano. Cualquier duda nos escribes y te ayudamos. Que te vaya muy bien."
   }
 }

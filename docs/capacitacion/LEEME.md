@@ -9,6 +9,13 @@ Los videos se publican en **amelianailspa.com/capacitacion/**. Es una página pr
 | `chicas-leidy.mp4`, `chicas-karla.mp4`, `chicas-julieth.mp4`, `chicas-daily.mp4` | cada chica, con su saludo | vertical 1080×1920 |
 | `pagina.mp4` / `pagina-horizontal.mp4` | Erika: la página y la reserva | vertical y 16:9 (1920×1080) |
 
+**Voz:** todo es la voz generada (Sulafat, muestra A), menos las escenas `e05`, `e06` y `e07` del video de Erika
+(crear cita, mover y cancelar, cobrar). Esas tres son **voz grabada por el usuario** en notas de WhatsApp. Los
+originales están en `dev/video/voces-grabadas/erika/` y se importaron con `importar-audios.mjs` a
+`dev/video/audio/erika/`. La transcripción coincide con el guion (0,93, 1,00 y 0,97). En el `erika.mp4` publicado,
+esas voces se mezclaron sobre el video ya armado, normalizadas a −15 LUFS, en 76,9 s, 94,5 s y 108,1 s, sin
+cambiar la imagen. Si se regenera con `todo.sh`, el video sale igual pero con la voz importada desde el principio.
+
 Cada video lleva cortinilla de inicio y de cierre con la marca, el celular con la pantalla real, el capítulo
 arriba, subtítulos quemados y voz en off. No lleva música. Solo se usan datos ficticios: el servidor local
 crea clientas como "Ana Prueba" o "Gina Ejemplo".
@@ -68,8 +75,10 @@ capturas `fin-<escena>.png` y `error-<escena>.png` en `dev/video/salida/erika-pr
   están en `dev/video/muestras/`.
 - **Peso:** Cloudflare Pages acepta hasta 25 MB por archivo. `armar.mjs` usa H.264 con CRF 25 (vertical) o
   24 (horizontal), y AAC a 96 kbps. `publicar.mjs` se detiene si algún video pasa el límite.
-- **Voz grabada a mano:** graba los párrafos de `GUIONES.md`, un archivo por párrafo con el nombre indicado.
-  Luego corre `node dev/video/importar-audios.mjs <video> <carpeta>` y después `todo.sh`.
+- **Voz grabada a mano:** graba los párrafos de `GUIONES.md`, un archivo por párrafo con el nombre indicado
+  (`.opus` de WhatsApp, `.m4a`, `.mp3`…; también sirve un `.zip`). Luego corre
+  `node dev/video/importar-audios.mjs <video> <carpeta|archivo.zip>` y después, para solo ese video,
+  `node dev/video/grabar.mjs erika && node dev/video/armar.mjs erika && node dev/video/publicar.mjs`.
 - La versión anterior de la página, para el "antes", sale del commit `e68a802` y se sirve localmente.
 - Las cifras de velocidad (12 MB antes, 1,9 MB ahora) se midieron cargando y recorriendo las dos versiones en
   un celular emulado.
