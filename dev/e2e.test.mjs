@@ -528,3 +528,168 @@ test('navegador: panel de Erika (computador y celular) y de una colaboradora', {
     assert.equal(await m.$('a[data-sec="equipo"]'), null, 'una colaboradora no ve la sección Equipo');
   } finally { await b.close(); }
 });
+
+test('galerías: catálogo con fotos y video, edición solo de Erika, subida sin R2 responde amable', async () => {
+  const cat = await cliente(base).pedir('/api/public/catalogo');
+  const press = cat.cuerpo.servicios.find((s) => s.slug === 'press-on');
+  assert.ok(press.medios.length >= 5, 'Press On trae su galería');
+  assert.equal(press.medios[0].tipo, 'video');
+  assert.match(press.medios[0].portada, /^\/img\//);
+  assert.ok(cat.cuerpo.ajustes.bienvenida_titulo);
+  const karla = cliente(base);
+  await karla.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.karla, pin: '1357' } });
+  assert.equal((await karla.pedir(`/api/panel/servicios/${press.id}/medios`, { metodo: 'PUT', datos: { medios: [] } })).status, 403);
+  const malo = await erika.pedir(`/api/panel/servicios/${press.id}/medios`, { metodo: 'PUT', datos: { medios: [{ tipo: 'foto', url: 'javascript:alert(1)' }] } });
+  assert.equal(malo.status, 400, 'solo enlaces https o fotos del sitio');
+  const nuevos = [{ tipo: 'foto', url: '/img/press-on-3-720.webp' }, ...press.medios];
+  assert.equal((await erika.pedir(`/api/panel/servicios/${press.id}/medios`, { metodo: 'PUT', datos: { medios: nuevos } })).status, 200);
+  const cat2 = await cliente(base).pedir('/api/public/catalogo');
+  const press2 = cat2.cuerpo.servicios.find((s) => s.slug === 'press-on');
+  assert.equal(press2.medios[0].url, '/img/press-on-3-720.webp', 'respeta el orden');
+  assert.equal(press2.foto, '/img/press-on-3-720.webp', 'la primera foto es la principal');
+  const sub = await fetch(base + '/api/panel/subir', { method: 'POST', headers: { 'Content-Type': 'image/png', Cookie: erika.cookie }, body: new Uint8Array([137, 80, 78, 71]) });
+  assert.equal(sub.status, 501, 'sin bucket R2 avisa que la subida no está activa');
+  // perfil propio y apariencia
+  assert.equal((await karla.pedir('/api/panel/mi-perfil', { metodo: 'PUT', datos: { color: '#00897B', foto: '/img/karla-600.webp' } })).status, 200);
+  assert.equal((await karla.pedir('/api/panel/mi-perfil', { metodo: 'PUT', datos: { color: 'rojo' } })).status, 400);
+  assert.equal((await karla.pedir('/api/panel/ajustes', { metodo: 'PUT', datos: { bienvenida_titulo: 'X' } })).status, 403);
+  assert.equal((await erika.pedir('/api/panel/ajustes', { metodo: 'PUT', datos: { bienvenida_titulo: 'Consiéntete hoy', color_acento: 'ciruela' } })).status, 200);
+  assert.equal((await erika.pedir('/api/panel/ajustes', { metodo: 'PUT', datos: { color_acento: 'verde' } })).status, 400);
+  const cat3 = await cliente(base).pedir('/api/public/catalogo');
+  assert.equal(cat3.cuerpo.ajustes.bienvenida_titulo, 'Consiéntete hoy');
+  assert.equal(cat3.cuerpo.ajustes.color_acento, 'ciruela');
+});
+
+for (const [nombre, disp] of [['iPhone 13', 'iPhone 13'], ['Android 360 px', 'Galaxy S8']]) {
+  test(`celular (${nombre}): reserva con ficha y galería, en pocos toques`, { skip: !chromium && 'Playwright no disponible' }, async () => {
+    const b = await chromium.launch();
+    try {
+      const ctx = await b.newContext({ ...devices[disp] });
+      const p = await ctx.newPage();
+      const errores = [];
+      p.on('pageerror', (e) => errores.push(e.message));
+      await p.goto(`${base}/reservar/`, { waitUntil: 'networkidle' });
+      const ancho = devices[disp].viewport.width;
+      assert.ok(await p.evaluate((w) => document.documentElement.scrollWidth <= w, ancho), 'sin desplazamiento horizontal');
+      assert.match(await p.textContent('#heroReserva h1'), /Consiéntete hoy/);
+      // áreas táctiles de 48 px o más
+      for (const sel of ['.chip', '.servicio-marca', '.servicio-abrir']) {
+        const alto = await p.$eval(sel, (e) => e.getBoundingClientRect().height);
+        assert.ok(alto >= 48, `${sel} mide ${alto}px`);
+      }
+      const suf = disp === 'Galaxy S8' ? '-android' : '';
+      await p.screenshot({ path: CAPTURAS + `movil-reservar-1-inicio${suf}.png` });
+      // Toque 1: abrir la ficha de Press On (galería con video)
+      await p.click('.servicio-abrir >> text=Press On');
+      await p.waitForSelector('.ficha-carrusel .ficha-medio');
+      assert.ok((await p.$$('.ficha-carrusel .ficha-medio')).length >= 5);
+      assert.ok(await p.$('.ficha-carrusel video[preload="none"][muted]'), 'video discreto: sin sonido y sin precarga');
+      await p.screenshot({ path: CAPTURAS + `movil-reservar-2-ficha${suf}.png` });
+      // Toque 2: agendar este servicio → profesional
+      await p.click('#fichaAgendar');
+      await p.waitForSelector('.pro');
+      await p.screenshot({ path: CAPTURAS + `movil-reservar-3-profesional${suf}.png` });
+      // Toque 3: cualquiera disponible → horario en día futuro
+      await p.click('.pro.cualquiera');
+      await p.waitForSelector('.turno');
+      await p.click(`.dia[data-fecha="${DIA}"]`);
+      await p.waitForSelector(`.dia[data-fecha="${DIA}"][aria-selected="true"]`);
+      await p.waitForSelector('.turno');
+      const altoTurno = await p.$eval('.turno', (e) => e.getBoundingClientRect().height);
+      assert.ok(altoTurno >= 48);
+      await p.click('.turno >> nth=-1');
+      await p.screenshot({ path: CAPTURAS + `movil-reservar-4-horario${suf}.png` });
+      assert.equal(await p.isVisible('#btnSeguir'), true, 'botón principal fijo abajo');
+      await p.click('#btnSeguir');
+      // Volver con "atrás" no pierde lo elegido
+      await p.goBack();
+      await p.waitForSelector('.turno[aria-pressed="true"]');
+      await p.click('#btnSeguir');
+      await p.fill('[name=nombre]', `Celular Ficticia ${nombre}`);
+      await p.fill('[name=celular]', disp === 'Galaxy S8' ? '300 555 0901' : '300 555 0902');
+      await p.check('[name=politica]');
+      const boton = await p.$eval('#btnReservar', (e) => { const r = e.getBoundingClientRect(); return { alto: r.height, abajo: window.innerHeight - r.bottom }; });
+      assert.ok(boton.alto >= 52, 'botón de confirmar grande');
+      await p.screenshot({ path: CAPTURAS + `movil-reservar-5-datos${suf}.png` });
+      await p.click('#btnReservar');
+      await p.waitForSelector('.listo .codigo');
+      await p.waitForTimeout(500);
+      await p.screenshot({ path: CAPTURAS + `movil-reservar-6-listo${suf}.png` });
+      const wa = await p.getAttribute('.btn.wa', 'href');
+      assert.ok(wa.startsWith('https://wa.me/573107027012'));
+      assert.deepEqual(errores, []);
+    } finally { await b.close(); }
+  });
+
+  test(`celular (${nombre}): panel tipo app — tarjetas, llegó, cobrar, agendar con +`, { skip: !chromium && 'Playwright no disponible' }, async () => {
+    const b = await chromium.launch();
+    try {
+      const ctx = await b.newContext({ ...devices[disp] });
+      const p = await ctx.newPage();
+      const errores = [];
+      p.on('pageerror', (e) => errores.push(e.message));
+      const suf = disp === 'Galaxy S8' ? '-android' : '';
+      await p.goto(`${base}/panel/`, { waitUntil: 'networkidle' });
+      await p.click('.persona >> text=Erika');
+      for (const d of '2468') await p.click(`.tecla[data-n="${d}"]`);
+      await p.click('#entrar');
+      // Tour de bienvenida (primera vez): se puede saltar
+      await p.waitForSelector('.tour-tarjeta');
+      await p.waitForTimeout(400);
+      await p.screenshot({ path: CAPTURAS + `movil-panel-0-tour${suf}.png` });
+      await p.click('#tourSaltar');
+      await p.waitForSelector('.stats .stat:not(.esqueleto)');
+      await p.screenshot({ path: CAPTURAS + `movil-panel-1-inicio${suf}.png` });
+      await p.goto(`${base}/panel/#/agenda/${DIA}/lista/`);
+      await p.waitForSelector('.tarjeta-cita');
+      await p.waitForTimeout(300);
+      await p.screenshot({ path: CAPTURAS + `movil-panel-2-tarjetas${suf}.png` });
+      const accion = await p.$eval('.tc-acciones > *', (e) => e.getBoundingClientRect().height);
+      assert.ok(accion >= 48, 'acciones de un toque grandes');
+      // Llegó (un toque)
+      const primera = await p.$('.tarjeta-cita:has([data-accion="asistio"]:not([aria-pressed="true"]))');
+      const idCita = await primera.getAttribute('data-cita');
+      await p.click(`.tarjeta-cita[data-cita="${idCita}"] [data-accion="asistio"]`);
+      await p.waitForSelector(`.tarjeta-cita[data-cita="${idCita}"] [data-accion="asistio"][aria-pressed="true"]`);
+      // Cobrar
+      await p.click(`.tarjeta-cita[data-cita="${idCita}"] [data-accion="cobrar"]`);
+      await p.waitForSelector('#formCobro');
+      await p.fill('#formCobro [name=monto]', '50000');
+      await p.click('[data-metodo="nequi"]');
+      await p.screenshot({ path: CAPTURAS + `movil-panel-3-cobrar${suf}.png` });
+      await p.click('#guardarCobro');
+      await p.waitForSelector('#formCobro', { state: 'detached' });
+      // Agendar con el botón + : servicio → hora → clienta reciente → guardar
+      await p.click('#fab');
+      await p.waitForSelector('#formCita');
+      await p.click('[data-serv] >> nth=0');
+      const otroDia = new Date(Date.parse(DIA + 'T12:00:00Z') + (disp === 'Galaxy S8' ? 2 : 1) * 86400000).toISOString().slice(0, 10);
+      await p.fill('#formCita [name=fecha]', otroDia);
+      await p.dispatchEvent('#formCita [name=fecha]', 'change');
+      await p.waitForSelector('#turnosNueva .turno');
+      await p.click('#turnosNueva .turno >> nth=-1');
+      await p.waitForSelector('#chipsRecientes .chip');
+      await p.click('#chipsRecientes .chip >> nth=0');
+      await p.screenshot({ path: CAPTURAS + `movil-panel-4-nueva-cita${suf}.png` });
+      await p.click('#guardarCita');
+      await p.waitForSelector('#formCita', { state: 'detached' });
+      // Bloqueo rápido
+      await p.goto(`${base}/panel/#/agenda/${DIA}/lista/`);
+      await p.waitForSelector('.tira-dias');
+      await p.goto(`${base}/panel/#/cuenta`);
+      await p.waitForSelector('#misColores');
+      await p.screenshot({ path: CAPTURAS + `movil-panel-5-mi-cuenta${suf}.png` });
+      await p.goto(`${base}/panel/#/ajustes`);
+      await p.waitForSelector('#previaHero');
+      await p.screenshot({ path: CAPTURAS + `movil-panel-6-apariencia${suf}.png` });
+      await p.goto(`${base}/panel/#/servicios`);
+      await p.click('.fila-servicio >> text=Press On');
+      await p.click('[data-tab="galeria"]');
+      await p.waitForSelector('.galeria-editor .ge-item');
+      await p.screenshot({ path: CAPTURAS + `movil-panel-7-galeria${suf}.png` });
+      assert.ok(await p.evaluate((w) => document.documentElement.scrollWidth <= w, devices[disp].viewport.width), 'sin desplazamiento horizontal');
+      assert.deepEqual(errores, []);
+    } finally { await b.close(); }
+  });
+}
+

@@ -207,3 +207,24 @@ Qué se envía:
 
 Cada recordatorio sale una sola vez (tabla `push_enviados`). Las suscripciones vencidas se borran solas.
 En iPhone las notificaciones web solo funcionan con la app instalada en la pantalla de inicio (iOS 16.4+).
+
+## 14. Subir fotos y videos desde el celular (opcional, R2)
+
+Hoy Erika arma las galerías eligiendo entre las fotos publicadas del spa o pegando un enlace (por
+ejemplo de Cloudinary). Para que pueda **subir desde el celular**, hay que conectar un bucket R2:
+
+1. Cloudflare → **R2** → activar R2 en la cuenta (el plan gratuito incluye 10 GB) → **Create bucket**
+   con el nombre `amelia-medios`.
+2. Agregar el binding a `wrangler.toml` y desplegar:
+
+   ```toml
+   [[r2_buckets]]
+   binding = "MEDIOS"
+   bucket_name = "amelia-medios"
+   ```
+
+3. Listo: en Panel → Servicios → Galería → Agregar → **Subir del celular** aparece la cámara/galería.
+   Los archivos se sirven desde `/api/medios/…` (JPG, PNG, WebP hasta 6 MB; MP4 hasta 30 MB).
+
+Cuando se agreguen fotos nuevas a `public/img/`, correr `node dev/listar-fotos.mjs` para que aparezcan
+en "Fotos del spa".

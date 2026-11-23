@@ -135,7 +135,7 @@ function pintarTarjetas({ citas, bloqueos }) {
         ${c.propia && c.estado !== 'cancelada' ? html`<div class="tc-acciones">
           <button data-accion="wa" aria-label="WhatsApp a ${c.clienta_nombre}">${crudo(ICONOS.whatsapp)}<span>WhatsApp</span></button>
           <a href="tel:+${c.clienta_celular}" aria-label="Llamar a ${c.clienta_nombre}">${crudo(TEL)}<span>Llamar</span></a>
-          <button data-accion="asistio" aria-pressed="${c.estado === 'asistio'}">${crudo(ICONOS.check)}<span>${c.estado === 'asistio' ? 'Asistió' : 'Llegó'}</span></button>
+          <button data-accion="asistio" aria-pressed="${String(c.estado === 'asistio')}">${crudo(ICONOS.check)}<span>${c.estado === 'asistio' ? 'Asistió' : 'Llegó'}</span></button>
           <button data-accion="cobrar">${crudo(PESOS)}<span>Cobrar</span></button>
           <button data-accion="mas">${crudo(MAS3)}<span>Más</span></button>
         </div>` : ''}
