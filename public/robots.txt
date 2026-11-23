@@ -3,5 +3,6 @@ Allow: /
 Disallow: /panel/
 Disallow: /api/
 Disallow: /reservar/cita/
+Disallow: /capacitacion/
 
 Sitemap: https://amelianailspa.com/sitemap.xml
