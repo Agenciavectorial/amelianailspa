@@ -433,6 +433,10 @@ test('navegador: reserva en celular desde un botón "Agendar" de la página', { 
     await p.goto(`${base}/reservar?servicio=lifting-pestanas&con=julieth`, { waitUntil: 'networkidle' });
     await p.waitForSelector('.turno');
     assert.match(await p.textContent('.con-quien'), /Julieth/);
+    // Un día futuro: si fuera hoy, la cita podría quedar a menos de 4 h y ya no se podría reprogramar en línea.
+    await p.click(`.dia[data-fecha="${DIA}"]`);
+    await p.waitForSelector(`.dia[data-fecha="${DIA}"][aria-selected="true"]`);
+    await p.waitForSelector('.turno');
     await p.click('.turno >> nth=1');
     await p.screenshot({ path: CAPTURAS + 'reservar-2-horario.png' });
     await p.click('#btnSeguir');

@@ -19,10 +19,10 @@ body.con-bandeja .marco { padding-bottom: calc(120px + var(--seguro-abajo)); }
 }
 
 /* barra superior */
+.cabecera-fija { position: sticky; top: 0; z-index: 20; background: var(--crema); box-shadow: 0 1px 0 rgba(122, 100, 148, .08); }
 .barra {
-  position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 10px;
-  padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 10px; background: rgba(247, 244, 250, .86);
-  backdrop-filter: saturate(1.4) blur(14px); -webkit-backdrop-filter: saturate(1.4) blur(14px);
+  display: flex; align-items: center; gap: 10px;
+  padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 10px;
 }
 .marca { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--negro); }
 .marca img { width: 40px; height: 40px; border-radius: 50%; box-shadow: var(--sombra-s); }
@@ -31,7 +31,7 @@ body.con-bandeja .marco { padding-bottom: calc(120px + var(--seguro-abajo)); }
 .barra-espacio { flex: 1; }
 #btnAtras + .marca { margin-left: 2px; }
 
-.progreso { padding: 2px 20px 8px; position: sticky; top: calc(62px + env(safe-area-inset-top, 0px)); z-index: 19; background: rgba(247, 244, 250, .86); backdrop-filter: blur(14px); }
+.progreso { padding: 2px 20px 8px; }
 .progreso-barra { height: 4px; background: var(--rosa-soft); border-radius: 9px; overflow: hidden; }
 .progreso-barra span { display: block; height: 100%; width: 25%; background: var(--grad); border-radius: 9px; transition: width .35s cubic-bezier(.2, .8, .2, 1); }
 .progreso p { font-size: .78rem; color: var(--gris); margin-top: 7px; font-weight: 500; letter-spacing: .02em; }
@@ -65,7 +65,7 @@ body.con-bandeja .marco { padding-bottom: calc(120px + var(--seguro-abajo)); }
 /* categorías */
 .categorias {
   display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px 14px; padding: 4px 16px 6px;
-  position: sticky; top: calc(96px + env(safe-area-inset-top, 0px)); z-index: 10; background: linear-gradient(var(--crema) 75%, transparent);
+  position: sticky; top: var(--alto-cabecera, 100px); z-index: 10; background: var(--crema);
 }
 .categorias::-webkit-scrollbar { display: none; }
 

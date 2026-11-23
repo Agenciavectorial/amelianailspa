@@ -16,6 +16,11 @@ const TITULOS = {
 };
 
 const app = $('#app');
+// Altura real del encabezado fijo (las categorías se pegan justo debajo, sin superponerse)
+const cabecera = $('#cabeceraFija');
+if (cabecera && 'ResizeObserver' in window) {
+  new ResizeObserver(() => document.documentElement.style.setProperty('--alto-cabecera', cabecera.offsetHeight + 'px')).observe(cabecera);
+}
 const bandeja = $('#bandeja');
 const E = { cat: null, sel: [], con: null, fecha: null, turno: null, paso: 'servicios', reserva: null };
 let C; // catálogo
