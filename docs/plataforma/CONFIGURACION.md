@@ -152,6 +152,7 @@ npm run test:e2e     # pruebas de punta a punta (levanta su propio servidor y us
 ```
 
 La base local vive en `dev/.estado/` (ignorada por git). Las capturas de las pruebas quedan en
+`dev/test-results/capturas/`; `CAPTURAS_DOCS=1 npm run test:e2e` actualiza las de referencia en
 `docs/plataforma/capturas/`.
 
 ## 12. Límites del plan gratuito de Cloudflare

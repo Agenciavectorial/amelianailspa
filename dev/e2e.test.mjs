@@ -1,6 +1,7 @@
 // Pruebas de punta a punta: API real (wrangler pages dev + D1 local) y navegador (Playwright/Chromium).
 //   npm run test:e2e
-// Usa solo datos ficticios. Las capturas quedan en docs/plataforma/capturas/.
+// Usa solo datos ficticios. Las capturas quedan en dev/test-results/capturas/
+// (con CAPTURAS_DOCS=1 actualiza las de referencia en docs/plataforma/capturas/).
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync } from 'node:fs';
@@ -11,7 +12,7 @@ const require = createRequire(import.meta.url);
 let chromium, devices;
 try { ({ chromium, devices } = require('playwright')); } catch { /* sin Playwright: se omiten pruebas de navegador */ }
 
-const CAPTURAS = new URL('../docs/plataforma/capturas/', import.meta.url).pathname;
+const CAPTURAS = new URL(process.env.CAPTURAS_DOCS ? '../docs/plataforma/capturas/' : './test-results/capturas/', import.meta.url).pathname;
 mkdirSync(CAPTURAS, { recursive: true });
 
 let srv, base, erika, ids = {};
