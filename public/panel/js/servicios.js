@@ -1,7 +1,7 @@
 // Servicios (solo Erika): catálogo con foto, precio, duración, quién lo hace y visibilidad.
-import { api, html, crudo, pintar, $, $$, toast, ocupado, confirmar, abrirHoja, cerrarHoja, duracion, dinero, ICONOS, foto } from '/app-citas/js/util.js';
-import { S, recargar, categorias, conAgenda } from './estado.js';
-import { editorGaleria, elegirMedio, agregarAGaleria } from './galeria.js';
+import { api, html, crudo, pintar, $, $$, toast, ocupado, confirmar, abrirHoja, cerrarHoja, duracion, dinero, ICONOS, foto } from '/app-citas/js/util.js?v=14671ef4de';
+import { S, recargar, categorias, conAgenda } from './estado.js?v=14671ef4de';
+import { editorGaleria, elegirMedio, agregarAGaleria } from './galeria.js?v=14671ef4de';
 
 export async function vista(v) {
   await recargar();

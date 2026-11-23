@@ -215,3 +215,7 @@ toques y no hay datos que robar con un número de teléfono.
   van con un año (`immutable`) y las fotos de `/img/` ya traen un año desde `public/_headers`.
 - **Service workers:** red primero (`cache: 'no-cache'`) y caché solo sin conexión; al instalar descargan la
   cáscara saltándose la caché HTTP. Subir `VERSION` cuando cambie la lista de la cáscara.
+- **Versiones:** todos los JS y CSS se cargan con `?v=<huella>` (`node dev/versionar.mjs`, una huella común
+  para todos). Lo versionado se guarda un año; las páginas HTML siempre se revalidan. **Antes de cada commit
+  que toque `/reservar`, `/panel` o `/app-citas`, correr `node dev/versionar.mjs`** (las pruebas unitarias
+  fallan si se olvida).
