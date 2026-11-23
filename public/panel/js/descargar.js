@@ -65,3 +65,28 @@ export function activarDescarga(raiz = document) {
     $('#tarjetaDescarga')?.remove();
   };
 }
+
+// ---------- avisos en el celular ----------
+// En Inicio, si la app puede recibir notificaciones y aún no están activas, invita a activarlas:
+// así cada chica se entera al instante cuando le agendan, mueven o cancelan, y 1 hora antes de cada cita.
+const PUSH = { sw: '/panel/sw.js', scope: '/panel/' };
+
+export async function tarjetaAvisos(caja) {
+  if (!caja) return;
+  const { estadoPush, activarPush } = await import('/app-citas/js/push.js');
+  const estado = await estadoPush(PUSH).catch(() => 'no-soportado');
+  if (estado !== 'inactivo') return;
+  caja.innerHTML = String(html`<section class="tarjeta tarjeta-descarga">
+    <span class="td-icono" aria-hidden="true">🔔</span>
+    <div><strong>Activa tus avisos</strong><p class="muted small">Te llega una notificación cuando te agendan, mueven o cancelan una cita, y 1 hora antes de cada una.</p></div>
+    <div class="td-botones"><button type="button" class="btn" id="activarAvisosEquipo">Activar avisos</button></div>
+  </section>`);
+  $('#activarAvisosEquipo', caja).onclick = async (e) => {
+    e.currentTarget.disabled = true;
+    try {
+      await activarPush({ ...PUSH, ruta: '/api/panel/push/suscribir' });
+      toast('¡Listo! Te avisaremos de tus citas.', 'ok');
+      caja.innerHTML = '';
+    } catch (x) { toast(x.message, 'error'); e.currentTarget.disabled = false; }
+  };
+}

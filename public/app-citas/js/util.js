@@ -244,12 +244,12 @@ export function fotoAncho(url, ancho) {
 }
 
 /** <img> responsivo. `ancho`/`alto` reservan el espacio (sin saltos); `prioridad` para la primera pantalla. */
-export function foto(url, { sizes = '100vw', ancho, alto, alt = '', clase = '', prioridad = false, id = '' } = {}) {
+export function foto(url, { sizes = '100vw', ancho, alto, alt = '', clase = '', prioridad = false, lazy = true, id = '' } = {}) {
   if (!url) return '';
   const v = variantes(url);
   const src = v ? (v.find(([, a]) => a >= 480) || v[v.length - 1])[0] : url;
   const srcset = v && v.length > 1 ? v.map(([u, a]) => `${u} ${a}w`).join(', ') : '';
-  return html`<img src="${src}"${srcset ? html` srcset="${srcset}" sizes="${sizes}"` : ''}${ancho ? html` width="${ancho}" height="${alto || ancho}"` : ''} alt="${alt}"${clase ? html` class="${clase}"` : ''}${id ? html` id="${id}"` : ''} ${crudo(prioridad ? 'fetchpriority="high"' : 'loading="lazy"')} decoding="async" referrerpolicy="no-referrer">`;
+  return html`<img src="${src}"${srcset ? html` srcset="${srcset}" sizes="${sizes}"` : ''}${ancho ? html` width="${ancho}" height="${alto || ancho}"` : ''} alt="${alt}"${clase ? html` class="${clase}"` : ''}${id ? html` id="${id}"` : ''} ${crudo(prioridad ? 'fetchpriority="high"' : lazy ? 'loading="lazy"' : '')} decoding="async" referrerpolicy="no-referrer">`;
 }
 
 /** Videos de Cloudinary con ancho limitado (no bajar el original en el celular). */
@@ -260,4 +260,54 @@ export function videoLiviano(url) {
   const esTrans = resto.length && /^[a-z]{1,3}_/.test(primero);
   if (esTrans && /(^|,)w_\d/.test(primero)) return url;
   return esTrans ? `${m[1]}${primero},w_720,c_limit/${resto.join('/')}` : `${m[1]}q_auto,f_auto,w_720,c_limit/${m[2]}`;
+}
+
+// ---------- ver fotos en grande ----------
+/**
+ * Visor a pantalla completa: desliza entre fotos, se cierra con la X, tocando fuera, con Esc o con "atrás".
+ * @param {{url: string, titulo?: string, texto?: string}[]} lista
+ */
+export function verFotos(lista, inicio = 0) {
+  const fotos = (lista || []).filter((f) => f && f.url);
+  if (!fotos.length) return;
+  const capa = document.createElement('div');
+  capa.className = 'visor';
+  capa.setAttribute('role', 'dialog');
+  capa.setAttribute('aria-modal', 'true');
+  capa.setAttribute('aria-label', fotos[inicio]?.titulo || 'Foto');
+  capa.innerHTML = String(html`
+    <button type="button" class="visor-cerrar" aria-label="Cerrar">${crudo(ICONOS.cerrar)}</button>
+    <div class="visor-pista">${fotos.map((f, i) => html`<figure class="visor-foto">
+      <img src="${fotoAncho(f.url, Math.min(1440, Math.round(innerWidth * (devicePixelRatio || 1))))}" alt="${f.titulo || ''}" ${crudo(Math.abs(i - inicio) > 1 ? 'loading="lazy"' : '')} decoding="async" referrerpolicy="no-referrer">
+      ${f.titulo || f.texto ? html`<figcaption>${f.titulo ? html`<strong>${f.titulo}</strong>` : ''}${f.texto ? html`<span>${f.texto}</span>` : ''}</figcaption>` : ''}
+    </figure>`)}</div>
+    ${fotos.length > 1 ? html`<p class="visor-cuenta" aria-live="polite"><span>${inicio + 1}</span> / ${fotos.length}</p>` : ''}`);
+  document.body.append(capa);
+  document.body.classList.add('con-visor');
+  const pista = capa.querySelector('.visor-pista');
+  pista.scrollLeft = pista.clientWidth * inicio;
+  const cuenta = capa.querySelector('.visor-cuenta span');
+  pista.addEventListener('scroll', () => { if (cuenta) cuenta.textContent = String(Math.round(pista.scrollLeft / pista.clientWidth) + 1); }, { passive: true });
+  let cerrado = false;
+  const cerrar = (desdeAtras = false) => {
+    if (cerrado) return;
+    cerrado = true;
+    removeEventListener('keydown', tecla);
+    removeEventListener('popstate', atras);
+    document.body.classList.remove('con-visor');
+    capa.remove();
+    if (!desdeAtras && history.state?.visor) history.back();
+  };
+  const tecla = (e) => {
+    if (e.key === 'Escape') cerrar();
+    if (e.key === 'ArrowRight') pista.scrollBy({ left: pista.clientWidth, behavior: 'smooth' });
+    if (e.key === 'ArrowLeft') pista.scrollBy({ left: -pista.clientWidth, behavior: 'smooth' });
+  };
+  const atras = () => cerrar(true);
+  history.pushState({ ...(history.state || {}), visor: true }, '');
+  addEventListener('keydown', tecla);
+  addEventListener('popstate', atras);
+  capa.querySelector('.visor-cerrar').onclick = () => cerrar();
+  capa.addEventListener('click', (e) => { if (e.target === capa || e.target.classList.contains('visor-foto')) cerrar(); });
+  capa.querySelector('.visor-cerrar').focus();
 }

@@ -418,14 +418,23 @@ test('notificaciones push: equipo avisado de citas nuevas, recordatorios 24 h / 
   });
   assert.equal((await disparar(Date.now(), 'clave-equivocada-1234567')).status, 404, 'sin la clave no se puede disparar');
   const inicioMs = Date.parse(DIA + 'T00:00:00Z') + (600 + 300) * 60000; // 10:00 Bogotá en UTC
-  const r24 = await (await disparar(inicioMs - 23 * 3600000)).json();
-  assert.equal(r24.r24, 1, JSON.stringify(r24));
-  assert.equal((await (await disparar(inicioMs - 22 * 3600000)).json()).r24, 0, 'no se repite');
-  const r2 = await (await disparar(inicioMs - 60 * 60000)).json();
-  assert.equal(r2.r2, 1, JSON.stringify(r2));
-  assert.ok(await esperar(() => navC.recibidos().length >= 2));
+  // Confirmación al activar los avisos (una sola vez por cita)
+  assert.ok(await esperar(() => navC.recibidos().length >= 1), 'llega la confirmación al agendar');
+  assert.match((await navC.ultimo()).titulo, /Tu cita quedó agendada/);
+  // Víspera: el día anterior entre 6 y 9 p. m. (aquí 7:00 p. m.)
+  const vis = await (await disparar(inicioMs - 15 * 3600000)).json();
+  assert.equal(vis.vispera, 1, JSON.stringify(vis));
+  assert.equal((await (await disparar(inicioMs - 14.5 * 3600000)).json()).vispera, 0, 'no se repite');
+  // Mañana del mismo día: no repite si ya recibió la de la víspera; Erika recibe el resumen del día
+  const man = await (await disparar(inicioMs - 135 * 60000)).json();
+  assert.equal(man.dia, 0, JSON.stringify(man));
+  assert.ok(man.eq_dia >= 1, 'resumen de la mañana al equipo');
+  // 1 hora antes
+  const r1 = await (await disparar(inicioMs - 60 * 60000)).json();
+  assert.equal(r1.r1, 1, JSON.stringify(r1));
+  assert.ok(await esperar(() => navC.recibidos().length >= 3));
   const msgC = await navC.ultimo();
-  assert.match(msgC.titulo, /Recuerda/);
+  assert.match(msgC.titulo, /Recuerda, tu cita es en 1 hora/);
   assert.match(msgC.cuerpo, /Forrado a las 10:00 a\. m\. con Daily/);
   assert.equal(msgC.url, `/reservar/cita/#${cita.cuerpo.token}`);
 });
@@ -678,10 +687,27 @@ for (const [nombre, disp] of [['iPhone 13', 'iPhone 13'], ['Android 360 px', 'Ga
       assert.ok((await p.$$('.ficha-carrusel .ficha-medio')).length >= 5);
       assert.ok(await p.$('.ficha-carrusel video[preload="none"][muted]'), 'video discreto: sin sonido y sin precarga');
       await p.screenshot({ path: CAPTURAS + `movil-reservar-2-ficha${suf}.png` });
+      // Tocar una foto de las uñas la abre en grande
+      await p.click('.ficha-medio[data-ver] >> nth=0');
+      await p.waitForSelector('.visor .visor-foto img');
+      await p.waitForTimeout(300);
+      await p.screenshot({ path: CAPTURAS + `movil-reservar-2b-foto-grande${suf}.png` });
+      await p.click('.visor-cerrar');
+      await p.waitForSelector('.visor', { state: 'detached' });
+      assert.ok(await p.isVisible('#fichaAgendar'), 'al cerrar la foto sigue en la ficha');
       // Toque 2: agendar este servicio → profesional
       await p.click('#fichaAgendar');
       await p.waitForSelector('.pro');
+      await p.waitForLoadState('networkidle');
       await p.screenshot({ path: CAPTURAS + `movil-reservar-3-profesional${suf}.png` });
+      // Tocar la foto de una profesional la muestra en grande, sin elegirla
+      await p.click('.pro-foto >> nth=0');
+      await p.waitForSelector('.visor figcaption strong');
+      await p.waitForTimeout(400);
+      await p.screenshot({ path: CAPTURAS + `movil-reservar-3b-profesional-grande${suf}.png` });
+      await p.click('.visor-cerrar');
+      await p.waitForSelector('.visor', { state: 'detached' });
+      assert.ok(await p.isVisible('.pro.cualquiera'), 'sigue en la lista de profesionales');
       // Toque 3: cualquiera disponible → horario en día futuro
       await p.click('.pro.cualquiera');
       await p.waitForSelector('.turno');

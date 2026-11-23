@@ -1,7 +1,7 @@
 // Reserva de citas para clientas (sin cuenta). Pasos: servicios → profesional → horario → datos → listo.
 import {
   api, html, crudo, pintar, $, $$, toast, ocupado, hora, duracion, dinero, fechaLarga, ICONOS, inicial, celularBonito, abrirHoja, cerrarHoja,
-  SITIO, aplicarAcento, foto, fotoAncho, videoLiviano,
+  SITIO, aplicarAcento, foto, fotoAncho, videoLiviano, verFotos,
 } from '/app-citas/js/util.js';
 import { crearSelector } from './selector.js';
 import { estadoPush, activarPush } from '/app-citas/js/push.js';
@@ -259,7 +259,7 @@ function abrirFicha(id) {
     ${medios.length ? html`<div class="ficha-carrusel" id="fichaCarrusel">
       ${medios.map((m, i) => m.tipo === 'video'
         ? html`<div class="ficha-medio"><video muted loop playsinline preload="none" ${crudo(reducido ? 'controls' : '')} poster="${fotoAncho(m.portada || '', 720)}" aria-label="Video de ${s.nombre}"><source src="${videoLiviano(m.url)}" type="video/mp4"></video></div>`
-        : html`<div class="ficha-medio">${foto(m.url, { sizes: '(min-width: 760px) 600px, 100vw', ancho: 720, alto: 900, alt: `${s.nombre} ${i + 1}`, prioridad: !i })}</div>`)}
+        : html`<div class="ficha-medio" data-ver="${m.url}" title="Toca para ver en grande">${foto(m.url, { sizes: '(min-width: 760px) 600px, 100vw', ancho: 720, alto: 900, alt: `${s.nombre} ${i + 1}`, prioridad: !i })}</div>`)}
     </div>
     ${medios.length > 1 ? html`<div class="ficha-puntos" aria-hidden="true">${medios.map((_, i) => html`<span class="${i ? '' : 'activo'}"></span>`)}</div>` : ''}` : ''}
     <div class="ficha-cuerpo">
@@ -288,6 +288,14 @@ function abrirFicha(id) {
       }
     }, { root: car, threshold: [0, 0.6, 1] });
     items.forEach((it) => obs.observe(it));
+    // Tocar una foto la abre en grande (se desliza entre todas las fotos del servicio)
+    car.addEventListener('click', (e) => {
+      const m = e.target.closest('[data-ver]');
+      if (!m) return;
+      const fotos = medios.filter((x) => x.tipo !== 'video');
+      verFotos(fotos.map((x, k) => ({ url: x.url, titulo: s.nombre, texto: fotos.length > 1 ? `Foto ${k + 1} de ${fotos.length}` : '' })),
+        Math.max(0, fotos.findIndex((x) => x.url === m.dataset.ver)));
+    });
   }
   $('#fichaAgendar', h).onclick = () => {
     if (!E.sel.includes(s.id)) {
@@ -316,14 +324,21 @@ function pasoProfesional() {
           <span class="flecha-pro">${crudo(ICONOS.atras)}</span>
         </button>
         ${aptas.map((c) => html`
-        <button class="pro" data-slug="${c.slug}">
-          ${c.foto ? foto(c.foto, { sizes: '56px', ancho: 56, clase: 'avatar' }) : html`<span class="avatar inicial">${inicial(c.nombre)}</span>`}
-          <span class="pro-texto"><strong>${c.nombre}</strong><span>${c.cargo || 'Manicurista'}</span></span>
-          <span class="flecha-pro">${crudo(ICONOS.atras)}</span>
-        </button>`)}
+        <div class="pro-caja">
+          <button class="pro" data-slug="${c.slug}">
+            ${c.foto ? foto(c.foto, { sizes: '66px', ancho: 66, clase: 'avatar', lazy: false }) : html`<span class="avatar inicial">${inicial(c.nombre)}</span>`}
+            <span class="pro-texto"><strong>${c.nombre}</strong><span>${c.cargo || 'Manicurista'}</span>${c.foto ? html`<small class="pro-ver">Toca su foto para verla en grande</small>` : ''}</span>
+            <span class="flecha-pro">${crudo(ICONOS.atras)}</span>
+          </button>
+          ${c.foto ? html`<button type="button" class="pro-foto" data-foto-de="${c.slug}" aria-label="Ver la foto de ${c.nombre} en grande"></button>` : ''}
+        </div>`)}
       </div>` : html`<p class="aviso">Ninguna de nuestras chicas hace todos esos servicios en una misma cita. Quita alguno o escríbenos por WhatsApp.</p>`}
     </section>`);
   for (const b of $$('.pro', app)) b.onclick = () => { E.con = b.dataset.slug; E.turno = null; irA('horario'); };
+  for (const b of $$('.pro-foto', app)) b.onclick = () => {
+    const c = aptas.find((x) => x.slug === b.dataset.fotoDe);
+    if (c) verFotos([{ url: c.foto, titulo: c.nombre, texto: c.cargo || 'Manicurista' }]);
+  };
 }
 
 function resumenServicios() {
@@ -489,7 +504,7 @@ export async function ofrecerAvisos(caja) {
     return;
   }
   if (estado !== 'inactivo') return;
-  pintar(caja, html`<button class="tarjeta avisos" id="activarAvisos"><strong>🔔 Avísame antes de mi cita</strong><span>Un recordatorio un día antes y 2 horas antes. Sin mensajes de más.</span></button>`);
+  pintar(caja, html`<button class="tarjeta avisos" id="activarAvisos"><strong>🔔 Avísame antes de mi cita</strong><span>Te confirmamos al instante y te recordamos la víspera y 1 hora antes. Sin mensajes de más.</span></button>`);
   $('#activarAvisos').onclick = async () => {
     let tokens = [];
     try { tokens = JSON.parse(localStorage.getItem('amelia_citas') || '[]').map((x) => x.token); } catch { /* sin almacenamiento */ }

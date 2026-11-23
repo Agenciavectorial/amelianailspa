@@ -2,7 +2,7 @@
 // La API (/api/*) siempre va a la red: los datos viven en D1 y nunca se sirven viejos.
 // Subir VERSION cuando cambie la lista de la cáscara. La red va primero, así que un cambio de CSS/JS
 // llega sin subirla; la versión solo limpia copias viejas de los celulares.
-const VERSION = 'amelia-panel-v6';
+const VERSION = 'amelia-panel-v7';
 const CASCARA = [
   '/panel/', '/panel/panel.css', '/panel/instalar.js', '/panel/manifest.webmanifest',
   '/panel/js/main.js', '/panel/js/estado.js', '/panel/js/login.js', '/panel/js/inicio.js', '/panel/js/agenda.js',

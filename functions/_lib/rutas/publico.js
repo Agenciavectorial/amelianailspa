@@ -8,7 +8,7 @@ import {
 } from '../reservas.js';
 import { ahoraBogota, aUTC, fechaTexto, horaTexto, sumarDias } from '../tiempo.js';
 import { generarICS, respuestaICS } from '../ics.js';
-import { avisarEquipo } from '../notificaciones.js';
+import { avisarEquipo, avisarClienta } from '../notificaciones.js';
 
 const AJUSTES_PUBLICOS = ['anticipacion_min', 'ventana_dias', 'cancelacion_horas', 'whatsapp', 'nombre_spa', 'direccion', 'politica_texto', 'intervalo_min',
   'bienvenida_titulo', 'bienvenida_texto', 'color_acento', 'portada_url'];
@@ -145,6 +145,7 @@ export function rutasPublicas(r) {
     }
     if (!creada) throw ultimoError;
     enSegundoPlano(avisarEquipo(env, creada.id, 'nueva'));
+    enSegundoPlano(avisarClienta(env, creada.id, 'nueva'));
     const c = await detalleCita(db, 'id', creada.id);
     return { ...citaPublica(c, d.ajustes), token: creada.token };
   });

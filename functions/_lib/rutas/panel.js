@@ -8,7 +8,7 @@ import {
   cancelarCita, cambiarEstado, detalleCita, ESTADOS_ACTIVOS,
 } from '../reservas.js';
 import { ahoraBogota, difDias, sumarDias, aMinutos } from '../tiempo.js';
-import { avisarEquipo } from '../notificaciones.js';
+import { avisarEquipo, avisarClienta } from '../notificaciones.js';
 
 const PERMISOS = ['gestionar_citas', 'gestionar_bloqueos', 'editar_horario', 'ver_agenda_equipo', 'ver_clientas'];
 const AJUSTES_EDITABLES = {
@@ -176,6 +176,7 @@ export function rutasPanel(r) {
     const clientaId = await clientaPorCelular(db, nombre, celular);
     const c = await insertarCita(db, { clientaId, colaboradoraId, fecha, inicio, servicios, origen: 'panel', notas, quien: quien(sesion), forzar });
     enSegundoPlano(avisarEquipo(env, c.id, 'nueva', { excluirId: sesion.id }));
+    enSegundoPlano(avisarClienta(env, c.id, 'nueva'));
     return { id: c.id, codigo: c.codigo };
   });
 
@@ -188,6 +189,7 @@ export function rutasPanel(r) {
       if (cita.estado === 'cancelada') return { ok: true };
       await cancelarCita(db, cita.id, quien(sesion), v.texto(body.motivo, 'motivo', { max: 200, opcional: true }));
       enSegundoPlano(avisarEquipo(env, cita.id, 'cancelada', { excluirId: sesion.id }));
+      enSegundoPlano(avisarClienta(env, cita.id, 'cancelada'));
     } else if (accion === 'estado') {
       const estado = body.estado;
       if (!['asistio', 'no_asistio', 'confirmada'].includes(estado)) falla(400, 'Estado inválido.');
@@ -216,6 +218,7 @@ export function rutasPanel(r) {
       }
       await moverCita(db, cita, { colaboradoraId, fecha, inicio, quien: quien(sesion), forzar });
       enSegundoPlano(avisarEquipo(env, cita.id, 'movida', { excluirId: sesion.id }));
+      enSegundoPlano(avisarClienta(env, cita.id, 'movida'));
     } else {
       falla(400, 'Acción inválida.');
     }
