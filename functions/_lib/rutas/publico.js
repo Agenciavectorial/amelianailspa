@@ -81,7 +81,7 @@ export function rutasPublicas(r) {
     };
   });
 
-  r.post('/api/public/reservar', 'publico', async ({ db, request, body: datos }) => {
+  r.post('/api/public/reservar', 'publico', async ({ db, env, request, body: datos }) => {
     const ip = ipDe(request);
     await revisarBloqueo(db, 'reserva-ip:' + ip);
     if (datos.sitio_web) falla(400, 'No pudimos procesar la reserva.');
@@ -93,7 +93,9 @@ export function rutasPublicas(r) {
     const notas = v.texto(datos.notas, 'notas', { max: 400, opcional: true });
     const con = typeof datos.con === 'string' && datos.con ? datos.con.slice(0, 60) : 'cualquiera';
 
-    await sumarIntento(db, 'reserva-ip:' + ip, { max: 8, ventanaMs: 3600000, bloqueoMs: 3600000 });
+    // Límite por IP (8 por hora; LIMITE_RESERVAS_HORA lo cambia, p. ej. en pruebas).
+    const max = Number(env.LIMITE_RESERVAS_HORA) || 8;
+    await sumarIntento(db, 'reserva-ip:' + ip, { max, ventanaMs: 3600000, bloqueoMs: 3600000 });
 
     const d = await disponibilidad(db, { servicioIds, con, fechas: [fecha] });
     const turno = d.porFecha[fecha].find((t) => t.inicio === inicio);
