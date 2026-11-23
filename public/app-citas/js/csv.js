@@ -35,21 +35,27 @@ export const normalizar = (s) => String(s || '').normalize('NFD').replace(/[̀-�
 
 /** Sinónimos de encabezados (Kumbio y hojas hechas a mano) → nombre interno. */
 export const ALIAS = {
-  nombre: ['nombre', 'nombre completo', 'cliente', 'clienta', 'nombre cliente', 'nombre clienta', 'servicio nombre', 'name', 'customer', 'nombres'],
-  celular: ['celular', 'telefono', 'tel', 'movil', 'whatsapp', 'phone', 'numero', 'telefono cliente', 'celular cliente', 'mobile'],
+  nombre: ['nombre', 'nombre completo', 'cliente', 'clienta', 'nombre cliente', 'nombre clienta', 'clienta nombre', 'cliente nombre', 'servicio nombre', 'name', 'customer', 'nombres'],
+  celular: ['celular', 'telefono', 'tel', 'movil', 'whatsapp', 'phone', 'numero', 'telefono cliente', 'celular cliente', 'clienta celular', 'cliente celular', 'mobile'],
   email: ['email', 'correo', 'correo electronico', 'e mail', 'mail'],
   notas: ['notas', 'nota', 'observaciones', 'comentarios', 'comentario', 'notes'],
   categoria: ['categoria', 'category', 'tipo', 'grupo'],
   precio: ['precio', 'valor', 'costo', 'price', 'tarifa', 'total'],
   duracion: ['duracion', 'duracion min', 'duracion minutos', 'minutos', 'tiempo', 'duration'],
   descripcion: ['descripcion', 'detalle', 'description'],
-  foto: ['foto', 'imagen', 'image', 'url foto', 'url imagen'],
+  foto: ['foto', 'imagen', 'image', 'url foto', 'url imagen', 'foto url', 'imagen url'],
   visible: ['visible', 'activo', 'publicado', 'activa'],
   fecha: ['fecha', 'dia', 'date', 'fecha cita', 'fecha de la cita'],
   hora: ['hora', 'hora inicio', 'inicio', 'time', 'hora de inicio', 'start'],
-  servicio: ['servicio', 'servicios', 'service', 'tratamiento'],
+  servicio: ['servicio', 'service', 'tratamiento', 'servicios'],
   colaboradora: ['colaboradora', 'colaborador', 'profesional', 'empleado', 'empleada', 'manicurista', 'estilista', 'staff', 'atendido por'],
   estado: ['estado', 'status', 'estado cita'],
+  colaboradoras: ['colaboradoras', 'profesionales', 'quien lo hace', 'empleados'],
+  servicios: ['servicios', 'servicios que hace'],
+  rol: ['rol', 'cargo', 'tipo usuario'],
+  horario: ['horario', 'horarios', 'disponibilidad'],
+  ultima_visita: ['ultima visita', 'ultima cita', 'last visit'],
+  cumpleanos: ['cumpleanos', 'fecha nacimiento', 'nacimiento', 'birthday'],
 };
 
 /** Mapea encabezados a campos internos. Devuelve { indice -> campo }. */

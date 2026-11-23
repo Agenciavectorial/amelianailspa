@@ -23,8 +23,23 @@ Abajo tienes el menú: **Inicio**, **Agenda**, (Clientas) y **Más**. En el comp
 la izquierda.
 
 ### Inicio
-Tus citas de hoy y de mañana, y botones rápidos para **Nueva cita** y **Bloquear horario**.
-Toca una cita para ver los datos de la clienta, escribirle por WhatsApp o marcar si asistió.
+- Arriba, los números del mes: **ingresos**, citas de la semana, **% de asistencia** y clientas
+  nuevas vs recurrentes. Debajo, tu **próxima cita**.
+- **Citas por gestionar:** citas que ya pasaron y nadie marcó. Toca **Sí** (asistió → se abre el
+  cobro) o **No** (no vino).
+- Tus citas de hoy y de mañana, y botones rápidos para **Agendar cita**, **Bloquear horario** y **Notas**.
+
+### Cobrar una cita
+En la cita toca **Cobrar**, escribe el valor (viene sugerido con el precio), elige **Efectivo, Nequi,
+Daviplata, Tarjeta o Transferencia** y, si hubo, la propina. Al cobrar, la cita queda como
+"asistió" y el dinero entra a los ingresos y a la analítica.
+
+### Mensajes por WhatsApp
+En cada cita hay botones **Confirmación, Recordatorio, Cambio de cita, Gracias + reseña**: abren
+WhatsApp con el mensaje ya escrito para esa clienta. Solo tienes que tocar enviar.
+
+### Notas
+Recados del negocio para todo el equipo (insumos por pedir, avisos). Márcalas como hechas o fíjalas arriba.
 
 ### Agenda
 - **Día:** una columna por chica. **Semana:** los 7 días de una persona.
@@ -73,6 +88,27 @@ Nunca puedes ver ni cambiar las citas de otra chica, aunque tengas el enlace.
 
 Tú ves y controlas todo. Además de lo anterior tienes, en **Más**:
 
+### Fidelización (que vuelvan)
+Cada servicio tiene un **ciclo de retorno** (por ejemplo semipermanente cada 21 días). Aquí aparecen:
+- **Les toca volver:** clientas a las que ya les toca y no tienen cita. Botón **Escribir** con el
+  mensaje listo y un enlace para reservar con su servicio y su chica de siempre.
+- **Cumpleaños** de la semana (si guardaste la fecha en su ficha).
+- **Recuperar:** clientas que no vienen hace más de 90 días.
+Cuando le escribes, sale de la lista.
+
+### Analítica
+Ingresos, propinas, ticket promedio, métodos de pago, cuánto hizo cada chica, servicios más
+vendidos, asistencia y días con más citas. Elige "Este mes", "Mes pasado", 30 o 90 días.
+
+### Promociones
+Crea promociones con título, foto, precio especial, servicio y fechas. Las vigentes salen de primeras
+en la página de reservas y en la app de las clientas, con botón para agendar.
+
+### Mensajes
+Aquí cambias el texto de cada mensaje (confirmación, recordatorio, gracias + reseña, te toca volver…).
+Las palabras entre llaves como `{nombre}` o `{fecha}` se reemplazan solas. Mira la vista previa antes
+de guardar.
+
 ### Equipo
 - **+ Persona** para agregar a alguien nuevo. Toca una tarjeta para editarla:
   - **Datos:** nombre, cargo, foto (enlace de Cloudinary), color en la agenda, si **recibe citas**
@@ -85,7 +121,7 @@ Tú ves y controlas todo. Además de lo anterior tienes, en **Más**:
     su **enlace de calendario** (si se comparte por error, toca *Generar otro*).
 
 ### Servicios
-Toca un servicio para cambiar nombre, categoría, **precio** (vacío = "precio en el spa"; puedes
+Toca un servicio para cambiar nombre, categoría, **ciclo de retorno**, **precio** (vacío = "precio en el spa"; puedes
 mostrar "desde"), **duración** (de 5 en 5 minutos: de ella dependen los horarios), foto, descripción,
 quién lo hace y si está **visible** para reservar. **+ Servicio** para crear uno nuevo.
 
@@ -116,8 +152,9 @@ datos, escribir notas internas y crearle una cita.
 5. **Importar.** Si lo importas dos veces no se duplica: los servicios y clientas se actualizan y las
    citas repetidas se omiten.
 
-Orden recomendado: primero **Servicios** (con precios y duraciones), luego **Clientas** y al final
-**Citas**.
+Orden recomendado: **Servicios** (con precios, duraciones y quién lo hace), **Equipo** (horarios),
+**Clientas** y al final **Citas**. Los archivos que entrega el Agente 3 (`servicios.csv`,
+`colaboradoras.csv`, `clientas.csv`, `citas.csv`) se suben tal cual.
 
 ### Si una clienta llama o escribe
 **Nueva cita** → servicios → chica → fecha → toca una hora libre → celular y nombre → Guardar.
@@ -127,6 +164,12 @@ dos citas de la misma persona.
 ---
 
 ## Lo que ve la clienta
+
+**La app de Amelia:** en amelianailspa.com/reservar puede tocar **Instalar app** (en iPhone:
+Compartir → Agregar a inicio). Ahí ve las **promociones**, **lo más pedido**, su **próxima cita**, su
+**historial** y el botón **"Repetir mi último servicio"**, que la lleva directo a elegir la hora con su
+servicio y su chica de siempre. No necesita cuenta: su celular recuerda sus reservas.
+
 
 1. Elige uno o varios servicios (con foto, duración y precio).
 2. Elige con quién, o **Cualquiera disponible** (le muestra más horarios y el sistema asigna a quien

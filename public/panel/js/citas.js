@@ -4,6 +4,9 @@ import {
   fechaLarga, celularBonito, inicial, ICONOS, sumarDias,
 } from '/app-citas/js/util.js';
 import { S, esDuena, puede, colab, conAgenda, categorias, aplicarEstilos } from './estado.js';
+import { botonesCita, datosCita, textoPlantilla, enviar } from './mensajes.js';
+
+export const METODOS = [['efectivo', 'Efectivo'], ['nequi', 'Nequi'], ['daviplata', 'Daviplata'], ['tarjeta', 'Tarjeta'], ['transferencia', 'Transferencia'], ['otro', 'Otro']];
 
 export const ESTADOS = {
   confirmada: ['Confirmada', ''], asistio: ['Asistió', 'ok'], no_asistio: ['No asistió', 'mal'], cancelada: ['Cancelada', 'aviso'],
@@ -17,8 +20,11 @@ export function pastillaEstado(e) {
 
 // ---------- ver una cita ----------
 export async function verCita(id, alCambiar) {
-  let c;
-  try { c = await api(`/api/panel/citas/${id}`); } catch (e) { toast(e.message, 'error'); return; }
+  let c, pagos = [];
+  try {
+    [c, { pagos }] = await Promise.all([api(`/api/panel/citas/${id}`), api(`/api/panel/citas/${id}/pagos`)]);
+  } catch (e) { toast(e.message, 'error'); return; }
+  const pagado = pagos.reduce((a, p) => a + p.monto, 0);
   const co = colab(c.colaboradora_id);
   const editable = puede('gestionar_citas') && (esDuena() || c.colaboradora_id === S.yo.id);
   const wa = `https://wa.me/${c.clienta_celular}?text=${encodeURIComponent(`¡Hola ${c.clienta_nombre.split(' ')[0]}! Te escribimos de Amelia Nail Spa sobre tu cita del ${fechaLarga(c.fecha)} a las ${hora(c.inicio)}.`)}`;
@@ -41,6 +47,9 @@ export async function verCita(id, alCambiar) {
         <div class="dc-fila"><span>Código</span><code>${c.codigo}</code></div>
         <div class="dc-fila"><span>Origen</span><span>${ORIGEN[c.origen] || c.origen}</span></div>
       </div>
+      ${pagos.length ? html`<div class="tarjeta dc-datos pagos-cita">${pagos.map((p) => html`<div class="dc-fila"><span>Cobrado · ${(METODOS.find((m) => m[0] === p.metodo) || [, p.metodo])[1]}</span><strong>${dinero(p.monto)}${p.propina ? html` <small class="muted">+ ${dinero(p.propina)} propina</small>` : ''}</strong></div>`)}</div>` : ''}
+      ${editable && c.estado !== 'cancelada' ? html`<button class="btn ${pagos.length ? 'sec' : ''} bloque" data-accion="cobrar">${pagos.length ? 'Registrar otro pago' : `Cobrar${c.precio_total != null ? ' ' + dinero(Math.max(0, c.precio_total - pagado)) : ''}`}</button>` : ''}
+      ${editable ? botonesCita(c) : ''}
       <label class="campo"><span>Notas</span><textarea id="notasCita" maxlength="400" ${editable ? '' : crudo('readonly')}>${c.notas}</textarea></label>
       ${editable ? html`
         <div class="acciones-cita">
@@ -65,10 +74,13 @@ export async function verCita(id, alCambiar) {
     };
   }
   h.onclick = async (e) => {
+    const pl = e.target.closest('[data-plantilla]');
+    if (pl) return enviar(c.clienta_celular, textoPlantilla(pl.dataset.plantilla, datosCita(c)), { cita_id: c.id, tipo: pl.dataset.plantilla });
     const b = e.target.closest('[data-accion]');
     if (!b) return;
     const a = b.dataset.accion;
     if (a === 'mover') return moverCita(c, alCambiar);
+    if (a === 'cobrar') return cobrar(c, pagado, alCambiar);
     if (a === 'cancelar' && !(await confirmar('¿Cancelar esta cita?', `${c.clienta_nombre} · ${fechaLarga(c.fecha)} ${hora(c.inicio)}. El turno quedará libre.`, { si: 'Cancelar cita', peligro: true }))) return verCita(c.id, alCambiar);
     const datos = a === 'cancelar' ? { accion: 'cancelar' }
       : a === 'reactivar' ? { accion: 'estado', estado: 'confirmada' }
@@ -80,6 +92,45 @@ export async function verCita(id, alCambiar) {
         cerrarHoja();
         alCambiar?.();
       } catch (x) { toast(x.message, 'error'); }
+    });
+  };
+}
+
+// ---------- cobrar ----------
+export function cobrar(c, pagado = 0, alCambiar) {
+  const sugerido = c.precio_total != null ? Math.max(0, c.precio_total - pagado) : '';
+  let metodo = 'efectivo';
+  const h = abrirHoja(html`
+    <div class="cabeza-hoja"><div><p class="muted small">${c.clienta_nombre} · ${fechaLarga(c.fecha)}</p><h2>Cobrar</h2></div><button class="icono-btn" data-cerrar aria-label="Cerrar">${crudo(ICONOS.cerrar)}</button></div>
+    <form id="formCobro">
+      <label class="campo"><span>Valor cobrado (COP)</span><input name="monto" type="number" inputmode="numeric" min="0" step="1000" required value="${sugerido}" autofocus></label>
+      <div class="campo"><span>Método de pago</span><div class="chips-serv metodos">
+        ${METODOS.map(([k, t]) => html`<button type="button" class="chip" data-metodo="${k}" aria-pressed="${k === metodo}">${t}</button>`)}
+      </div></div>
+      <div class="dos-col">
+        <label class="campo"><span>Propina (opcional)</span><input name="propina" type="number" inputmode="numeric" min="0" step="1000" value=""></label>
+        <label class="campo"><span>Nota (opcional)</span><input name="nota" maxlength="200" placeholder="Abono, descuento…"></label>
+      </div>
+      <p class="aviso error" id="errCobro" hidden></p>
+      <button class="btn bloque" id="guardarCobro">Registrar cobro</button>
+      <p class="muted small espacio-arriba">Al cobrar, la cita queda marcada como "asistió".</p>
+    </form>`);
+  h.querySelector('.metodos').onclick = (e) => {
+    const b = e.target.closest('[data-metodo]');
+    if (!b) return;
+    metodo = b.dataset.metodo;
+    for (const x of $$('[data-metodo]', h)) x.setAttribute('aria-pressed', String(x === b));
+  };
+  const f = $('#formCobro', h);
+  f.onsubmit = (e) => {
+    e.preventDefault();
+    ocupado($('#guardarCobro', h), async () => {
+      try {
+        await api(`/api/panel/citas/${c.id}/pagos`, { metodo: 'POST', datos: { monto: Number(f.monto.value), propina: Number(f.propina.value || 0), metodo, nota: f.nota.value } });
+        toast('Cobro registrado', 'ok');
+        cerrarHoja();
+        alCambiar?.();
+      } catch (x) { $('#errCobro', h).textContent = x.message; $('#errCobro', h).hidden = false; }
     });
   };
 }

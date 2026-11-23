@@ -65,7 +65,7 @@ Google Calendar / iPhone ─────────┘    /api/ics/<token>.ics 
 | `registro(id, fecha, quien, accion, cita_id, detalle)` | Historial de cambios de citas (quién movió/canceló qué). |
 
 `migrations/0002_datos_iniciales.sql` carga lo público de la página: horario, 16 servicios con
-foto y duración, y el equipo (Erika propietaria; Leidy, Karla, Julieth y Darly con agenda), **sin
+foto y duración, y el equipo (Erika propietaria; Leidy, Karla, Julieth y Daily con agenda), **sin
 PIN** y **sin clientas**. Los precios quedan en "a consultar" hasta importar los de Kumbio.
 
 ### Reserva atómica (resumen)
@@ -157,3 +157,39 @@ dev/                        e2e.mjs (Playwright), semilla-pruebas.sql (datos fic
 tests/                      pruebas unitarias (node --test)
 docs/plataforma/            esta documentación
 ```
+
+## 8. Fase 2: negocio, mensajes, fidelización y app de la clienta
+
+Requisitos que llegaron del usuario a través del Agente 1 (superar a Kumbio). Migración
+`migrations/0003_negocio.sql` y rutas en `functions/_lib/rutas/negocio.js`.
+
+| Pieza | Cómo funciona |
+|---|---|
+| **Cobros ("Facturar")** | Tabla `pagos` (monto, propina, método: efectivo, Nequi, Daviplata, tarjeta, transferencia, otro). `POST /api/panel/citas/:id/pagos` (Erika o la dueña de la cita con `gestionar_citas`). Cobrar marca la cita como *asistió*. Alimenta ingresos y analítica. |
+| **Citas por gestionar** | `GET /api/panel/por-gestionar`: citas *confirmadas* que ya terminaron (30 días atrás). En Inicio: "¿Asistió? Sí / No"; "Sí" abre el cobro. |
+| **Dashboard** | `GET /api/panel/resumen2`: ingresos del mes, citas de la semana, % de asistencia, clientas nuevas vs recurrentes, mensajes enviados, próxima cita. |
+| **Analítica** (Erika) | `GET /api/panel/analitica?desde&hasta`: ingresos, propinas, ticket promedio, por método, por colaboradora, servicios más vendidos, asistencia, días con más citas, origen (web/panel). |
+| **Notas** | Tabla `notas_negocio`, compartidas por el equipo; cada quien borra las suyas, Erika todas. |
+| **Mensajes con plantillas** | Tabla `plantillas` (confirmación, recordatorio, cambio, cancelación, gracias + reseña, te toca volver) editable por Erika con variables `{nombre} {servicio} {fecha} {hora} {colaboradora} {codigo} {enlace} {resena} {spa} {direccion}`. Hoy se envían como **WhatsApp prellenado con un toque** (sin cupos). Cada envío queda en `mensajes` (para contarlos y no repetir). |
+| **Fidelización** | `servicios.ciclo_dias` (ciclo de retorno, editable). `GET /api/panel/fidelizacion`: clientas cuya última visita + ciclo ya llegó (o llega en 3 días) y no tienen cita futura, cumpleaños de la semana, inactivas (+`dias_inactiva`, 90 por defecto) y recurrentes. El mensaje lleva un enlace `/reservar?servicio=…&con=…` con su servicio y colaboradora de siempre. |
+| **Promociones** | Tabla `promociones` con vigencia; las vigentes salen en `/api/public/catalogo` y arriba en la reserva, con botón que agenda el servicio. |
+| **App de la clienta (PWA)** | `/reservar` es instalable (`manifest.webmanifest`, `sw.js`, `instalar.js` con pasos para iPhone). Muestra promociones, lo más pedido (últimos 90 días), su próxima cita, su historial y **"Repetir mi último servicio"**. |
+
+### Identificación de la clienta (decisión)
+
+**Sin cuenta ni contraseña: el celular de la clienta guarda los enlaces privados de sus reservas**
+(token aleatorio de 24 bytes por cita, en `localStorage`). `GET /api/public/mis-citas?tokens=…` solo
+devuelve las citas cuyos tokens conoce el dispositivo, sin exponer su celular. Así reserva en pocos
+toques y no hay datos que robar con un número de teléfono.
+
+- Por qué no "celular + código": enviar el código exige un proveedor de SMS o WhatsApp Business API
+  (costo por mensaje y verificación del número). Queda preparado como siguiente paso (ver
+  `PENDIENTES.md`). Pedir solo el celular sin código permitiría a cualquiera ver las citas de otra.
+- Si cambia de celular: el enlace de cada cita sigue sirviendo (lo tiene en WhatsApp y en su
+  calendario); al abrirlo se vuelve a guardar en el dispositivo.
+
+### Notificaciones push
+
+Pendiente (ver `PENDIENTES.md`): Web Push con VAPID firmado en el Worker. Mientras tanto: WhatsApp
+prellenado desde el panel, `.ics` con alarma 2 h antes en el calendario de la clienta y feeds `.ics`
+para las chicas (Google Calendar/iPhone avisan de citas nuevas al sincronizar).

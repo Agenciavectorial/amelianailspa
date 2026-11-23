@@ -46,7 +46,7 @@ npx wrangler d1 migrations apply amelia-citas --remote
 ```
 
 Esto crea las tablas y carga lo público de la página: horario, los 16 servicios con foto y duración
-y el equipo (Erika, Leidy, Karla, Julieth y Darly). **No** carga clientas ni PIN.
+y el equipo (Erika, Leidy, Karla, Julieth y Daily). **No** carga clientas ni PIN.
 
 Para revisar que quedó bien:
 

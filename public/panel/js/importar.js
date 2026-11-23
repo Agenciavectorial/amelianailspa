@@ -3,24 +3,31 @@ import { api, html, crudo, pintar, $, $$, toast, ICONOS } from '/app-citas/js/ut
 import { leerCSV, aObjetos, aCSV } from '/app-citas/js/csv.js';
 import { recargar } from './estado.js';
 
+// Formato acordado con el Agente 3 (docs/agentes/FORMATO-IMPORTACION.md). También acepta sinónimos.
 const TIPOS = {
   servicios: {
     titulo: 'Servicios', lote: 100, requeridos: ['nombre', 'duracion'],
-    campos: ['nombre', 'categoria', 'precio', 'duracion', 'descripcion', 'foto', 'visible'],
-    ejemplo: [['nombre', 'categoria', 'precio', 'duracion', 'descripcion', 'visible'], ['Semipermanente', 'Uñas', '45000', '75', 'Color por 3 semanas', 'si'], ['Lifting de Pestañas', 'Pestañas & Cejas', '80000', '1:15', '', 'si']],
-    ayuda: 'Si el servicio ya existe (mismo nombre) se actualiza su precio, duración y categoría.',
+    campos: ['categoria', 'nombre', 'precio', 'duracion', 'descripcion', 'colaboradoras', 'foto', 'visible'],
+    ejemplo: [['categoria', 'nombre', 'precio', 'duracion_min', 'descripcion', 'colaboradoras', 'foto_url'], ['Uñas', 'Semipermanente', '45000', '75', 'Color por 3 semanas', 'Leidy|Karla', ''], ['Pestañas & Cejas', 'Lifting de Pestañas', '80000', '75', '', 'Julieth', '']],
+    ayuda: 'Si el servicio ya existe (mismo nombre) se actualiza. "colaboradoras" va separado por | y reemplaza quién lo hace.',
+  },
+  colaboradoras: {
+    titulo: 'Equipo', lote: 10, requeridos: ['nombre'],
+    campos: ['nombre', 'celular', 'rol', 'servicios', 'horario'],
+    ejemplo: [['nombre', 'celular', 'rol', 'servicios', 'horario'], ['Karla', '3000000000', 'colaboradora', 'Dipping|Semipermanente', 'lun-sab 09:00-19:00; dom cerrado']],
+    ayuda: 'Crea o actualiza a cada persona (sin PIN: se lo pones en Equipo). Horario tipo "lun-sab 09:00-19:00; dom cerrado".',
   },
   clientas: {
     titulo: 'Clientas', lote: 100, requeridos: ['nombre', 'celular'],
-    campos: ['nombre', 'celular', 'email', 'notas'],
-    ejemplo: [['nombre', 'celular', 'email', 'notas'], ['Clienta Ejemplo', '3001234567', 'ejemplo@correo.com', 'Prefiere tonos nude']],
+    campos: ['nombre', 'celular', 'email', 'notas', 'ultima_visita', 'cumpleanos'],
+    ejemplo: [['nombre', 'celular', 'email', 'notas', 'ultima_visita'], ['Clienta Ejemplo', '3001234567', 'ejemplo@correo.com', 'Prefiere tonos nude', '2026-10-23']],
     ayuda: 'El celular identifica a la clienta: si ya existe, se actualiza su nombre y correo.',
   },
   citas: {
     titulo: 'Citas', lote: 10, requeridos: ['fecha', 'hora', 'nombre', 'celular', 'servicio', 'colaboradora'],
-    campos: ['fecha', 'hora', 'nombre', 'celular', 'servicio', 'colaboradora', 'duracion', 'precio', 'estado', 'notas'],
-    ejemplo: [['fecha', 'hora', 'nombre', 'celular', 'servicio', 'colaboradora', 'duracion', 'precio', 'estado'], ['2026-12-05', '10:30', 'Clienta Ejemplo', '3001234567', 'Semipermanente', 'Karla', '75', '45000', 'confirmada'], ['28/10/2026', '3:00 pm', 'Otra Ejemplo', '3109876543', 'Acrílicas + Pedi Spa', 'Leidy', '', '', 'asistio']],
-    ayuda: 'Fechas AAAA-MM-DD o DD/MM/AAAA. Varios servicios se separan con "+". Las citas pasadas quedan como historial; las futuras ocupan el turno (si se cruzan con otra, se reportan).',
+    campos: ['fecha', 'hora', 'duracion', 'colaboradora', 'servicio', 'nombre', 'celular', 'precio', 'estado', 'notas'],
+    ejemplo: [['fecha', 'hora_inicio', 'duracion_min', 'colaboradora', 'servicio', 'clienta_nombre', 'clienta_celular', 'estado', 'notas'], ['2026-12-05', '10:30', '75', 'Karla', 'Semipermanente', 'Clienta Ejemplo', '3001234567', 'confirmada', ''], ['2026-10-23', '16:00', '20', 'Leidy', 'Depilación Cejas/Bozo', 'Otra Ejemplo', '3109876543', 'asistio', '']],
+    ayuda: 'Fechas AAAA-MM-DD (o DD/MM/AAAA). Varios servicios se separan con "+". Las citas pasadas quedan como historial; las futuras ocupan el turno (si se cruzan con otra, se reportan).',
   },
 };
 

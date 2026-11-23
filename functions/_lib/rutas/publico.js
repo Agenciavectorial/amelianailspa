@@ -6,7 +6,7 @@ import {
   leerAjustes, disponibilidad, rangoFechas, clientaPorCelular, insertarCita, detalleCita,
   cancelarCita, moverCita, ESTADOS_ACTIVOS,
 } from '../reservas.js';
-import { ahoraBogota, aUTC, fechaTexto, horaTexto } from '../tiempo.js';
+import { ahoraBogota, aUTC, fechaTexto, horaTexto, sumarDias } from '../tiempo.js';
 import { generarICS, respuestaICS } from '../ics.js';
 
 const AJUSTES_PUBLICOS = ['anticipacion_min', 'ventana_dias', 'cancelacion_horas', 'whatsapp', 'nombre_spa', 'direccion', 'politica_texto', 'intervalo_min'];
@@ -47,18 +47,25 @@ function eventoCita(c, ajustes) {
 export function rutasPublicas(r) {
   r.get('/api/public/catalogo', 'publico', async ({ db }) => {
     const ajustes = await leerAjustes(db);
-    const [serv, colab, cs, spa] = await db.batch([
+    const hoy = ahoraBogota().fecha;
+    const [serv, colab, cs, spa, promo, pop] = await db.batch([
       db.prepare('SELECT id, slug, nombre, categoria, descripcion, foto, precio, precio_desde, duracion FROM servicios WHERE visible = 1 ORDER BY orden, nombre'),
       db.prepare('SELECT id, slug, nombre, cargo, foto FROM colaboradoras WHERE activa = 1 AND agenda = 1 ORDER BY orden, nombre'),
       db.prepare('SELECT cs.colaboradora_id, cs.servicio_id FROM colaboradora_servicios cs JOIN servicios s ON s.id = cs.servicio_id WHERE s.visible = 1'),
       db.prepare('SELECT dia, abierto, abre, cierra FROM horario_spa ORDER BY dia'),
+      db.prepare(`SELECT p.id, p.titulo, p.descripcion, p.foto, p.precio_promo, p.hasta, p.servicio_id, s.slug AS servicio_slug
+                    FROM promociones p LEFT JOIN servicios s ON s.id = p.servicio_id AND s.visible = 1
+                   WHERE p.activa = 1 AND (p.desde = '' OR p.desde <= ?1) AND (p.hasta = '' OR p.hasta >= ?1) ORDER BY p.orden, p.id DESC LIMIT 8`).bind(hoy),
+      db.prepare(`SELECT cs.servicio_id AS id, COUNT(*) AS n FROM cita_servicios cs JOIN citas c ON c.id = cs.cita_id JOIN servicios s ON s.id = cs.servicio_id
+                   WHERE c.fecha >= ? AND c.estado <> 'cancelada' AND s.visible = 1 GROUP BY cs.servicio_id ORDER BY n DESC LIMIT 4`).bind(sumarDias(hoy, -90)),
     ]);
     const colaboradoras = colab.results.map((c) => ({
       ...c, servicios: cs.results.filter((x) => x.colaboradora_id === c.id).map((x) => x.servicio_id),
     }));
     return {
       ajustes: Object.fromEntries(AJUSTES_PUBLICOS.map((k) => [k, ajustes[k]])),
-      servicios: serv.results, colaboradoras, horario: spa.results, hoy: ahoraBogota().fecha,
+      servicios: serv.results, colaboradoras, horario: spa.results, hoy,
+      promociones: promo.results, populares: pop.results.map((x) => x.id),
     };
   });
 
@@ -135,6 +142,20 @@ export function rutasPublicas(r) {
     if (!creada) throw ultimoError;
     const c = await detalleCita(db, 'id', creada.id);
     return { ...citaPublica(c, d.ajustes), token: creada.token };
+  });
+
+  // "Mis citas" en la app de la clienta: el dispositivo guarda los enlaces privados de sus reservas.
+  r.get('/api/public/mis-citas', 'publico', async ({ db, q }) => {
+    const tokens = String(q.get('tokens') || '').split(',').filter((t) => /^[A-Za-z0-9_-]{20,64}$/.test(t)).slice(0, 12);
+    if (!tokens.length) return { citas: [] };
+    const ajustes = await leerAjustes(db);
+    const citas = [];
+    for (const t of tokens) {
+      const c = await detalleCita(db, 'token', t);
+      if (c) citas.push({ ...citaPublica(c, ajustes), token: t });
+    }
+    citas.sort((a, b) => (b.fecha + String(b.inicio).padStart(4, '0')).localeCompare(a.fecha + String(a.inicio).padStart(4, '0')));
+    return { citas };
   });
 
   r.get('/api/public/cita', 'publico', async ({ db, q }) => {

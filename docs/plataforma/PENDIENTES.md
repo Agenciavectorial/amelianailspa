@@ -19,7 +19,7 @@ publicación.
   los extrae de Kumbio y Erika los carga con **Importar CSV → Servicios** (o a mano en Servicios).
 - **Duraciones:** se tomó el valor alto de los rangos de la página (p. ej. Acrílicas "90–120 min" →
   120). → Confirmar o corregir con lo de Kumbio.
-- **Quién hace qué:** por defecto Leidy, Karla, Julieth y Darly hacen **todos** los servicios
+- **Quién hace qué:** por defecto Leidy, Karla, Julieth y Daily hacen **todos** los servicios
   (incluidos pestañas, cejas y faciales). → Erika debe desmarcar en Equipo → Servicios lo que cada
   una no hace; si no, una clienta podría reservar un facial con quien no lo hace.
 - **Erika no recibe citas** (`agenda` apagado), igual que en la página (`data-no-agenda`). → Si ella
@@ -32,7 +32,7 @@ publicación.
   Depilación usan fotos de otros sitios (catalinajaramillo.com, wixstatic, youtube, etc.) igual que la
   página. Pueden desaparecer o no ser de uso libre. → Subir fotos propias a Cloudinary y cambiarlas
   en Servicios.
-- La foto de Darly en la página era `.heic`; aquí se pide a Cloudinary en `.jpg` (misma imagen).
+- La foto de Daily en la página era `.heic`; aquí se pide a Cloudinary en `.jpg` (misma imagen).
 
 ## Reglas de reserva (valores por defecto, Erika los cambia en *Reglas de reserva*)
 
@@ -75,6 +75,32 @@ publicación.
 - **Fuentes locales** en `public/app-citas/fonts/` (licencia OFL de Google Fonts) en vez de cargar
   Google Fonts: más rápido y permite `font-src 'self'`.
 
+## Fase 2 (lo pidió el usuario vía Agente 1): qué falta
+
+- **Envío automático de mensajes (sin tocar nada):** recordatorios 24 h y 2 h antes, "gracias" al
+  día siguiente y "te toca volver". Requiere **WhatsApp Business API** (Meta Cloud API o un proveedor
+  como Twilio/360dialog: cuenta verificada, plantillas aprobadas por Meta y costo por conversación) o
+  un proveedor de correo (Resend, Brevo; solo si la clienta deja su correo). **Decisión del usuario.**
+  Punto de integración listo: las plantillas ya existen en D1; faltaría un Cron Trigger de Cloudflare
+  que lea las citas, rellene la plantilla (la misma función de `public/panel/js/mensajes.js`,
+  llevada al servidor) y la envíe, registrando cada envío en la tabla `mensajes` para no duplicar.
+- **Notificaciones push web (VAPID):** a la clienta que instaló la app y a las chicas por citas nuevas
+  o cambios. Requiere generar llaves VAPID (secreto en Cloudflare), guardar suscripciones en D1 y
+  firmar/cifrar en el Worker (RFC 8291). En iPhone solo funciona con la app instalada (iOS 16.4+).
+  No se implementó en esta fase para no entregar algo a medias; hoy cubren el caso el WhatsApp
+  prellenado y los calendarios `.ics`.
+- **Identificar a la clienta con celular + código:** depende del mismo proveedor de mensajería. Hoy
+  se identifica por los enlaces guardados en su celular (ver `ARQUITECTURA.md` §8).
+- **Enlace de reseñas de Google:** quedó una búsqueda genérica. Erika debe pegar el enlace real
+  ("Pedir reseñas" en su perfil de Google) en *Reglas de reserva*.
+- **Ciclos de retorno** cargados por defecto (semipermanente/acrílicas/poligel 21 días, pestañas punto
+  a punto 18, lifting y laminado 45, faciales 30…). Erika debe confirmarlos en Servicios.
+- **Fuentes:** la página tiene las suyas en `public/fonts/`; la plataforma usa su copia en
+  `public/app-citas/fonts/` (mismos tipos de letra) para no depender de archivos que mantiene otro
+  agente. Se pueden unificar más adelante.
+- **Cabeceras:** el Agente 1 ofreció agregar bloques al final de `public/_headers`. No hace falta:
+  los middlewares de `functions/` ya las ponen en `/reservar`, `/panel`, `/app-citas` y `/api`.
+
 ## Ideas para una siguiente fase
 
 - **Recordatorios automáticos por WhatsApp** (24 h y 2 h antes) con la API de WhatsApp Business y un
@@ -82,7 +108,7 @@ publicación.
   confirmación con un toque (`wa.me`) y puede añadir la cita a su calendario con alarma.
 - **Anticipo/depósito** para servicios largos (Wompi, Mercado Pago, Bold).
 - **Lista de espera** cuando un día está lleno.
-- **Reporte mensual** (ingresos por colaboradora, servicios más pedidos, faltas).
+- **Exportar** la analítica a CSV/Excel y comisiones por colaboradora.
 - **Política de privacidad** completa en la página (Ley 1581 de 2012). La reserva ya pide
   autorización explícita para usar nombre y celular solo para gestionar la cita; falta la página con
   la política (Agente 1 / asesoría legal).

@@ -82,11 +82,11 @@ test('ráfaga de 12 reservas que se cruzan (horas distintas): nunca quedan citas
 
 test('la restricción de la base de datos frena el cruce aunque se salte la verificación previa (forzar)', async () => {
   // "forzar" (solo Erika) se salta horario y bloqueos: lo único que impide el cruce es la PK de cita_slots.
-  const datos = (n) => ({ servicios: [ids.dipping], colaboradora_id: ids.darly, fecha: DIA, inicio: 900, nombre: `Forzada ${n}`, celular: `30077700${10 + n}`, forzar: true });
+  const datos = (n) => ({ servicios: [ids.dipping], colaboradora_id: ids.daily, fecha: DIA, inicio: 900, nombre: `Forzada ${n}`, celular: `30077700${10 + n}`, forzar: true });
   const res = await Promise.all([1, 2, 3, 4].map((n) => erika.pedir('/api/panel/citas', { metodo: 'POST', datos: datos(n) })));
   assert.equal(res.filter((r) => r.status === 200).length, 1, JSON.stringify(res.map((r) => r.cuerpo)));
   assert.ok(res.filter((r) => r.status === 409).every((r) => r.cuerpo.codigo === 'ocupado'));
-  const ag = await erika.pedir(`/api/panel/agenda?desde=${DIA}&hasta=${DIA}&colaboradora=${ids.darly}`);
+  const ag = await erika.pedir(`/api/panel/agenda?desde=${DIA}&hasta=${DIA}&colaboradora=${ids.daily}`);
   const activas = ag.cuerpo.citas.filter((c) => c.estado !== 'cancelada').sort((a, b) => a.inicio - b.inicio);
   for (let i = 1; i < activas.length; i++) assert.ok(activas[i].inicio >= activas[i - 1].fin, 'citas encimadas');
 });
@@ -180,7 +180,7 @@ test('sin sesión no hay panel; cerrar sesión revoca la cookie', async () => {
 test('límite de intentos de PIN: bloquea tras 5 fallos', async () => {
   const atacante = cliente(base);
   const estados = [];
-  for (let i = 0; i < 6; i++) estados.push((await atacante.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.darly, pin: String(1000 + i) } })).status);
+  for (let i = 0; i < 6; i++) estados.push((await atacante.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.daily, pin: String(1000 + i) } })).status);
   assert.deepEqual(estados.slice(0, 5), [401, 401, 401, 401, 401]);
   assert.equal(estados[5], 429);
 });
@@ -222,6 +222,102 @@ test('importador CSV: servicios con precios y citas de Kumbio (simular y luego g
   assert.deepEqual(ri.cuerpo.resultado.map((r) => r.ok), [true, true, false, false], JSON.stringify(ri.cuerpo.resultado));
   const rep = await erika.pedir('/api/panel/importar', { metodo: 'POST', datos: { tipo: 'citas', filas: citas.slice(0, 2) } });
   assert.ok(rep.cuerpo.resultado.every((r) => /ya existía/.test(r.msg)), 'reimportar no duplica');
+});
+
+const haceDias = (n) => { const d = new Date(Date.now() - 5 * 3600000); d.setUTCDate(d.getUTCDate() - n); return d.toISOString().slice(0, 10); };
+
+test('importador con el formato de Kumbio (servicios con colaboradoras, equipo con horario, citas)', async () => {
+  const serv = await erika.pedir('/api/panel/importar', { metodo: 'POST', datos: { tipo: 'servicios', filas: [
+    { categoria: 'Uñas', nombre: 'Dipping', precio: '65000', duracion: '90', descripcion: '', colaboradoras: 'Karla|Daily', foto: '' },
+  ] } });
+  assert.ok(serv.cuerpo.resultado[0].ok, JSON.stringify(serv.cuerpo));
+  const eq = await erika.pedir('/api/panel/importar', { metodo: 'POST', datos: { tipo: 'colaboradoras', filas: [
+    { nombre: 'Julieth', celular: '3000000099', rol: 'colaboradora', servicios: 'Lifting de Pestañas|Laminado de Cejas', horario: 'lun-vie 10:00-18:00; sab 10:00-14:00; dom cerrado' },
+    { nombre: 'Nueva Ficticia', celular: '', rol: 'colaboradora', servicios: 'Semipermanente', horario: 'mar,jue 09:00-13:00' },
+    { nombre: 'Mal Horario', horario: 'todos los días' },
+  ] } });
+  assert.deepEqual(eq.cuerpo.resultado.map((r) => r.ok), [true, true, false], JSON.stringify(eq.cuerpo.resultado));
+  const { cuerpo: a } = await erika.pedir('/api/panel/arranque');
+  const jul = a.colaboradoras.find((c) => c.slug === 'julieth');
+  assert.deepEqual(jul.servicios.sort(), [ids['lifting-pestanas'], ids['laminado-cejas']].sort());
+  assert.equal(jul.horario.find((h) => h.dia === 6).cierra, 14 * 60);
+  assert.equal(jul.horario.find((h) => h.dia === 0).trabaja, 0);
+  const dip = a.colaboradoras.filter((c) => c.servicios.includes(ids.dipping)).map((c) => c.slug).sort();
+  assert.deepEqual(dip, ['daily', 'karla']);
+  assert.ok(a.colaboradoras.some((c) => c.nombre === 'Nueva Ficticia' && c.agenda));
+  // citas con las columnas exactas del formato (hora_inicio, duracion_min, clienta_nombre, clienta_celular)
+  const ci = await erika.pedir('/api/panel/importar', { metodo: 'POST', datos: { tipo: 'citas', filas: [
+    { fecha: haceDias(20), hora: '10:00', duracion: '75', colaboradora: 'Karla', servicio: 'Semipermanente', nombre: 'Vuelve Ficticia', celular: '3005550600', estado: 'asistio' },
+    { fecha: haceDias(2), hora: '11:00', duracion: '60', colaboradora: 'Leidy', servicio: 'Forrado', nombre: 'Pendiente Ficticia', celular: '3005550601', estado: 'confirmada' },
+  ] } });
+  assert.ok(ci.cuerpo.resultado.every((r) => r.ok), JSON.stringify(ci.cuerpo.resultado));
+});
+
+test('citas por gestionar, cobro con método de pago, resumen y analítica', async () => {
+  const pg = await erika.pedir('/api/panel/por-gestionar');
+  const pend = pg.cuerpo.citas.find((c) => c.clienta_nombre === 'Pendiente Ficticia');
+  assert.ok(pend, 'una cita pasada sin marcar aparece para preguntar ¿asistió?');
+  const karla = cliente(base);
+  await karla.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.karla, pin: '1357' } });
+  assert.equal((await karla.pedir(`/api/panel/citas/${pend.id}/pagos`, { metodo: 'POST', datos: { monto: 50000, metodo: 'nequi' } })).status, 403, 'no cobra citas ajenas');
+  assert.equal((await erika.pedir(`/api/panel/citas/${pend.id}/pagos`, { metodo: 'POST', datos: { monto: 50000, metodo: 'bitcoin' } })).status, 400);
+  const ok = await erika.pedir(`/api/panel/citas/${pend.id}/pagos`, { metodo: 'POST', datos: { monto: 50000, propina: 5000, metodo: 'nequi' } });
+  assert.equal(ok.status, 200);
+  const pg2 = await erika.pedir('/api/panel/por-gestionar');
+  assert.ok(!pg2.cuerpo.citas.some((c) => c.id === pend.id), 'cobrar la marca como asistió');
+  const r = await erika.pedir('/api/panel/resumen2');
+  assert.equal(r.status, 200);
+  const an = await erika.pedir(`/api/panel/analitica?desde=${haceDias(30)}&hasta=${DIA}`);
+  assert.equal(an.cuerpo.ingresos, 50000);
+  assert.equal(an.cuerpo.propinas, 5000);
+  assert.equal(an.cuerpo.metodos[0].metodo, 'nequi');
+  assert.equal(an.cuerpo.colaboradoras.find((c) => c.nombre === 'Leidy').ingresos, 50000);
+  assert.equal((await karla.pedir('/api/panel/analitica')).status, 403, 'la analítica es solo de Erika');
+});
+
+test('fidelización: a quién le toca volver, inactivas y registro del mensaje', async () => {
+  const f = await erika.pedir('/api/panel/fidelizacion');
+  assert.equal(f.status, 200);
+  const vuelve = f.cuerpo.a_contactar.find((c) => c.nombre === 'Vuelve Ficticia');
+  assert.ok(vuelve, 'semipermanente hace 20 días (ciclo 21) → le toca volver');
+  assert.equal(vuelve.colab_slug, 'karla');
+  assert.ok(f.cuerpo.inactivas.some((c) => c.nombre === 'Histórica Ficticia'), 'última visita hace meses → inactiva');
+  await erika.pedir('/api/panel/mensajes', { metodo: 'POST', datos: { clienta_id: vuelve.clienta_id, tipo: 'vuelve' } });
+  const f2 = await erika.pedir('/api/panel/fidelizacion');
+  assert.ok(!f2.cuerpo.a_contactar.some((c) => c.nombre === 'Vuelve Ficticia'), 'tras escribirle sale de la lista');
+  const karla = cliente(base);
+  await karla.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.karla, pin: '1357' } });
+  assert.equal((await karla.pedir('/api/panel/fidelizacion')).status, 403);
+});
+
+test('notas, plantillas y promociones con sus permisos', async () => {
+  const karla = cliente(base);
+  await karla.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.karla, pin: '1357' } });
+  const n = await karla.pedir('/api/panel/notas', { metodo: 'POST', datos: { texto: 'Pedir esmalte nude' } });
+  assert.equal(n.status, 200);
+  const nE = await erika.pedir('/api/panel/notas', { metodo: 'POST', datos: { texto: 'Nota de Erika' } });
+  assert.equal((await karla.pedir(`/api/panel/notas/${nE.cuerpo.id}`, { metodo: 'DELETE' })).status, 403);
+  assert.equal((await karla.pedir(`/api/panel/notas/${n.cuerpo.id}`, { metodo: 'DELETE' })).status, 200);
+  assert.equal((await karla.pedir('/api/panel/plantillas/recordatorio', { metodo: 'PUT', datos: { texto: 'Hola {nombre}' } })).status, 403);
+  assert.equal((await erika.pedir('/api/panel/plantillas/recordatorio', { metodo: 'PUT', datos: { texto: 'Hola {nombre}, te esperamos el {fecha}' } })).status, 200);
+  const pl = await karla.pedir('/api/panel/plantillas');
+  assert.match(pl.cuerpo.plantillas.find((p) => p.clave === 'recordatorio').texto, /te esperamos/);
+  assert.equal((await karla.pedir('/api/panel/promociones', { metodo: 'POST', datos: { titulo: 'X' } })).status, 403);
+  await erika.pedir('/api/panel/promociones', { metodo: 'POST', datos: { titulo: 'Martes de semi', servicio_id: ids.semipermanente, precio_promo: 39000, activa: true } });
+  await erika.pedir('/api/panel/promociones', { metodo: 'POST', datos: { titulo: 'Vencida', activa: true, hasta: '2020-01-01' } });
+  const cat = await cliente(base).pedir('/api/public/catalogo');
+  assert.deepEqual(cat.cuerpo.promociones.map((p) => p.titulo), ['Martes de semi']);
+  assert.equal(cat.cuerpo.promociones[0].servicio_slug, 'semipermanente');
+  assert.ok(Array.isArray(cat.cuerpo.populares));
+});
+
+test('mis citas (app de la clienta) con los enlaces guardados en el celular', async () => {
+  const r = await reservar({ servicios: [ids.forrado], con: 'leidy', fecha: DIA, inicio: 690, nombre: 'App Ficticia', celular: '3005550700' });
+  assert.equal(r.status, 200);
+  const m = await cliente(base).pedir(`/api/public/mis-citas?tokens=${r.cuerpo.token},token-que-no-existe-123456,<script>`);
+  assert.equal(m.cuerpo.citas.length, 1);
+  assert.equal(m.cuerpo.citas[0].codigo, r.cuerpo.codigo);
+  assert.ok(!('clienta_celular' in m.cuerpo.citas[0]), 'no expone el celular');
 });
 
 test('navegador: reserva en celular desde un botón "Agendar" de la página', { skip: !chromium && 'Playwright no disponible' }, async () => {

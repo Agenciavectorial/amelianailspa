@@ -85,6 +85,22 @@ export async function datosDemo(base) {
     await erika.pedir('/api/panel/citas', { metodo: 'POST', datos: { servicios, colaboradora_id: agenda[ci].id, fecha, inicio, nombre, celular, forzar: true } });
   }
   await erika.pedir('/api/panel/bloqueos', { metodo: 'POST', datos: { colaboradora_id: agenda[0].id, fecha: manana, inicio: '13:00', fin: '14:00', motivo: 'Almuerzo' } });
+  // Historial ficticio: visitas pasadas (unas cobradas), una por gestionar y una promoción.
+  const hace = (n) => { const d = new Date(Date.now() - 5 * 3600000); d.setUTCDate(d.getUTCDate() - n); return d.toISOString().slice(0, 10); };
+  const pasadas = [[20, 'Karla', 'Semipermanente', 'asistio'], [9, 'Leidy', 'Acrílicas', 'asistio'], [5, 'Julieth', 'Lifting de Pestañas', 'asistio'],
+    [3, 'Daily', 'Dipping', 'no_asistio'], [1, 'Leidy', 'Forrado', 'confirmada'], [120, 'Karla', 'Pedi Spa', 'asistio']];
+  await erika.pedir('/api/panel/importar', { metodo: 'POST', datos: { tipo: 'citas', filas: pasadas.map(([d, col, serv, estado], k) => ({
+    fecha: hace(d), hora: '10:00', colaboradora: col, servicio: serv, nombre: ficticias[k % ficticias.length][0], celular: ficticias[k % ficticias.length][1], estado,
+  })) } });
+  const metodos = ['nequi', 'efectivo', 'tarjeta'];
+  const ag = await erika.pedir(`/api/panel/agenda?desde=${hace(30)}&hasta=${hoy}`);
+  let m = 0;
+  for (const c of ag.cuerpo.citas.filter((x) => x.estado === 'asistio')) {
+    await erika.pedir(`/api/panel/citas/${c.id}/pagos`, { metodo: 'POST', datos: { monto: [45000, 85000, 70000][m % 3], metodo: metodos[m % 3] } });
+    m++;
+  }
+  const semi = a.servicios.find((s) => s.slug === 'semipermanente');
+  await erika.pedir('/api/panel/promociones', { metodo: 'POST', datos: { titulo: 'Martes de semipermanente', descripcion: 'Color que dura 3 semanas a precio especial.', servicio_id: semi.id, precio_promo: 39000, activa: true, foto: semi.foto } });
   return { pinErika: '1234', pinChicas: '1111' };
 }
 

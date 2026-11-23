@@ -12,9 +12,9 @@ import { ahoraBogota, difDias, sumarDias, aMinutos } from '../tiempo.js';
 const PERMISOS = ['gestionar_citas', 'gestionar_bloqueos', 'editar_horario', 'ver_agenda_equipo', 'ver_clientas'];
 const AJUSTES_EDITABLES = {
   anticipacion_min: [0, 10080], ventana_dias: [1, 365], intervalo_min: [5, 120],
-  cancelacion_horas: [0, 168], max_citas_por_celular: [1, 20],
+  cancelacion_horas: [0, 168], max_citas_por_celular: [1, 20], dias_inactiva: [15, 730],
 };
-const AJUSTES_TEXTO = { whatsapp: 20, nombre_spa: 80, direccion: 200, politica_texto: 600 };
+const AJUSTES_TEXTO = { whatsapp: 20, nombre_spa: 80, direccion: 200, politica_texto: 600, resena_url: 300 };
 
 function permisosLimpios(p = {}) {
   return Object.fromEntries(PERMISOS.map((k) => [k, v.bool(p[k])]));
@@ -55,13 +55,14 @@ export function rutasPanel(r) {
   r.get('/api/panel/arranque', 'sesion', async ({ db, sesion }) => {
     const ajustes = await leerAjustes(db);
     const hoy = ahoraBogota().fecha;
-    const [serv, colab, cs, hc, spa, fest] = await db.batch([
+    const [serv, colab, cs, hc, spa, fest, plant] = await db.batch([
       db.prepare('SELECT * FROM servicios ORDER BY orden, nombre'),
       db.prepare('SELECT id, slug, nombre, rol, cargo, bio, foto, color, activa, agenda, permisos, ics_token, orden, pin_hash IS NOT NULL AS tiene_pin FROM colaboradoras ORDER BY activa DESC, orden, nombre'),
       db.prepare('SELECT colaboradora_id, servicio_id FROM colaboradora_servicios'),
       db.prepare('SELECT colaboradora_id, dia, trabaja, abre, cierra FROM horario_colaboradora'),
       db.prepare('SELECT dia, abierto, abre, cierra FROM horario_spa ORDER BY dia'),
       db.prepare('SELECT fecha, motivo FROM festivos WHERE fecha >= ? ORDER BY fecha').bind(sumarDias(hoy, -1)),
+      db.prepare('SELECT clave, titulo, texto FROM plantillas ORDER BY orden'),
     ]);
     const verEquipo = puede(sesion, 'ver_agenda_equipo');
     let colaboradoras = colab.results.map((c) => ({
@@ -81,7 +82,8 @@ export function rutasPanel(r) {
     }
     return {
       yo: yoPublico(sesion), hoy,
-      ajustes: sesion.esPropietaria ? ajustes : { intervalo_min: ajustes.intervalo_min, whatsapp: ajustes.whatsapp, nombre_spa: ajustes.nombre_spa },
+      ajustes: sesion.esPropietaria ? ajustes : { intervalo_min: ajustes.intervalo_min, whatsapp: ajustes.whatsapp, nombre_spa: ajustes.nombre_spa, direccion: ajustes.direccion, resena_url: ajustes.resena_url },
+      plantillas: plant.results,
       servicios: sesion.esPropietaria ? serv.results : serv.results.filter((s) => s.visible || colaboradoras.some((c) => c.servicios.includes(s.id))),
       colaboradoras, horario_spa: spa.results, festivos: fest.results,
     };
@@ -142,7 +144,7 @@ export function rutasPanel(r) {
     if (!c) falla(404, 'La cita no existe.');
     if (!sesion.esPropietaria && c.colaboradora_id !== sesion.id) falla(403, 'Esta cita no es tuya.');
     const { results } = await db.prepare('SELECT fecha, quien, accion, detalle FROM registro WHERE cita_id = ? ORDER BY id DESC LIMIT 30').bind(c.id).all();
-    delete c.token;
+    // El token (enlace privado de la clienta) solo se entrega a quien puede ver la cita, para enviárselo.
     return { ...c, registro: results };
   });
 
@@ -370,16 +372,17 @@ export function rutasPanel(r) {
       duracion,
       body.visible === undefined ? 1 : (v.bool(body.visible) ? 1 : 0),
       v.entero(Number(body.orden ?? 0), 'orden', { min: 0, max: 9999 }),
+      body.ciclo_dias === '' || body.ciclo_dias == null ? null : v.entero(Number(body.ciclo_dias), 'ciclo de retorno', { min: 1, max: 365 }),
     ];
     if (id == null) {
       let slug = v.slugDe(nombre);
       if (await db.prepare('SELECT 1 FROM servicios WHERE slug = ?').bind(slug).first()) slug = `${slug}-${Date.now().toString(36).slice(-4)}`;
       id = (await db.prepare(
-        'INSERT INTO servicios (nombre, categoria, descripcion, foto, precio, precio_desde, duracion, visible, orden, slug) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id'
+        'INSERT INTO servicios (nombre, categoria, descripcion, foto, precio, precio_desde, duracion, visible, orden, ciclo_dias, slug) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id'
       ).bind(...d, slug).first()).id;
     } else {
       await db.prepare(
-        'UPDATE servicios SET nombre = ?, categoria = ?, descripcion = ?, foto = ?, precio = ?, precio_desde = ?, duracion = ?, visible = ?, orden = ? WHERE id = ?'
+        'UPDATE servicios SET nombre = ?, categoria = ?, descripcion = ?, foto = ?, precio = ?, precio_desde = ?, duracion = ?, visible = ?, orden = ?, ciclo_dias = ? WHERE id = ?'
       ).bind(...d, id).run();
     }
     if (Array.isArray(body.colaboradoras)) {
@@ -499,9 +502,11 @@ export function rutasPanel(r) {
   r.put('/api/panel/clientas/:id', 'propietaria', async ({ db, params, body }) => {
     const id = v.entero(Number(params.id), 'clienta', { min: 1 });
     try {
-      await db.prepare('UPDATE clientas SET nombre = ?, celular = ?, email = ?, notas = ? WHERE id = ?').bind(
+      const cumple = String(body.cumpleanos || '').trim();
+      if (cumple && !/^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(cumple)) falla(400, 'Cumpleaños: usa el formato MM-DD.');
+      await db.prepare('UPDATE clientas SET nombre = ?, celular = ?, email = ?, notas = ?, preferencias = ?, cumpleanos = ? WHERE id = ?').bind(
         v.texto(body.nombre, 'nombre', { min: 2, max: 80 }), v.celular(body.celular), v.email(body.email),
-        v.texto(body.notas, 'notas', { max: 1000, opcional: true }), id,
+        v.texto(body.notas, 'notas', { max: 1000, opcional: true }), v.texto(body.preferencias, 'preferencias', { max: 500, opcional: true }), cumple, id,
       ).run();
     } catch (e) {
       if (/UNIQUE/i.test(String(e.message))) falla(409, 'Ya existe otra clienta con ese celular.');

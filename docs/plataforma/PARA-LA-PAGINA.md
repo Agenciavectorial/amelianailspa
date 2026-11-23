@@ -39,7 +39,7 @@ slug es el nombre en minúsculas sin tildes y con guiones):
 | Dermapen | `dermapen` |
 | Hidragloss | `hidragloss` |
 
-**Slugs de manicuristas:** `leidy`, `karla`, `julieth`, `darly` (Erika y Valentina no reciben citas).
+**Slugs de manicuristas:** `leidy`, `karla`, `julieth`, `daily` (Erika y Valentina no reciben citas).
 
 Un slug que no exista simplemente se ignora (la clienta empieza desde el paso 1).
 

@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { turnosDelDia } from '../functions/_lib/disponibilidad.js';
 import { celular, slugDe, fecha as validarFecha } from '../functions/_lib/validar.js';
-import { precioDe, duracionDe, fechaDe, horaDe } from '../functions/_lib/rutas/importar.js';
+import { precioDe, duracionDe, fechaDe, horaDe, horarioDe, cumpleDe } from '../functions/_lib/rutas/importar.js';
 import { generarICS, plegar, escaparICS } from '../functions/_lib/ics.js';
 import { hashPin, verificarPin } from '../functions/_lib/auth.js';
 import { ahoraBogota, aUTC, diaSemana, horaTexto } from '../functions/_lib/tiempo.js';
@@ -157,4 +157,19 @@ test('tiempo en Bogotá (UTC-5)', () => {
   assert.equal(diaSemana('2026-11-23'), 1);
   assert.equal(horaTexto(870), '2:30 p. m.');
   assert.equal(horaTexto(0), '12:00 a. m.');
+});
+
+test('importador: horario de colaboradoras (formato del Agente 3) y cumpleaños', () => {
+  const h = horarioDe('lun-sab 09:00-19:00; dom cerrado');
+  assert.equal(h.length, 7);
+  assert.deepEqual(h.find((x) => x.dia === 6), { dia: 6, trabaja: 1, abre: 540, cierra: 1140 });
+  assert.equal(h.find((x) => x.dia === 0).trabaja, 0);
+  assert.deepEqual(horarioDe('mar,jue 10:00-14:00').map((x) => x.dia), [2, 4]);
+  assert.equal(horarioDe('lunes a viernes 9:00-17:00').length, 5);
+  assert.deepEqual(horarioDe('vie-lun 10:00-12:00').map((x) => x.dia), [5, 6, 0, 1], 'rango que cruza el domingo');
+  assert.throws(() => horarioDe('todos los días'));
+  assert.throws(() => horarioDe('lun 18:00-09:00'));
+  assert.equal(cumpleDe('1990-03-15'), '03-15');
+  assert.equal(cumpleDe('15/03'), '03-15');
+  assert.equal(cumpleDe('32/13'), '');
 });

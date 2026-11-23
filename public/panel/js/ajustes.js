@@ -123,6 +123,11 @@ async function vistaReglas(v) {
         <label class="campo"><span>WhatsApp del spa</span><input name="whatsapp" type="tel" value="${a.whatsapp}"></label>
       </div>
       <label class="campo"><span>Dirección</span><input name="direccion" maxlength="200" value="${a.direccion}"></label>
+      <div class="dos-col">
+        <label class="campo"><span>Enlace para reseñas en Google</span><input name="resena_url" type="url" maxlength="300" value="${a.resena_url || ''}">
+          <span class="ayuda">Google Maps → tu negocio → "Pedir reseñas" → copiar enlace.</span></label>
+        <label class="campo"><span>Inactiva después de (días)</span><input name="dias_inactiva" type="number" min="15" max="730" value="${a.dias_inactiva || 90}"></label>
+      </div>
       <label class="campo"><span>Texto de la política (lo ve la clienta al reservar)</span><textarea name="politica_texto" maxlength="600">${a.politica_texto}</textarea></label>
       <button class="btn" id="guardarReglas">Guardar reglas</button>
     </form>
@@ -136,7 +141,7 @@ async function vistaReglas(v) {
     e.preventDefault();
     ocupado($('#guardarReglas'), async () => {
       const d = Object.fromEntries(new FormData(e.target));
-      for (const k of ['anticipacion_min', 'ventana_dias', 'intervalo_min', 'cancelacion_horas', 'max_citas_por_celular']) d[k] = Number(d[k]);
+      for (const k of ['anticipacion_min', 'ventana_dias', 'intervalo_min', 'cancelacion_horas', 'max_citas_por_celular', 'dias_inactiva']) d[k] = Number(d[k]);
       try { await api('/api/panel/ajustes', { metodo: 'PUT', datos: d }); await recargar(); toast('Reglas guardadas', 'ok'); } catch (x) { toast(x.message, 'error'); }
     });
   };

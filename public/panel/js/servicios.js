@@ -45,6 +45,8 @@ function editar(s, v) {
         <label class="campo"><span>Precio (COP)</span><input name="precio" type="number" min="0" step="1000" value="${s.precio ?? ''}" placeholder="Vacío = a consultar"></label>
         <label class="interruptor alinear-campo"><input type="checkbox" name="precio_desde" ${s.precio_desde ? crudo('checked') : ''}> Mostrar "desde"</label>
       </div>
+      <label class="campo"><span>Ciclo de retorno (días)</span><input name="ciclo_dias" type="number" min="1" max="365" value="${s.ciclo_dias ?? ''}" placeholder="Ej. 21">
+        <span class="ayuda">Cada cuánto suele volver una clienta por este servicio. Se usa en Fidelización para recordarle.</span></label>
       <label class="campo"><span>Descripción</span><textarea name="descripcion" maxlength="500">${s.descripcion}</textarea></label>
       <label class="campo"><span>Foto (enlace https, ej. Cloudinary)</span><input name="foto" type="url" value="${s.foto}" placeholder="https://res.cloudinary.com/..."></label>
       <div class="campo"><span>¿Quién lo hace?</span>
@@ -65,7 +67,7 @@ function editar(s, v) {
     ocupado($('#guardarServ', h), async () => {
       const datos = {
         nombre: f.nombre.value, categoria: f.categoria.value, duracion: Number(f.duracion.value), precio: f.precio.value === '' ? null : Number(f.precio.value),
-        precio_desde: f.precio_desde.checked, descripcion: f.descripcion.value, foto: f.foto.value, visible: f.visible.checked, orden: Number(f.orden.value || 0),
+        precio_desde: f.precio_desde.checked, ciclo_dias: f.ciclo_dias.value === '' ? null : Number(f.ciclo_dias.value), descripcion: f.descripcion.value, foto: f.foto.value, visible: f.visible.checked, orden: Number(f.orden.value || 0),
         colaboradoras: $$('[name=quien]:checked', f).map((x) => Number(x.value)),
       };
       try {

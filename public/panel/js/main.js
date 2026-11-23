@@ -16,6 +16,11 @@ const IC = {
   importar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></svg>',
   cuenta: ICONOS.usuaria,
   mas: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>',
+  fidelizacion: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 10-7.8 7.8L12 21.2l8.8-8.8a5.5 5.5 0 000-7.8z"/></svg>',
+  analitica: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+  notas: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>',
+  promociones: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4l-7.2 7.2a2 2 0 01-2.8 0L3 13V3h10l7.6 7.6a2 2 0 010 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>',
+  mensajes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8.5 8.5 0 01-12.6 7.4L3 21l1.6-5.4A8.5 8.5 0 1121 12z"/></svg>',
 };
 
 function secciones() {
@@ -23,9 +28,12 @@ function secciones() {
     { id: 'inicio', nombre: 'Inicio', dock: true },
     { id: 'agenda', nombre: 'Agenda', dock: true },
   ];
-  if (puede('ver_clientas')) l.push({ id: 'clientas', nombre: 'Clientas', dock: true });
+  if (puede('ver_clientas')) l.push({ id: 'clientas', nombre: 'Clientas', dock: true }, { id: 'fidelizacion', nombre: 'Fidelización' });
+  if (esDuena()) l.push({ id: 'analitica', nombre: 'Analítica' });
+  l.push({ id: 'notas', nombre: 'Notas' });
   if (esDuena()) {
-    l.push({ id: 'servicios', nombre: 'Servicios' }, { id: 'equipo', nombre: 'Equipo' }, { id: 'spa', nombre: 'Horario y festivos' },
+    l.push({ id: 'servicios', nombre: 'Servicios' }, { id: 'promociones', nombre: 'Promociones' }, { id: 'equipo', nombre: 'Equipo' },
+      { id: 'mensajes', nombre: 'Mensajes' }, { id: 'spa', nombre: 'Horario y festivos' },
       { id: 'ajustes', nombre: 'Reglas de reserva' }, { id: 'importar', nombre: 'Importar CSV' });
   }
   l.push({ id: 'cuenta', nombre: esDuena() ? 'Mi cuenta' : 'Mi cuenta y horario' });
@@ -36,6 +44,8 @@ const MODULOS = {
   inicio: () => import('./inicio.js'), agenda: () => import('./agenda.js'), clientas: () => import('./clientas.js'),
   servicios: () => import('./servicios.js'), equipo: () => import('./equipo.js'), spa: () => import('./ajustes.js'),
   ajustes: () => import('./ajustes.js'), importar: () => import('./importar.js'), cuenta: () => import('./ajustes.js'),
+  fidelizacion: () => import('./fidelizacion.js'), analitica: () => import('./analitica.js'), notas: () => import('./notas.js'),
+  promociones: () => import('./promociones.js'), mensajes: () => import('./plantillas.js'),
   mas: null,
 };
 

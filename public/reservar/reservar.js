@@ -1,6 +1,6 @@
 // Reserva de citas para clientas (sin cuenta). Pasos: servicios → profesional → horario → datos → listo.
 import {
-  api, html, crudo, pintar, $, $$, toast, ocupado, hora, duracion, dinero, fechaLarga, ICONOS, inicial, celularBonito,
+  api, html, crudo, pintar, $, $$, toast, ocupado, hora, duracion, dinero, fechaLarga, ICONOS, inicial, celularBonito, abrirHoja,
 } from '/app-citas/js/util.js';
 import { crearSelector } from './selector.js';
 
@@ -110,6 +110,16 @@ function pasoServicios() {
       </div>
       ${proxima ? html`<a class="proxima" href="/reservar/cita/#${proxima.token}">
           ${crudo(ICONOS.calendario)}<span><strong>Tu próxima cita</strong>${fechaLarga(proxima.fecha)} · ${hora(proxima.inicio)}</span><span class="flecha">Ver</span></a>` : ''}
+      <div id="misCitas"></div>
+      ${!conColab && C.promociones?.length ? html`<h2 class="titulo-bloque">Promociones</h2><div class="promos">${C.promociones.map((p) => html`
+        <button class="promo" data-promo="${p.id}">
+          ${p.foto ? html`<img src="${p.foto}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}
+          <span class="promo-texto"><strong>${p.titulo}</strong>${p.descripcion ? html`<span>${p.descripcion}</span>` : ''}
+            <span class="promo-pie">${p.precio_promo != null ? html`<b>${dinero(p.precio_promo)}</b>` : ''}${p.hasta ? html`<small>hasta ${fechaLarga(p.hasta).replace(/^\S+ /, '')}</small>` : ''}</span></span>
+        </button>`)}</div>` : ''}
+      ${!conColab && populares().length ? html`<h2 class="titulo-bloque">Lo más pedido</h2><div class="populares">${populares().map((s) => html`
+        <button class="popular" data-pop="${s.id}">${s.foto ? html`<img src="${s.foto}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}<span>${s.nombre}</span></button>`)}</div>
+        <h2 class="titulo-bloque">Todos los servicios</h2>` : ''}
       ${conColab ? html`<div class="con-colab"><img class="avatar" src="${conColab.foto}" alt=""><span>Reservando con <strong>${conColab.nombre}</strong></span><button class="btn ghost chico" id="quitarCon">Cambiar</button></div>` : ''}
       <div class="categorias" role="tablist">
         ${cats.map((c) => html`<button class="chip" role="tab" data-cat="${c}" aria-pressed="${c === E.cat}">${c}</button>`)}
@@ -119,9 +129,58 @@ function pasoServicios() {
       </div>
     </section>`);
   for (const b of $$('.categorias .chip', app)) b.onclick = () => { E.cat = b.dataset.cat; pasoServicios(); };
+  for (const b of $$('[data-promo]', app)) {
+    b.onclick = () => {
+      const p = C.promociones.find((x) => x.id === Number(b.dataset.promo));
+      const s = p.servicio_id && porId(p.servicio_id);
+      if (s) { E.sel = [s.id]; E.cat = s.categoria; irA(siguienteDespuesDeServicios()); } else toast('Escríbenos por WhatsApp para esta promoción 💜');
+    };
+  }
+  for (const b of $$('[data-pop]', app)) {
+    b.onclick = () => { const s = porId(Number(b.dataset.pop)); if (!E.sel.includes(s.id)) E.sel.push(s.id); E.cat = s.categoria; irA(siguienteDespuesDeServicios()); };
+  }
+  pintarMisCitas();
   for (const b of $$('.servicio', app)) b.onclick = () => alternar(Number(b.dataset.id));
   $('#quitarCon', app)?.addEventListener('click', () => { E.con = null; pasoServicios(); });
   $('.categorias .chip[aria-pressed="true"]', app)?.scrollIntoView({ inline: 'center', block: 'nearest' });
+}
+
+function populares() {
+  const ids = C.populares?.length ? C.populares : [];
+  return ids.map(porId).filter(Boolean).slice(0, 4);
+}
+
+function tokensGuardados() {
+  try { return JSON.parse(localStorage.getItem('amelia_citas') || '[]').map((x) => x.token).filter(Boolean); } catch { return []; }
+}
+
+let misCitas = null;
+async function pintarMisCitas() {
+  const caja = $('#misCitas');
+  const tokens = tokensGuardados();
+  if (!caja || !tokens.length) return;
+  if (!misCitas) {
+    try { misCitas = (await api(`/api/public/mis-citas?tokens=${tokens.join(',')}`)).citas; } catch { return; }
+  }
+  if (!document.body.contains(caja)) return;
+  const ultima = misCitas.find((c) => c.estado !== 'cancelada' && c.fecha <= C.hoy) || misCitas.find((c) => c.estado !== 'cancelada');
+  const historial = misCitas.filter((c) => c.fecha < C.hoy || c.estado !== 'confirmada').slice(0, 5);
+  if (!ultima && !historial.length) return;
+  pintar(caja, html`
+    ${ultima ? html`<button class="repetir" id="repetir">
+      <span class="repetir-icono">${crudo(ICONOS.chispa)}</span>
+      <span class="repetir-texto"><strong>Repetir mi último servicio</strong><span>${ultima.servicios.map((s) => s.nombre).join(' + ')} con ${ultima.colaboradora.nombre}</span></span>
+      <span class="flecha">→</span></button>` : ''}
+    ${historial.length ? html`<details class="historial-clienta"><summary>Mi historial (${historial.length})</summary>
+      <ul>${historial.map((c) => html`<li><a href="/reservar/cita/#${c.token}"><span>${c.fecha_texto}</span><span>${c.servicios.map((s) => s.nombre).join(' + ')}</span></a></li>`)}</ul></details>` : ''}`);
+  $('#repetir')?.addEventListener('click', () => {
+    const ids = ultima.servicios.map((s) => s.id).filter((id) => porId(id));
+    if (!ids.length) return toast('Ese servicio ya no está disponible. Elige otro 💜');
+    E.sel = ids;
+    E.cat = porId(ids[0]).categoria;
+    E.con = colabPorSlug(ultima.colaboradora.slug) ? ultima.colaboradora.slug : null;
+    irA(siguienteDespuesDeServicios());
+  });
 }
 
 function tarjetaServicio(s) {
@@ -271,9 +330,9 @@ async function reservar(e) {
       E.reserva = r;
       try {
         localStorage.setItem('amelia_datos', JSON.stringify({ nombre: datos.nombre.trim(), celular: datos.celular.trim() }));
-        const lista = JSON.parse(localStorage.getItem('amelia_citas') || '[]').filter((x) => x.fecha >= C.hoy);
+        const lista = JSON.parse(localStorage.getItem('amelia_citas') || '[]');
         lista.push({ token: r.token, fecha: r.fecha, inicio: r.inicio });
-        localStorage.setItem('amelia_citas', JSON.stringify(lista.slice(-5)));
+        localStorage.setItem('amelia_citas', JSON.stringify(lista.slice(-12)));
       } catch { /* almacenamiento no disponible */ }
       history.replaceState({ paso: 'listo' }, '', location.pathname);
       irA('listo', { empujar: false });
@@ -362,8 +421,8 @@ async function iniciar() {
   const slugCon = q.get('con');
   if (slugCon && colabPorSlug(slugCon)) E.con = slugCon;
   if (slugServicio) {
-    const s = C.servicios.find((x) => x.slug === slugServicio);
-    if (s) { E.sel = [s.id]; E.cat = s.categoria; }
+    const ss = slugServicio.split(',').map((sl) => C.servicios.find((x) => x.slug === sl.trim())).filter(Boolean);
+    if (ss.length) { E.sel = ss.slice(0, 4).map((s) => s.id); E.cat = ss[0].categoria; }
   }
   history.replaceState({ paso: 'servicios' }, '', location.search);
   if (E.sel.length) {
@@ -374,3 +433,18 @@ async function iniciar() {
   }
 }
 iniciar();
+
+// Instalar la app (Android: aviso del navegador; iPhone: pasos)
+$('#btnInstalar').onclick = async () => {
+  const r = window.ameliaInstalar ? await window.ameliaInstalar() : 'manual';
+  if (r === 'instalada') toast('¡Listo! Ya tienes la app de Amelia 💜', 'ok');
+  else if (r === 'ios' || r === 'manual') {
+    abrirHoja(html`<div class="cabeza-hoja"><div><span class="script">Amelia</span><h2>en tu celular</h2></div><button class="icono-btn" data-cerrar aria-label="Cerrar">${crudo(ICONOS.cerrar)}</button></div>
+      <ol class="pasos-ios">
+        <li>Toca el botón <strong>Compartir</strong> <span class="muted">(el cuadrito con flecha ↑ abajo en Safari)</span>.</li>
+        <li>Elige <strong>"Agregar a inicio"</strong>.</li>
+        <li>Toca <strong>Agregar</strong>. ¡Listo! Tendrás a Amelia en tu pantalla, con tus citas y promociones.</li>
+      </ol>
+      <p class="muted small">En Android: menú ⋮ del navegador → <strong>Instalar app</strong>.</p>`);
+  }
+};

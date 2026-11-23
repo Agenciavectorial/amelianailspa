@@ -281,3 +281,55 @@ html.instalada .instalar-app { display: none; }
 .ag-grilla[data-modo="semana"] { --ancho-col: 86px; }
 .ag-grilla[data-modo="semana"] .ag-cita { left: 2px; right: 2px; padding: 4px 5px; }
 @media (max-width: 899px) { .ag-controles .interruptor { order: 5; } }
+
+/* ---------- fase 2: gestionar, cobros, analítica, notas, mensajes ---------- */
+.proxima-cita { display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; margin-bottom: 18px; padding: 14px 16px; background: var(--negro); color: #fff; }
+.proxima-cita .pc-hora { display: grid; min-width: 120px; }
+.proxima-cita .pc-hora small { color: var(--lila); font-size: .74rem; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+.proxima-cita .pc-cuerpo { flex: 1; display: grid; min-width: 0; }
+.proxima-cita .pc-cuerpo span { font-size: .85rem; opacity: .8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fila-gestionar { display: flex; align-items: center; gap: 12px; padding: 12px 14px; }
+.fg-texto { flex: 1; display: grid; min-width: 0; gap: 1px; cursor: pointer; }
+.fg-texto span { font-size: .86rem; color: var(--gris); }
+.fg-texto small { font-size: .78rem; color: var(--rosa-deep); font-weight: 600; }
+.fg-texto small::first-letter { text-transform: uppercase; }
+.fg-botones { display: flex; gap: 6px; }
+.fila-gestionar.hecha { opacity: .45; }
+.columnas-inicio { display: grid; gap: 0 18px; }
+@media (min-width: 1000px) { .columnas-inicio { grid-template-columns: 1fr 1fr; } }
+.bloque-inicio h2 a { font-family: var(--sans); font-size: .85rem; font-weight: 600; }
+.mensajes-cita { display: grid; gap: 8px; }
+.chip-wa svg { width: 15px; height: 15px; color: #1FAF54; }
+.chip[aria-pressed="true"] svg { color: #fff; }
+.rejilla-analitica { display: grid; gap: 14px; }
+@media (min-width: 1000px) { .rejilla-analitica { grid-template-columns: 1fr 1fr; } }
+.barra-fila { display: grid; grid-template-columns: minmax(80px, 30%) 1fr auto; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--gris-claro); }
+.bf-nombre { font-size: .88rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bf-barra { height: 10px; background: var(--gris-claro); border-radius: 9px; overflow: hidden; }
+.bf-barra span { display: block; height: 100%; border-radius: 9px; background: var(--c, var(--rosa-deep)); }
+.bf-valor { display: grid; justify-items: end; font-size: .88rem; min-width: 74px; }
+.bf-valor small { color: var(--gris); font-size: .74rem; }
+.columnas-dias { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; align-items: end; height: 150px; margin-top: 10px; }
+.cd { display: grid; justify-items: center; gap: 4px; height: 100%; grid-template-rows: 1fr auto auto; }
+.cd-barra { width: 70%; max-width: 34px; background: var(--gris-claro); border-radius: 8px; display: flex; align-items: flex-end; overflow: hidden; }
+.cd-barra span { display: block; width: 100%; background: var(--grad); border-radius: 8px; }
+.cd small { font-size: .72rem; color: var(--gris); text-transform: uppercase; }
+.cd strong { font-size: .85rem; }
+.rango-analitica { overflow-x: auto; margin-bottom: 14px; }
+.rango-analitica button { white-space: nowrap; }
+.fid-stats { margin-top: 0; }
+.nueva-nota textarea { width: 100%; border: 0; resize: vertical; min-height: 70px; font-size: 1rem; background: transparent; }
+.nueva-nota textarea:focus { outline: none; }
+.fila-nota { display: flex; justify-content: space-between; align-items: center; gap: 10px; border-top: 1px solid var(--gris-claro); padding-top: 10px; }
+.lista-notas { display: grid; gap: 8px; margin-top: 14px; }
+@media (min-width: 900px) { .lista-notas { grid-template-columns: repeat(2, 1fr); } }
+.nota { padding: 14px; display: grid; gap: 8px; }
+.nota.fijada { border-left: 4px solid var(--rosa-deep); }
+.nota.hecha .nota-texto { text-decoration: line-through; color: var(--gris); }
+.nota-texto { white-space: pre-wrap; }
+.nota-pie { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.lista-plantillas { display: grid; gap: 12px; margin: 16px 0; }
+@media (min-width: 1000px) { .lista-plantillas { grid-template-columns: 1fr 1fr; } }
+.plantilla textarea { width: 100%; border: 1.5px solid var(--linea); border-radius: 12px; padding: 12px; margin: 8px 0; resize: vertical; font-size: .95rem; }
+.vista-previa { white-space: pre-wrap; background: #E7F8EC; border-radius: 12px; padding: 12px; font-size: .9rem; margin-top: 8px; }
+.plantilla summary { cursor: pointer; font-size: .86rem; color: var(--rosa-deep); font-weight: 600; }

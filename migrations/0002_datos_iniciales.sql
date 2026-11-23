@@ -40,7 +40,7 @@ INSERT INTO colaboradoras (slug, nombre, rol, cargo, foto, color, agenda, permis
   ('leidy', 'Leidy', 'colaboradora', 'Uñas acrílicas', 'https://res.cloudinary.com/dcuvpsgao/image/upload/q_auto,f_auto,w_400/v1782243581/Leidy.jpg_xdyf10.jpg', '#C2185B', 1, '{"gestionar_citas":true,"gestionar_bloqueos":true,"editar_horario":false,"ver_agenda_equipo":false,"ver_clientas":false}', 1),
   ('karla', 'Karla', 'colaboradora', 'Dipping & nail art', 'https://res.cloudinary.com/dcuvpsgao/image/upload/q_auto,f_auto,w_400/v1782243580/Karla.jpg_ri1j8n.jpg', '#00897B', 1, '{"gestionar_citas":true,"gestionar_bloqueos":true,"editar_horario":false,"ver_agenda_equipo":false,"ver_clientas":false}', 2),
   ('julieth', 'Julieth', 'colaboradora', 'Nail art', 'https://res.cloudinary.com/dcuvpsgao/image/upload/q_auto,f_auto,w_400/v1782243580/Julieth.jpg_lvwfga.jpg', '#F57C00', 1, '{"gestionar_citas":true,"gestionar_bloqueos":true,"editar_horario":false,"ver_agenda_equipo":false,"ver_clientas":false}', 3),
-  ('darly', 'Darly', 'colaboradora', 'Manicurista', 'https://res.cloudinary.com/dcuvpsgao/image/upload/q_auto,f_auto,w_400/v1783125605/Chica_Nueva_broknl.jpg', '#3949AB', 1, '{"gestionar_citas":true,"gestionar_bloqueos":true,"editar_horario":false,"ver_agenda_equipo":false,"ver_clientas":false}', 4);
+  ('daily', 'Daily', 'colaboradora', 'Manicurista', 'https://res.cloudinary.com/dcuvpsgao/image/upload/q_auto,f_auto,w_400/v1783125605/Chica_Nueva_broknl.jpg', '#3949AB', 1, '{"gestionar_citas":true,"gestionar_bloqueos":true,"editar_horario":false,"ver_agenda_equipo":false,"ver_clientas":false}', 4);
 
 -- Por defecto las cuatro manicuristas hacen todos los servicios (Erika lo ajusta en el panel).
 INSERT INTO colaboradora_servicios (colaboradora_id, servicio_id)

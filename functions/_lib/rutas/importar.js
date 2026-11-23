@@ -56,6 +56,45 @@ export function horaDe(s) {
   return Math.round((h * 60 + mi) / 5) * 5;
 }
 
+const DIAS_CORTOS = { dom: 0, lun: 1, mar: 2, mie: 3, jue: 4, vie: 5, sab: 6 };
+const diaDe = (t) => DIAS_CORTOS[sinAcentos(t).slice(0, 3)];
+
+/**
+ * "lun-sab 09:00-19:00; dom cerrado" → [{dia, trabaja, abre, cierra}] (solo los días mencionados).
+ * También acepta "lun,mie,vie 10:00-18:00" y "lunes a viernes 9:00-17:00".
+ */
+export function horarioDe(texto) {
+  const dias = new Map();
+  for (const parte of String(texto || '').split(/[;\n]+/)) {
+    const t = sinAcentos(parte).replace(/\s+a\s+/g, '-').trim();
+    if (!t) continue;
+    const m = /^([a-z,\- ]+?)\s+(cerrado|no trabaja|libre|descanso|(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2}))$/.exec(t);
+    if (!m) throw new Error(`horario no reconocido: "${parte.trim()}"`);
+    const lista = [];
+    for (const trozo of m[1].split(/\s*,\s*/).filter(Boolean)) {
+      const [a, b] = trozo.split(/\s*-\s*/).map(diaDe);
+      if (a == null || (trozo.includes('-') && b == null)) throw new Error(`días no reconocidos: "${trozo}"`);
+      if (b == null) lista.push(a);
+      else for (let d = a; ; d = (d + 1) % 7) { lista.push(d); if (d === b) break; }
+    }
+    const abre = m[3] ? aMinutos(m[3]) : 0, cierra = m[4] ? aMinutos(m[4]) : 0;
+    if (m[3] && (abre == null || cierra == null || cierra <= abre)) throw new Error(`horas inválidas en "${parte.trim()}"`);
+    for (const d of lista) dias.set(d, { dia: d, trabaja: m[3] ? 1 : 0, abre, cierra });
+  }
+  return [...dias.values()];
+}
+
+/** Cumpleaños → 'MM-DD' (acepta AAAA-MM-DD, DD/MM/AAAA, DD/MM). */
+export function cumpleDe(s) {
+  const t = String(s ?? '').trim();
+  if (!t) return '';
+  const f = fechaDe(t);
+  if (f) return f.slice(5);
+  const m = /^(\d{1,2})[/.-](\d{1,2})$/.exec(t);
+  if (m && +m[2] >= 1 && +m[2] <= 12 && +m[1] >= 1 && +m[1] <= 31) return `${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+  return '';
+}
+
 const ESTADOS = {
   confirmada: 'confirmada', agendada: 'confirmada', pendiente: 'confirmada', programada: 'confirmada', reservada: 'confirmada',
   asistio: 'asistio', atendida: 'asistio', completada: 'asistio', finalizada: 'asistio', realizada: 'asistio',
@@ -68,7 +107,7 @@ export function rutasImportar(r) {
     const { tipo } = body;
     const filas = Array.isArray(body.filas) ? body.filas : falla(400, 'Faltan las filas.');
     const simular = v.bool(body.simular);
-    const limite = tipo === 'citas' ? 10 : 100;
+    const limite = tipo === 'citas' || tipo === 'colaboradoras' ? 10 : 100;
     if (filas.length > limite) falla(400, `Máximo ${limite} filas por lote.`);
     const resultado = [];
     const ok = (i, msg) => resultado.push({ fila: i, ok: true, msg });
@@ -77,6 +116,8 @@ export function rutasImportar(r) {
 
     if (tipo === 'servicios') {
       const sentencias = [];
+      const asignar = [];
+      const { results: equipo } = await db.prepare('SELECT id, nombre FROM colaboradoras').all();
       filas.forEach((f, k) => {
         const i = desplazamiento + k;
         try {
@@ -94,10 +135,73 @@ export function rutasImportar(r) {
                precio = COALESCE(excluded.precio, servicios.precio), duracion = excluded.duracion, visible = excluded.visible`
           ).bind(v.slugDe(nombre), nombre, v.texto(f.categoria, 'categoría', { max: 40, opcional: true }) || 'Otros',
             v.texto(f.descripcion, 'descripción', { max: 500, opcional: true }), v.url(f.foto), precio, duracion, visible));
-          ok(i, `${nombre} · ${duracion} min${precio != null ? ` · $${precio.toLocaleString('es-CO')}` : ''}`);
+          let aviso = '';
+          if (f.colaboradoras) {
+            const nombres = String(f.colaboradoras).split(/\s*[|,;]\s*/).filter(Boolean);
+            const ids = nombres.map((n) => equipo.find((c) => sinAcentos(c.nombre) === sinAcentos(n))?.id);
+            const faltan = nombres.filter((_, k2) => !ids[k2]);
+            if (faltan.length) aviso = ` · no encontré a: ${faltan.join(', ')}`;
+            asignar.push({ slug: v.slugDe(nombre), ids: ids.filter(Boolean) });
+          }
+          ok(i, `${nombre} · ${duracion} min${precio != null ? ` · $${precio.toLocaleString('es-CO')}` : ''}${aviso}`);
         } catch (e) { mal(i, e.message); }
       });
-      if (!simular && sentencias.length) await db.batch(sentencias);
+      if (!simular && sentencias.length) {
+        await db.batch(sentencias);
+        const extra = asignar.flatMap((a) => [
+          db.prepare('DELETE FROM colaboradora_servicios WHERE servicio_id = (SELECT id FROM servicios WHERE slug = ?)').bind(a.slug),
+          ...a.ids.map((cid) => db.prepare('INSERT OR IGNORE INTO colaboradora_servicios (colaboradora_id, servicio_id) SELECT ?, id FROM servicios WHERE slug = ?').bind(cid, a.slug)),
+        ]);
+        if (extra.length) await db.batch(extra);
+      }
+      return { resultado };
+    }
+
+    if (tipo === 'colaboradoras') {
+      const [{ results: equipo }, { results: servs }] = await db.batch([
+        db.prepare('SELECT id, slug, nombre, rol FROM colaboradoras'),
+        db.prepare('SELECT id, nombre FROM servicios'),
+      ]);
+      for (let k = 0; k < filas.length; k++) {
+        const f = filas[k], i = desplazamiento + k;
+        try {
+          const nombre = v.texto(f.nombre, 'nombre', { min: 2, max: 40 });
+          const cel = f.celular ? v.celular(f.celular) : '';
+          const rol = sinAcentos(f.rol).startsWith('prop') ? 'propietaria' : 'colaboradora';
+          const horario = f.horario ? horarioDe(f.horario) : null;
+          const nombresServ = String(f.servicios || '').split(/\s*[|,;]\s*/).filter(Boolean);
+          const idsServ = nombresServ.map((n) => servs.find((s2) => sinAcentos(s2.nombre) === sinAcentos(n))?.id);
+          const faltan = nombresServ.filter((_, k2) => !idsServ[k2]);
+          let existente = equipo.find((c) => sinAcentos(c.nombre) === sinAcentos(nombre) || c.slug === v.slugDe(nombre));
+          if (!existente && rol === 'propietaria') existente = equipo.find((c) => c.rol === 'propietaria');
+          const msg = `${nombre}${existente ? ' (actualizada)' : ' (nueva)'}${horario ? ` · horario de ${horario.length} día(s)` : ''}${faltan.length ? ` · servicios no encontrados: ${faltan.join(', ')}` : ''}`;
+          if (simular) { ok(i, msg); continue; }
+          let id = existente?.id;
+          if (id) {
+            await db.prepare("UPDATE colaboradoras SET celular = CASE WHEN ? <> '' THEN ? ELSE celular END WHERE id = ?").bind(cel, cel, id).run();
+          } else {
+            let slug = v.slugDe(nombre);
+            if (equipo.some((c) => c.slug === slug)) slug += '-' + Date.now().toString(36).slice(-3);
+            id = (await db.prepare(
+              `INSERT INTO colaboradoras (slug, nombre, rol, celular, agenda, permisos, orden) VALUES (?, ?, 'colaboradora', ?, 1, ?, 50) RETURNING id`
+            ).bind(slug, nombre, cel, JSON.stringify({ gestionar_citas: true, gestionar_bloqueos: true })).first()).id;
+            equipo.push({ id, slug, nombre, rol: 'colaboradora' });
+          }
+          const sent = [];
+          if (nombresServ.length) {
+            sent.push(db.prepare('DELETE FROM colaboradora_servicios WHERE colaboradora_id = ?').bind(id));
+            for (const sid of idsServ.filter(Boolean)) sent.push(db.prepare('INSERT OR IGNORE INTO colaboradora_servicios (colaboradora_id, servicio_id) VALUES (?, ?)').bind(id, sid));
+          }
+          if (horario) {
+            for (const h of horario) {
+              sent.push(db.prepare(`INSERT INTO horario_colaboradora (colaboradora_id, dia, trabaja, abre, cierra) VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(colaboradora_id, dia) DO UPDATE SET trabaja = excluded.trabaja, abre = excluded.abre, cierra = excluded.cierra`).bind(id, h.dia, h.trabaja, h.abre, h.cierra));
+            }
+          }
+          if (sent.length) await db.batch(sent);
+          ok(i, msg);
+        } catch (e) { mal(i, e.message); }
+      }
       return { resultado };
     }
 
@@ -109,12 +213,17 @@ export function rutasImportar(r) {
           const nombre = v.texto(f.nombre, 'nombre', { min: 2, max: 80 });
           const celular = v.celular(f.celular);
           const email = (() => { try { return v.email(f.email); } catch { return ''; } })();
+          let notas = v.texto(f.notas, 'notas', { max: 500, opcional: true });
+          const ultima = fechaDe(f.ultima_visita);
+          if (ultima) notas = `${notas} (Última visita en Kumbio: ${ultima})`.trim();
+          const cumple = cumpleDe(f.cumpleanos);
           sentencias.push(db.prepare(
-            `INSERT INTO clientas (nombre, celular, email, notas) VALUES (?, ?, ?, ?)
+            `INSERT INTO clientas (nombre, celular, email, notas, cumpleanos) VALUES (?, ?, ?, ?, ?)
              ON CONFLICT(celular) DO UPDATE SET nombre = excluded.nombre,
                email = CASE WHEN excluded.email <> '' THEN excluded.email ELSE clientas.email END,
-               notas = CASE WHEN excluded.notas <> '' AND instr(clientas.notas, excluded.notas) = 0 THEN trim(clientas.notas || ' ' || excluded.notas) ELSE clientas.notas END`
-          ).bind(nombre, celular, email, v.texto(f.notas, 'notas', { max: 500, opcional: true })));
+               notas = CASE WHEN excluded.notas <> '' AND instr(clientas.notas, excluded.notas) = 0 THEN trim(clientas.notas || ' ' || excluded.notas) ELSE clientas.notas END,
+               cumpleanos = CASE WHEN excluded.cumpleanos <> '' THEN excluded.cumpleanos ELSE clientas.cumpleanos END`
+          ).bind(nombre, celular, email, notas, cumple));
           ok(i, `${nombre} · +${celular}`);
         } catch (e) { mal(i, e.message); }
       });
@@ -182,6 +291,6 @@ export function rutasImportar(r) {
       }
       return { resultado };
     }
-    falla(400, 'Tipo de importación inválido (servicios, clientas o citas).');
+    falla(400, 'Tipo de importación inválido (servicios, colaboradoras, clientas o citas).');
   });
 }

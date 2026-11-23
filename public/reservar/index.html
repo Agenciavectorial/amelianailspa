@@ -13,12 +13,17 @@
 <meta property="og:locale" content="es_CO">
 <link rel="icon" type="image/png" href="/app-citas/img/icono-192.png">
 <link rel="apple-touch-icon" href="/app-citas/img/apple-touch.png">
+<link rel="manifest" href="/reservar/manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Amelia">
 <link rel="preload" href="/app-citas/fonts/dmsans.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/app-citas/fonts/playfair.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preconnect" href="https://res.cloudinary.com">
 <link rel="stylesheet" href="/app-citas/base.css">
 <link rel="stylesheet" href="/reservar/reservar.css">
 <script type="module" src="/reservar/reservar.js"></script>
+<script src="/reservar/instalar.js" defer></script>
 </head>
 <body class="reservar">
 <aside class="lateral" aria-hidden="true">
@@ -36,6 +41,7 @@
       <span><strong>Amelia</strong> Nail Spa</span>
     </a>
     <span class="barra-espacio"></span>
+    <button class="btn sec chico btn-instalar" id="btnInstalar">Instalar app</button>
   </header>
   <div class="progreso" id="progreso" hidden>
     <div class="progreso-barra"><span id="progresoRelleno"></span></div>

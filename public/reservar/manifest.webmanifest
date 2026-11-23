@@ -1,0 +1,22 @@
+{
+  "name": "Amelia Nail Spa",
+  "short_name": "Amelia",
+  "description": "Reserva tus citas de uñas, pestañas y faciales en Amelia Nail Spa, Medellín.",
+  "lang": "es-CO",
+  "id": "/reservar/",
+  "start_url": "/reservar/?app=1",
+  "scope": "/reservar/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F7F4FA",
+  "theme_color": "#F7F4FA",
+  "categories": ["beauty", "lifestyle"],
+  "icons": [
+    { "src": "/app-citas/img/icono-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/app-citas/img/icono-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/app-citas/img/icono-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Reservar", "url": "/reservar/?app=1" }
+  ]
+}

@@ -61,7 +61,11 @@ async function verClienta(id) {
           <label class="campo"><span>Nombre</span><input name="nombre" value="${c.nombre}" maxlength="80"></label>
           <label class="campo"><span>Celular</span><input name="celular" type="tel" value="${c.celular}"></label>
         </div>
-        <label class="campo"><span>Correo (opcional)</span><input name="email" type="email" value="${c.email}"></label>
+        <div class="dos-col">
+          <label class="campo"><span>Correo (opcional)</span><input name="email" type="email" value="${c.email}"></label>
+          <label class="campo"><span>Cumpleaños (MM-DD)</span><input name="cumpleanos" value="${c.cumpleanos || ''}" placeholder="03-15" maxlength="5"></label>
+        </div>
+        <label class="campo"><span>Preferencias (colores, forma, largo…)</span><input name="preferencias" maxlength="500" value="${c.preferencias || ''}"></label>
         <label class="campo"><span>Notas internas (alergias, gustos…)</span><textarea name="notas" maxlength="1000">${c.notas}</textarea></label>
         <button class="btn sec bloque" id="guardarClienta">Guardar cambios</button>
       </form>` : (c.notas ? html`<p class="aviso info espacio-arriba">${c.notas}</p>` : '')}

@@ -1,7 +1,8 @@
-// Inicio: saludo, números del día y las citas de hoy y mañana.
-import { api, html, crudo, pintar, $, hora, dinero, fechaLarga, sumarDias, inicial, ICONOS } from '/app-citas/js/util.js';
+// Inicio: resumen del negocio, citas por gestionar (¿asistió?), próxima cita, hoy/mañana y clientas a contactar.
+import { api, html, crudo, pintar, $, toast, hora, dinero, fechaLarga, fechaCorta, sumarDias, inicial, ICONOS } from '/app-citas/js/util.js';
 import { S, esDuena, puede, colab, aplicarEstilos } from './estado.js';
-import { verCita, nuevaCita, nuevoBloqueo, pastillaEstado } from './citas.js';
+import { verCita, nuevaCita, nuevoBloqueo, pastillaEstado, cobrar } from './citas.js';
+import { enviar, textoPlantilla } from './mensajes.js';
 
 function saludo() {
   const h = new Date(Date.now() - 5 * 3600000).getUTCHours();
@@ -11,33 +12,80 @@ function saludo() {
 export async function vista(v) {
   pintar(v, html`
     <header class="cabeza-vista">
-      <div><span class="script">${saludo()}</span><h1>${S.yo.nombre.split(' ')[0]}, <em>así va tu día</em></h1></div>
+      <div><span class="script">${saludo()}</span><h1>${S.yo.nombre.split(' ')[0]}, <em>así va tu negocio</em></h1></div>
     </header>
     <div class="stats" id="stats">${[1, 2, 3, 4].map(() => html`<div class="stat esqueleto"></div>`)}</div>
     <div class="acciones-rapidas">
-      ${puede('gestionar_citas') ? html`<button class="btn" id="irNueva">${crudo(ICONOS.mas)} Nueva cita</button>` : ''}
+      ${puede('gestionar_citas') ? html`<button class="btn" id="irNueva">${crudo(ICONOS.mas)} Agendar cita</button>` : ''}
       ${puede('gestionar_bloqueos') ? html`<button class="btn sec" id="irBloq">${crudo(ICONOS.reloj)} Bloquear horario</button>` : ''}
-      <a class="btn sec" href="#/agenda">${crudo(ICONOS.calendario)} Ver agenda</a>
+      <a class="btn sec" href="#/agenda">${crudo(ICONOS.calendario)} Calendario</a>
+      <a class="btn sec" href="#/notas">Notas</a>
     </div>
-    <section class="bloque-inicio"><h2>Hoy <span class="muted">${fechaLarga(S.hoy)}</span></h2><div id="listaHoy"></div></section>
-    <section class="bloque-inicio"><h2>Mañana</h2><div id="listaManana"></div></section>`);
+    <div id="proxima"></div>
+    <section class="bloque-inicio" id="bloqueGestionar" hidden><h2>Citas por gestionar <span class="muted">¿asistió?</span></h2><div id="listaGestionar"></div></section>
+    <div class="columnas-inicio">
+      <section class="bloque-inicio"><h2>Hoy <span class="muted">${fechaLarga(S.hoy)}</span></h2><div id="listaHoy"></div></section>
+      <section class="bloque-inicio"><h2>Mañana</h2><div id="listaManana"></div></section>
+    </div>
+    ${puede('ver_clientas') ? html`<section class="bloque-inicio" id="bloqueContactar" hidden><h2>Clientas a contactar hoy <a class="muted" href="#/fidelizacion">ver todo</a></h2><div id="listaContactar"></div></section>` : ''}`);
   const recargar = () => vista(v);
   $('#irNueva')?.addEventListener('click', () => nuevaCita({}, recargar));
   $('#irBloq')?.addEventListener('click', () => nuevoBloqueo({}, recargar));
 
   const manana = sumarDias(S.hoy, 1);
   const filtro = puede('ver_agenda_equipo') ? '' : `&colaboradora=${S.yo.id}`;
-  const [res, ag] = await Promise.all([
-    api('/api/panel/resumen'),
+  const [res, ag, pg, fid] = await Promise.all([
+    api('/api/panel/resumen2'),
     api(`/api/panel/agenda?desde=${S.hoy}&hasta=${manana}${filtro}`),
+    api('/api/panel/por-gestionar'),
+    puede('ver_clientas') ? api('/api/panel/fidelizacion').catch(() => null) : null,
   ]);
+  const cl = res.clientas_mes;
   pintar($('#stats'), html`
-    <div class="stat destacado"><span>Citas hoy</span><strong>${res.dia.citas || 0}</strong><small>${res.dia.atendidas || 0} atendidas</small></div>
-    <div class="stat"><span>Valor estimado hoy</span><strong>${res.dia.valor ? dinero(res.dia.valor) : '—'}</strong><small>con precios registrados</small></div>
-    <div class="stat"><span>Próximos 7 días</span><strong>${res.semana.citas || 0}</strong><small>${res.semana.valor ? dinero(res.semana.valor) : 'citas agendadas'}</small></div>
-    <div class="stat"><span>Este mes</span><strong>${res.mes.web || 0}</strong><small>reservas en línea · ${res.mes.faltas || 0} faltas</small></div>`);
+    <div class="stat destacado"><span>Ingresos del mes</span><strong>${dinero(res.ingresos_mes.total)}</strong><small>${res.ingresos_mes.citas} citas cobradas${res.ingresos_mes.propinas ? ` · ${dinero(res.ingresos_mes.propinas)} propinas` : ''}</small></div>
+    <div class="stat"><span>Citas esta semana</span><strong>${res.citas_semana}</strong><small>próximos 7 días</small></div>
+    <div class="stat"><span>Asistencia del mes</span><strong>${res.asistencia_mes.pct != null ? res.asistencia_mes.pct + '%' : '—'}</strong><small>${res.asistencia_mes.si} asistieron · ${res.asistencia_mes.no} faltaron</small></div>
+    <div class="stat"><span>Clientas del mes</span><strong>${cl.nuevas + cl.recurrentes}</strong><small>${cl.nuevas} nuevas · ${cl.recurrentes} recurrentes</small></div>`);
+
+  if (res.proxima) {
+    const p = res.proxima;
+    pintar($('#proxima'), html`<button class="tarjeta proxima-cita" data-cita="${p.id}">
+      <span class="pc-hora"><small>Próxima cita</small><strong>${p.fecha === S.hoy ? 'Hoy' : fechaCorta(p.fecha)} · ${hora(p.inicio)}</strong></span>
+      <span class="pc-cuerpo"><strong>${p.clienta_nombre}</strong><span>${p.servicios} · con ${p.colaboradora_nombre}</span></span>
+      <span class="flecha-mas">›</span></button>`);
+    $('#proxima').onclick = () => verCita(p.id, recargar);
+  }
+
+  if (pg.citas.length) {
+    $('#bloqueGestionar').hidden = false;
+    pintar($('#listaGestionar'), html`<div class="lista-citas">${pg.citas.map((c) => html`
+      <div class="fila-gestionar tarjeta" data-id="${c.id}">
+        <span class="fg-texto"><strong>${c.servicios}</strong><span>${c.clienta_nombre} · con ${c.colaboradora_nombre}</span><small>${fechaLarga(c.fecha)} · ${hora(c.inicio)}</small></span>
+        <span class="fg-botones">
+          <button class="btn chico" data-asistio="1">Sí</button>
+          <button class="btn sec chico" data-asistio="0">No</button>
+        </span>
+      </div>`)}</div>`);
+    $('#listaGestionar').onclick = async (e) => {
+      const b = e.target.closest('[data-asistio]');
+      const fila = e.target.closest('.fila-gestionar');
+      if (!fila) return;
+      const c = pg.citas.find((x) => x.id === Number(fila.dataset.id));
+      if (!b) return verCita(c.id, recargar);
+      if (b.dataset.asistio === '1') {
+        // Asistió: ofrece cobrar de una vez
+        return cobrar(c, 0, recargar);
+      }
+      try {
+        await api(`/api/panel/citas/${c.id}`, { metodo: 'PATCH', datos: { accion: 'estado', estado: 'no_asistio' } });
+        toast('Marcada como no asistió');
+        recargar();
+      } catch (x) { toast(x.message, 'error'); }
+    };
+  }
+
   const pintarLista = (el, fecha) => {
-    const l = ag.citas.filter((c) => c.fecha === fecha && c.estado !== 'cancelada' && (esDuena() || c.propia || puede('ver_agenda_equipo')));
+    const l = ag.citas.filter((c) => c.fecha === fecha && c.estado !== 'cancelada');
     if (!l.length) { pintar(el, html`<div class="vacio chico">${crudo(ICONOS.calendario)}<p>Sin citas.</p></div>`); return; }
     pintar(el, html`<div class="lista-citas">${l.map((c) => {
       const co = colab(c.colaboradora_id);
@@ -55,4 +103,33 @@ export async function vista(v) {
   };
   pintarLista($('#listaHoy'), S.hoy);
   pintarLista($('#listaManana'), manana);
+
+  if (fid && (fid.a_contactar.length || fid.cumpleanos.length)) {
+    $('#bloqueContactar').hidden = false;
+    const lista = [
+      ...fid.cumpleanos.map((c) => ({ ...c, motivo: `🎂 Cumple el ${c.cumpleanos.split('-').reverse().join('/')}`, tipo: 'cumple' })),
+      ...fid.a_contactar.slice(0, 6).map((c) => ({ ...c, motivo: `${c.servicios} · hace ${c.dias} días con ${c.colaboradora}`, tipo: 'vuelve' })),
+    ];
+    pintar($('#listaContactar'), html`<div class="lista-citas">${lista.map((c, i) => html`
+      <div class="fila-gestionar tarjeta"><span class="fg-texto"><strong>${c.nombre}</strong><span>${c.motivo}</span></span>
+      <button class="btn wa chico" data-i="${i}">${crudo(ICONOS.whatsapp)} Escribir</button></div>`)}</div>`);
+    $('#listaContactar').onclick = (e) => {
+      const b = e.target.closest('[data-i]');
+      if (!b) return;
+      const c = lista[Number(b.dataset.i)];
+      const texto = c.tipo === 'cumple'
+        ? `¡Feliz cumpleaños, ${c.nombre.split(' ')[0]}! 🎂💜 Todo el equipo de Amelia Nail Spa te desea un día precioso. Te esperamos para consentirte: ${location.origin}/reservar`
+        : textoPlantilla('vuelve', { nombre: c.nombre.split(' ')[0], servicio: c.servicios, colaboradora: c.colaboradora, enlace: enlaceRepetir(c), spa: S.ajustes.nombre_spa });
+      enviar(c.celular, texto, { clienta_id: c.clienta_id, tipo: c.tipo === 'cumple' ? 'cumpleanos' : 'vuelve' });
+      b.closest('.fila-gestionar').classList.add('hecha');
+    };
+  }
+  void esDuena;
+}
+
+export function enlaceRepetir(c) {
+  const p = new URLSearchParams();
+  if (c.slugs) p.set('servicio', c.slugs.split(',')[0]);
+  if (c.colab_slug) p.set('con', c.colab_slug);
+  return `${location.origin}/reservar?${p}`;
 }
