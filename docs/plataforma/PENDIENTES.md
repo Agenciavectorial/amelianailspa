@@ -5,13 +5,21 @@ publicación.
 
 ## Para publicar
 
-- ⚠️ **Crear la base D1 y poner su `database_id` en `wrangler.toml`.** Mientras tenga ceros, los
-  despliegues fallarán. Ver `CONFIGURACION.md` §2.
-- ⚠️ **Crear el secreto `CLAVE_INICIAL`** y dársela a Erika en persona (§4).
-- ⚠️ **Página principal:** cambiar los botones de Kumbio por `/reservar` y agregar `robots.txt`/`sitemap`
-  (ver `PARA-LA-PAGINA.md`).
-- Recomendado: base D1 aparte para despliegues de vista previa (§10), para no mezclar pruebas con
-  citas reales.
+Hecho el 2026-11-23 con un token de Cloudflare de permisos limitados:
+- ✅ Base D1 `amelia-citas` creada (región ENAM) con las 4 migraciones; su ID ya está en `wrangler.toml`
+  y en `workers/recordatorios/wrangler.toml`.
+- ✅ Worker `amelia-recordatorios` publicado (cron cada 15 min).
+- ✅ Llaves VAPID guardadas como secretos en el Worker y en Pages (producción y pruebas).
+- ✅ Versión de prueba de la rama funcionando en Cloudflare Pages.
+
+Falta:
+- ⚠️ **Crear el secreto `CLAVE_INICIAL`** en Pages (Production y Preview) y dársela a Erika en persona (§4).
+- ⚠️ **Rama de producción:** hoy el proyecto Pages publica la rama de la página principal. Al unir todo a
+  `main` (squash), cambiar en Pages → Settings → Builds → *Production branch* a `main`.
+- ⚠️ **Botones "Agendar"** de la página → `/reservar` (ver `PARA-LA-PAGINA.md`).
+- **Ojo:** la versión de prueba usa la misma base que usará producción. Las reservas de prueba se pueden
+  borrar desde el panel (Cancelar) o pedir una limpieza antes de abrir al público.
+- Recomendado: base D1 aparte para pruebas (§10) cuando ya haya citas reales.
 
 ## Datos del spa (confirmar con Erika)
 
