@@ -1,6 +1,22 @@
 # Reporte de la migración
 
-Actualizado: 23 nov 2026. Sin datos personales de clientas.
+Actualizado: 23 nov 2026 (segunda revisión). Sin datos personales de clientas.
+
+## Estado para continuar
+**Listo:** dominio en Cloudflare con HTTPS; `www` y `http` redirigen a `https://amelianailspa.com`; `/reservar` y `/panel` cargan en producción; botones de Agendar apuntan a `/reservar`; Analytics puesto; Search Console verificado, sitemap enviado (Correcto, 2 páginas) e indexación de la portada solicitada.
+
+**Desarrollo:**
+1. `sitemap.xml` lista `/reservar`, pero esa URL responde 308 a `/reservar/`. Unificar en sitemap, canonical y enlaces.
+2. Veloterapia no tiene foto en el catálogo. Lifting, punto a punto, laminado y sombreado usan arte de la marca, a falta de foto propia.
+3. Horario: la base usa el de Kumbio (lun-jue 9-20, vie 10-19, sáb 8-18, dom 11-17); Google tiene otro (lun-vie 9-19, sáb 10-19, dom 11-17). Con lo que confirme Erika, dejar iguales base, página y datos estructurados.
+
+**Agencia / Erika:**
+1. Entrar a `/panel` con la clave inicial y crear el PIN de Erika. Al revisar, el panel aún pedía esa configuración, así que nadie podía ver reservas todavía.
+2. Importar clientas y citas (Drive privado). Hay una cita futura, el 24 nov, que vive solo en Kumbio hasta importarla o crearla a mano. Los CSV pueden estar desactualizados.
+3. Precios, celulares, horario y quién atiende (Karla y Daily están inactivas en Kumbio, pero reciben reservas en la plataforma).
+4. Acceso de administrador al Perfil de Google, y sesión en Instagram, Facebook y TikTok.
+
+**Kumbio:** no desactivar hasta tener el panel configurado, la cita del 24 importada y una primera reserva real. Mientras las dos agendas estén abiertas puede haber cruces de horario.
 
 ## Tarea 1 — Kumbio: hecha
 - `docs/migracion-kumbio/datos/servicios.csv` (16 servicios) y `colaboradoras.csv` (Daily, Julieth, Leidy).
@@ -14,7 +30,7 @@ Actualizado: 23 nov 2026. Sin datos personales de clientas.
 - Sin descansos ni tiempo libre por profesional. En el calendario de noviembre no se ven bloqueos (no se revisaron otros meses). No se encontró ajuste de festivos ni política de cancelación.
 - Reservas: anticipación mínima 0 días, intervalos de 30 min, cupo 1, nombre y teléfono obligatorios, apellido y correo opcionales, COP, impuesto y comisión 0 %.
 - Mensajes de WhatsApp activos (número genérico de Kumbio): confirmación, recordatorio 24 h antes, pedir reseña, reagendamiento si no asiste. Segundo recordatorio apagado.
-- Kumbio sigue activo; no se cambió nada.
+- Kumbio sigue activo; no se cambió nada (revisado otra vez el 23 nov: la página pública de reservas sigue abierta).
 
 ## Tarea 2 — Fotos: 1 de 5
 - Subida: `fotos-nuevas/depilacion-cejas.jpg` (496x720), portada del video propio "Depilación de cejas" del TikTok del spa (23 sep 2025).
@@ -32,25 +48,21 @@ Actualizado: 23 nov 2026. Sin datos personales de clientas.
 - Dejar reseña (probado, abre el formulario): https://search.google.com/local/writereview?placeid=ChIJE1p6ZtApRI4RySgvgmAtowc
 - La cuenta de la agencia no administra este perfil, así que no se puso la web. El dueño sigue sin identificar.
 
-## Tarea 4 — Cloudflare: página publicada, dominio pendiente
-- Proyecto Pages `amelianailspa`, conectado al repositorio, preset None, sin build, salida `public`, despliegue automático activo: **https://amelianailspa.pages.dev**
-- Probado: 189 recursos del HTML responden 200; celular (375 px): menú inferior, preguntas y fotos sin errores; los enlaces de Agendar apuntan a Kumbio y los de WhatsApp al número del spa (enlaces leídos, no abiertos uno a uno). Velocidad no medida. Escritorio revisado solo a ~980 px de ancho.
-- **Por corregir en la página:** a ~980 px la barra superior morada se parte en dos líneas y tapa el menú y parte del logo.
-- Zona `amelianailspa.com` creada en Cloudflare (plan gratis), estado **pendiente**. Registros importados = los actuales: A 75.2.60.5 y CNAME www -> amelianailspa.netlify.app. No hay MX, TXT, DMARC ni CAA hoy (DNS público). Se agregó el TXT de Search Console. Bot Preference Sync apagado para no alterar robots.txt.
-- **Falta:** el dominio está en **Spaceship** (nameservers launch1/launch2.spaceship.net) y pide inicio de sesión. Cambiar los nameservers a `ada.ns.cloudflare.com` y `venkat.ns.cloudflare.com`.
-- Después: Custom domains (raíz y www), redirección de www, quitar el dominio en Netlify (sitio `amelianailspa`) y apagarlo a los 30 días. El sitio actual sigue en Netlify, sin cambios.
+## Tarea 4 — Cloudflare y dominio: hecha
+- Nameservers `ada` y `venkat.ns.cloudflare.com` activos en el registro. DNSSEC sin firmar. Sin registros de correo (tampoco los había antes).
+- Custom domains raíz y `www`: activos, SSL habilitado. DNS: CNAME de ambos a Pages y el TXT de Google.
+- Regla de redirección `www` a raíz (301, conserva ruta y parámetros): probada.
+- Equipos con DNS en caché pueden ver un 404 de Netlify durante unas horas.
+- Netlify: sitio `amelianailspa`, sin borrar; ya no responde al dominio (404). Su panel no se revisó. Apagarlo hacia el 23 dic 2026.
 
-## Tarea 5 — Search Console y Analytics: parcial
-- Search Console: propiedad de dominio agregada, **sin verificar** (el TXT ya está en la zona de Cloudflare y será visible al cambiar nameservers). Sitemap e indexación: después.
-- Google Analytics 4: propiedad "Amelia Nail Spa" (Bogotá, COP) dentro de la cuenta Agencia Vectorial. **ID de medición: G-PPSD6EHCEW**
-- **Por corregir en la página:** la CSP actual (`script-src 'self'; connect-src 'self'`) bloquearía Analytics; hay que permitir los dominios de Google.
-- Redes: sin sesión, no se cambió nada. Instagram enlaza a beacons.ai/amelianailspa, que no muestra la página ni Kumbio, y cuyo ícono de WhatsApp apunta a `wa.me/Amelia%20Nails%20Spa` (no es un número). TikTok no muestra enlace web en la bio. Facebook no se pudo ver.
+## Tarea 5 — Search Console y Analytics: hecha; perfil de Google y redes pendientes
+- Search Console: propiedad de dominio verificada por DNS (no borrar el TXT). Sitemap enviado, estado Correcto, 2 páginas. La portada ya estaba indexada; se pidió nuevo rastreo.
+- GA4 **G-PPSD6EHCEW** está en la página y la CSP lo permite. No se comprobó la llegada de datos.
+- Perfil de Google: Amelia no está entre los 6 perfiles de la cuenta de la agencia. Falta el acceso para poner la web.
+- Redes: sin cambios. beacons.ai/amelianailspa no enlaza la página, y su WhatsApp apunta a `wa.me/Amelia%20Nails%20Spa` (no es un número).
 
-## Tarea 6 — Plataforma de citas: base lista, falta la clave inicial
-- **La base D1 `amelia-citas` está lista.** Ya estaba creada y su ID está en `wrangler.toml`; no se creó otra.
-- Comprobado en la versión de prueba: `/api/public/catalogo` responde 16 servicios; `/reservar` y `/panel` cargan. El Worker `amelia-recordatorios` existe en Cloudflare.
-- En Pages hay 3 secretos en producción (nombres no visibles en la revisión); según PENDIENTES.md son los de notificaciones.
-- **Falta:** el secreto `CLAVE_INICIAL` (lo crea la agencia en Cloudflare, Production y Preview), unir la plataforma a la página publicada y cambiar los botones de Kumbio a `/reservar`. En la página publicada `/reservar` y `/panel` aún dan 404.
-- **Diferencias entre la base y Kumbio, por confirmar con el spa:** en la base Leidy, Karla, Julieth y Daily hacen todos los servicios; en Kumbio Julieth y Daily solo uñas, Karla solo faciales, cejas y pestañas, Leidy todo; Karla y Daily están inactivas allí. Las duraciones también difieren (p. ej. Acrílicas: base 120 min, Kumbio 135).
-- El horario de la base es el de la página; el de los CSV es el de Kumbio. Definir cuál vale antes de importar colaboradoras.
-- Kumbio sigue activo.
+## Tarea 6 — Plataforma de citas: publicada, falta configurar el panel
+- Producción responde con la base: 17 servicios y disponibilidad. No se hizo ninguna reserva de prueba.
+- `CLAVE_INICIAL` y los tres secretos VAPID existen en producción (valores no vistos). Vista previa sin revisar.
+- Servicios por persona, ya según Kumbio: Leidy todo; Karla faciales, cejas y pestañas; Julieth y Daily uñas (y Veloterapia). Duraciones ajustadas. Precios vacíos.
+- Sin probar: ingreso al panel, notificaciones y recordatorios.
