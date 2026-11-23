@@ -60,6 +60,14 @@ test('configuración inicial: solo con CLAVE_INICIAL y una sola vez', async () =
   assert.equal(cuerpo.yo.esPropietaria, true);
   for (const c of cuerpo.colaboradoras) ids[c.slug] = c.id;
   for (const s of cuerpo.servicios) ids[s.slug] = s.id;
+  // Escenario fijo para las pruebas (independiente de los datos reales cargados de Kumbio):
+  // horario L-V 9-19, S 10-19, D 11-17 y todas las manicuristas con todos los servicios.
+  await erika.pedir('/api/panel/spa', { metodo: 'PUT', datos: { horario: [0, 1, 2, 3, 4, 5, 6].map((dia) => ({
+    dia, abierto: true, abre: dia === 0 ? '11:00' : dia === 6 ? '10:00' : '09:00', cierra: dia === 0 ? '17:00' : '19:00' })) } });
+  for (const c of cuerpo.colaboradoras.filter((x) => x.agenda)) {
+    const r = await erika.pedir(`/api/panel/colaboradoras/${c.id}`, { metodo: 'PUT', datos: { ...c, servicios: cuerpo.servicios.map((x) => x.id) } });
+    assert.equal(r.status, 200);
+  }
   for (const slug of ['leidy', 'karla']) {
     const r = await erika.pedir(`/api/panel/colaboradoras/${ids[slug]}/pin`, { metodo: 'POST', datos: { pin: '1357' } });
     assert.equal(r.status, 200);
@@ -78,9 +86,11 @@ test('el PIN se guarda con PBKDF2 y sal (nunca en claro)', async () => {
 test('disponibilidad pública respeta horario y duración', async () => {
   const r = await cliente(base).pedir(`/api/public/disponibilidad?fecha=${DIA}&servicios=${ids.acrilicas}&con=leidy`);
   assert.equal(r.status, 200);
-  assert.equal(r.cuerpo.duracion, 120);
+  const cat = await cliente(base).pedir('/api/public/catalogo');
+  const dur = cat.cuerpo.servicios.find((x) => x.slug === 'acrilicas').duracion;
+  assert.equal(r.cuerpo.duracion, dur);
   assert.equal(r.cuerpo.turnos[0].inicio, 540); // abre 9:00
-  assert.equal(r.cuerpo.turnos.at(-1).fin, 1140); // la última termina a las 19:00
+  assert.ok(r.cuerpo.turnos.at(-1).fin <= 1140 && r.cuerpo.turnos.at(-1).fin > 1140 - 15, 'la última termina antes de las 19:00');
 });
 
 test('dos clientas reservan el MISMO turno al mismo tiempo: solo una gana', async () => {
@@ -114,16 +124,16 @@ test('cancelar libera el turno y la clienta puede reprogramar con su enlace', as
   const r = await reservar({ servicios: [ids['press-on']], con: 'leidy', fecha: DIA, inicio: 840, nombre: 'Gestiona Ficticia', celular: '3005550101' });
   assert.equal(r.status, 200);
   const token = r.cuerpo.token;
-  const mover = await cliente(base).pedir('/api/public/cita/reprogramar', { metodo: 'POST', datos: { token, fecha: DIA, inicio: 900 } });
+  const mover = await cliente(base).pedir('/api/public/cita/reprogramar', { metodo: 'POST', datos: { token, fecha: DIA, inicio: 960 } });
   assert.equal(mover.status, 200);
-  assert.equal(mover.cuerpo.inicio, 900);
+  assert.equal(mover.cuerpo.inicio, 960);
   const libre = await cliente(base).pedir(`/api/public/disponibilidad?fecha=${DIA}&servicios=${ids['press-on']}&con=leidy`);
   assert.ok(libre.cuerpo.turnos.some((t) => t.inicio === 840), 'el turno viejo quedó libre');
   const ics = await cliente(base).pedir(`/api/public/cita.ics?token=${token}`);
   assert.match(ics.cuerpo, /BEGIN:VCALENDAR[\s\S]*BEGIN:VEVENT[\s\S]*END:VCALENDAR/);
   const cancel = await cliente(base).pedir('/api/public/cita/cancelar', { metodo: 'POST', datos: { token } });
   assert.equal(cancel.cuerpo.estado, 'cancelada');
-  const otra = await reservar({ servicios: [ids['press-on']], con: 'leidy', fecha: DIA, inicio: 900, nombre: 'Toma Turno', celular: '3005550102' });
+  const otra = await reservar({ servicios: [ids['press-on']], con: 'leidy', fecha: DIA, inicio: 960, nombre: 'Toma Turno', celular: '3005550102' });
   assert.equal(otra.status, 200, 'el turno cancelado se puede volver a tomar');
 });
 
@@ -145,7 +155,7 @@ test('permisos: una colaboradora no ve ni edita lo que no le corresponde', async
   const login = await karla.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.karla, pin: '1357' } });
   assert.equal(login.status, 200);
   // Cita de Leidy creada por Erika
-  const deLeidy = await erika.pedir('/api/panel/citas', { metodo: 'POST', datos: { servicios: [ids.tradicional], colaboradora_id: ids.leidy, fecha: DIA, inicio: 1020, nombre: 'Privada Ficticia', celular: '3005550300' } });
+  const deLeidy = await erika.pedir('/api/panel/citas', { metodo: 'POST', datos: { servicios: [ids.tradicional], colaboradora_id: ids.leidy, fecha: DIA, inicio: 1080, nombre: 'Privada Ficticia', celular: '3005550300' } });
   assert.equal(deLeidy.status, 200);
   const idLeidy = deLeidy.cuerpo.id;
 
