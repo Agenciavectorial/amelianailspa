@@ -1,5 +1,24 @@
 // Utilidades compartidas del front (reservar + panel). Sin dependencias.
 
+/** Dominio para enlaces que salen de la app (WhatsApp, calendario, copiar enlace). En desarrollo local, el local. */
+export const SITIO = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? location.origin : 'https://amelianailspa.com';
+
+/** Acentos de marca permitidos (todos de la paleta del spa, con contraste AA para texto blanco). */
+export const ACENTOS = {
+  lavanda: { nombre: 'Lavanda', rosa: '#A98BBE', deep: '#7A6494', soft: '#EDE5F2', grad: ['#B79BCB', '#8E74AA', '#7A6494'] },
+  ciruela: { nombre: 'Ciruela', rosa: '#9C7AA8', deep: '#5E4570', soft: '#EAE1EF', grad: ['#A887B5', '#7A5A8C', '#5E4570'] },
+  rosa: { nombre: 'Rosa antiguo', rosa: '#C48BB0', deep: '#8E5579', soft: '#F5E6EF', grad: ['#D19BBD', '#A86D93', '#8E5579'] },
+  malva: { nombre: 'Malva', rosa: '#A88AA0', deep: '#6F5468', soft: '#EFE6EC', grad: ['#B79CB0', '#8A6C82', '#6F5468'] },
+};
+export function aplicarAcento(clave) {
+  const a = ACENTOS[clave] || ACENTOS.lavanda;
+  const r = document.documentElement.style;
+  r.setProperty('--rosa', a.rosa);
+  r.setProperty('--rosa-deep', a.deep);
+  r.setProperty('--rosa-soft', a.soft);
+  r.setProperty('--grad', `linear-gradient(135deg, ${a.grad[0]} 0%, ${a.grad[1]} 55%, ${a.grad[2]} 100%)`);
+}
+
 /** Escapa texto para insertarlo en HTML. */
 export function esc(v) {
   return String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

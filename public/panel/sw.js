@@ -1,12 +1,12 @@
 // Service worker del panel: cachea solo la "cáscara" (HTML/CSS/JS/fuentes) para abrir rápido.
 // La API (/api/*) siempre va a la red: los datos viven en D1 y nunca se sirven viejos.
-const VERSION = 'amelia-panel-v3';
+const VERSION = 'amelia-panel-v4';
 const CASCARA = [
   '/panel/', '/panel/panel.css', '/panel/instalar.js', '/panel/manifest.webmanifest',
   '/panel/js/main.js', '/panel/js/estado.js', '/panel/js/login.js', '/panel/js/inicio.js', '/panel/js/agenda.js',
   '/panel/js/citas.js', '/panel/js/clientas.js', '/panel/js/equipo.js', '/panel/js/servicios.js', '/panel/js/ajustes.js',
   '/panel/js/importar.js', '/panel/js/mensajes.js', '/panel/js/analitica.js', '/panel/js/fidelizacion.js', '/panel/js/notas.js',
-  '/panel/js/promociones.js', '/panel/js/plantillas.js', '/app-citas/base.css', '/app-citas/js/util.js', '/app-citas/js/csv.js', '/app-citas/js/push.js',
+  '/panel/js/promociones.js', '/panel/js/plantillas.js', '/panel/js/galeria.js', '/panel/js/tour.js', '/app-citas/base.css', '/app-citas/js/util.js', '/app-citas/js/csv.js', '/app-citas/js/push.js',
   '/app-citas/fonts/dmsans.woff2', '/app-citas/fonts/playfair.woff2', '/app-citas/fonts/playfair-italic.woff2',
   '/app-citas/fonts/greatvibes.woff2', '/app-citas/img/logo.webp', '/app-citas/img/icono-192.png',
 ];

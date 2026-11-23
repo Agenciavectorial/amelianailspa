@@ -63,6 +63,7 @@ function shell() {
         </div>
       </nav>
       <main id="vista" class="vista"></main>
+      ${puede('gestionar_citas') ? html`<button class="fab" id="fab" aria-label="Agendar cita">${crudo(ICONOS.mas)}</button>` : ''}
       <nav class="dock" aria-label="Secciones">
         ${dock.map((s) => html`<a href="#/${s.id}" data-sec="${s.id}">${crudo(IC[s.id])}<span>${s.nombre}</span></a>`)}
         <a href="#/mas" data-sec="mas">${crudo(IC.mas)}<span>Más</span></a>
@@ -118,6 +119,12 @@ async function entrar() {
     return;
   }
   shell();
+  $('#fab')?.addEventListener('click', async () => {
+    const { nuevaCita } = await import('./citas.js');
+    const m = /^#\/agenda\/(\d{4}-\d{2}-\d{2})/.exec(location.hash);
+    nuevaCita({ fecha: m ? m[1] : S.hoy, colaboradoraId: esDuena() ? undefined : S.yo.id }, () => navegar());
+  });
+  setTimeout(() => import('./tour.js').then((t) => t.tourSiEsPrimeraVez()), 700);
   window.removeEventListener('hashchange', navegar);
   window.addEventListener('hashchange', navegar);
   navegar();

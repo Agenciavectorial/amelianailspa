@@ -1,12 +1,12 @@
 // Mensajes a clientas con las plantillas que edita Erika. Hoy se envían por WhatsApp prellenado
 // (un toque, sin cupos). Punto de integración para envío automático: ver docs/plataforma/PENDIENTES.md.
-import { api, html, crudo, hora, fechaLarga, ICONOS, toast } from '/app-citas/js/util.js';
+import { api, html, crudo, hora, fechaLarga, ICONOS, toast, SITIO } from '/app-citas/js/util.js';
 import { S } from './estado.js';
 
 export const VARIABLES = ['nombre', 'servicio', 'fecha', 'hora', 'colaboradora', 'codigo', 'enlace', 'resena', 'spa', 'direccion'];
 
 export function rellenar(texto, datos) {
-  return String(texto || '').replace(/\{(\w+)\}/g, (m, k) => (datos[k] != null && datos[k] !== '' ? String(datos[k]) : m === '{enlace}' ? `${location.origin}/reservar/` : ''));
+  return String(texto || '').replace(/\{(\w+)\}/g, (m, k) => (datos[k] != null && datos[k] !== '' ? String(datos[k]) : m === '{enlace}' ? `${SITIO}/reservar/` : ''));
 }
 
 /** Datos de una cita para las plantillas. */
@@ -18,7 +18,7 @@ export function datosCita(c) {
     hora: c.inicio != null ? hora(c.inicio) : '',
     colaboradora: c.colaboradora_nombre || '',
     codigo: c.codigo || '',
-    enlace: c.token ? `${location.origin}/reservar/cita/#${c.token}` : `${location.origin}/reservar/`,
+    enlace: c.token ? `${SITIO}/reservar/cita/#${c.token}` : `${SITIO}/reservar/`,
     resena: S.ajustes.resena_url || '',
     spa: S.ajustes.nombre_spa || 'Amelia Nail Spa',
     direccion: S.ajustes.direccion || '',

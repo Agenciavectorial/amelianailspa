@@ -27,7 +27,7 @@ async function entrar(p, quien, pin) {
   await c.evaluate(() => window.scrollTo(0, 620)); await foto(c, 'c2-servicios');
   await c.evaluate(() => window.scrollTo(0, 0));
   await c.click('.categorias .chip >> nth=0');
-  await c.click('.servicio >> nth=5'); await c.click('.servicio >> nth=7');
+  await c.click('.servicio-marca >> nth=5'); await c.click('.servicio-marca >> nth=7');
   await foto(c, 'c3-elegidos');
   await c.click('#btnSeguir'); await c.waitForSelector('.pro'); await foto(c, 'c4-profesional');
   await c.click('.pro >> nth=2'); await c.waitForSelector('.turno'); await c.click('.dia:not([disabled]) >> nth=2'); await c.waitForTimeout(800); await c.waitForSelector('.turno'); await c.click('.turno >> nth=1'); await foto(c, 'c5-horario');
