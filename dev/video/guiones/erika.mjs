@@ -1,0 +1,50 @@
+// Video para Erika: panel de propietaria. Cada escena = un párrafo de voz + lo que se ve en pantalla.
+// "bloque" agrupa párrafos que se piden juntos a la voz (una solicitud por bloque).
+import * as A from '../acciones.mjs';
+
+const escenas = [
+  { id: 'e01', bloque: 'b1', capitulo: 'Bienvenida', texto: 'Hola, Erika. Mira, esto es lo que ya te hicimos: tu propia plataforma de citas, para que ya no dependas de Kumbio. Tus clientas reservan en tu página, y tú manejas todo desde el panel, en el celular. Te lo muestro parte por parte. Tranquila, que es muy fácil.',
+    accion: A.erika.bienvenida },
+  { id: 'e02', bloque: 'b1', capitulo: 'Entrar y crear tu PIN', texto: 'Para entrar, abres amelianailspa punto com, barra panel. La primera vez creas tu PIN de cuatro números. Después, solo tocas tu foto, escribes el PIN, y listo, ya estás adentro.',
+    accion: A.erika.entrar },
+  { id: 'e03', bloque: 'b1', capitulo: 'El inicio del día', texto: 'Este es el inicio de tu día. Arriba ves cuánto llevas en ingresos del mes, las citas de la semana, la asistencia y las clientas nuevas. Más abajo, tu próxima cita, las citas que te faltan por marcar, y todo lo de hoy y de mañana.',
+    accion: A.erika.inicio },
+  { id: 'e04', bloque: 'b1', capitulo: 'Agenda por chica', texto: 'En Agenda ves el día con una columna por cada chica. Con las flechas cambias de día, y en Semana ves los siete días de una sola persona. Los bloques grises a rayas son horas bloqueadas, y la línea roja es la hora en que vas.',
+    accion: A.erika.agenda },
+  { id: 'e05', bloque: 'b2', capitulo: 'Crear una cita', texto: 'Para crear una cita, tocas el botón Cita, o un espacio libre en la agenda. Eliges el servicio, la chica, el día y una hora libre. Escribes el celular y el nombre de la clienta, y guardas. El sistema nunca deja encimar dos citas.',
+    accion: A.erika.crearCita },
+  { id: 'e06', bloque: 'b2', capitulo: 'Mover y cancelar', texto: 'Si la clienta necesita cambiar, tocas la cita y le das Mover: solo te muestra horas libres. Y si cancela, le das Cancelar cita, y ese turno queda libre de una para otra clienta.',
+    accion: A.erika.moverCancelar },
+  { id: 'e07', bloque: 'b2', capitulo: 'Asistencia y cobro', texto: 'Cuando termina el servicio, marcas si asistió. Al tocar Sí, se abre el cobro: el valor viene sugerido, eliges efectivo, Nequi, Daviplata, tarjeta o transferencia, y si hubo propina, también la anotas. Así tus ingresos se suman solitos.',
+    accion: A.erika.cobrar },
+  { id: 'e08', bloque: 'b2b', capitulo: 'Clientas e historial', texto: 'En Clientas buscas por nombre o por celular. Ves sus visitas, sus faltas, cuánto ha gastado, y tus notas, como el diseño que le gusta o si tiene alguna alergia. Desde ahí también le creas una cita.',
+    accion: A.erika.clientas },
+  { id: 'e09', bloque: 'b2b', capitulo: 'Servicios, fotos y precios', texto: 'En Servicios cambias el precio, la duración, la foto y la descripción de cada uno, y quién lo hace. Esas fotos son las que ven tus clientas al reservar. Si dejas el precio vacío, sale como precio en el spa.',
+    accion: A.erika.servicios },
+  { id: 'e10', bloque: 'b3', capitulo: 'Equipo y PIN de las chicas', texto: 'En Equipo están Leidy, Karla, Julieth y Daily. Tocas a una y le marcas los servicios que hace, su horario, sus permisos y su PIN. El PIN se lo entregas en persona, y si se le olvida, tú le pones uno nuevo.',
+    accion: A.erika.equipo },
+  { id: 'e11', bloque: 'b3', capitulo: 'Horario y festivos', texto: 'En Horario y festivos pones a qué hora abre y cierra el spa cada día. Con Ver festivos de Colombia cierras los festivos con un solo toque, y esos días nadie puede reservar.',
+    accion: A.erika.horario },
+  { id: 'e12', bloque: 'b3', capitulo: 'Reglas de reserva', texto: 'En Reglas de reserva decides con cuánta anticipación pueden reservar, hasta cuántos días adelante, cada cuánto se ofrecen las horas, y hasta cuándo pueden cancelar en línea.',
+    accion: A.erika.reglas },
+  { id: 'e13', bloque: 'b3', capitulo: 'Promociones', texto: 'En Promociones creas una con foto, precio especial y fechas. Las promociones vigentes salen de primeras en la página de reservas y en la app de tus clientas.',
+    accion: A.erika.promociones },
+  { id: 'e14', bloque: 'b3', capitulo: 'Mensajes y recordatorios', texto: 'En Mensajes ajustas los textos de WhatsApp: la confirmación, el recordatorio, el cambio de cita y el de gracias con reseña. Las palabras entre llaves, como nombre o fecha, se llenan solas. Y en cada cita hay botones que abren WhatsApp con el mensaje ya escrito.',
+    accion: A.erika.mensajes },
+  { id: 'e15', bloque: 'b4', capitulo: 'Te toca volver', texto: 'En Fidelización está la lista de clientas a las que les toca volver. Por ejemplo, si una se hizo semipermanente hace más de tres semanas y no tiene cita, aparece aquí. Le das Escribir, y le llega tu mensaje con el enlace para reservar con su chica de siempre.',
+    accion: A.erika.fidelizacion },
+  { id: 'e16', bloque: 'b4', capitulo: 'Notificaciones', texto: 'En Mi cuenta activas las notificaciones. Así te llega un aviso al celular cada vez que una clienta reserva, cambia o cancela. Y con Instalar app, el panel te queda en la pantalla de inicio, como una aplicación.',
+    accion: A.erika.notificaciones },
+  { id: 'e17', bloque: 'b4', capitulo: 'Importar Kumbio', texto: 'Por último, en Importar CSV traes lo de Kumbio: primero los servicios, luego las clientas y al final las citas. Antes de guardar, el sistema te muestra qué filas están bien. Y si importas dos veces, no se duplica nada.',
+    accion: A.erika.importar },
+  { id: 'e18', bloque: 'b4', capitulo: 'Listo', texto: 'Y eso es todo, Erika. Tu agenda, tus clientas y tu negocio, en tu mano. Cualquier duda, nos escribes y te ayudamos. ¡Que te vaya muy bien!',
+    accion: A.erika.cierre },
+];
+
+export default {
+  id: 'erika',
+  titulo: 'Tu panel de Amelia',
+  subtitulo: 'Para Erika · panel de propietaria',
+  escenas,
+  bloques: [...new Set(escenas.map((e) => e.bloque))].map((id) => ({ id, escenas: escenas.filter((e) => e.bloque === id) })),
+};

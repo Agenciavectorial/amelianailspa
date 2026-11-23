@@ -4,3 +4,7 @@ node_modules/
 dev/.estado/
 dev/test-results/
 dev/.estado-e2e/
+# Videos de capacitación: intermedios
+dev/video/audio/*/bloques/
+dev/video/salida/
+dev/.estado-video*/
