@@ -130,7 +130,7 @@ body.con-hoja .dock { visibility: hidden; }
 
 .agenda-marco { overflow: auto; margin: 0 -16px; padding: 0 16px 8px; overscroll-behavior: contain; max-height: calc(100dvh - 240px - var(--seguro-abajo)); }
 @media (min-width: 900px) { .agenda-marco { max-height: calc(100dvh - 190px); margin: 0; padding: 0; border-radius: var(--radio); } }
-.ag-grilla { --eje: 52px; min-width: calc(var(--eje) + var(--cols) * 140px); background: var(--blanco); border-radius: var(--radio); box-shadow: var(--sombra-s); }
+.ag-grilla { --eje: 52px; --ancho-col: 140px; min-width: calc(var(--eje) + var(--cols) * var(--ancho-col)); background: var(--blanco); border-radius: var(--radio); box-shadow: var(--sombra-s); }
 .ag-cabeza { display: grid; grid-template-columns: var(--eje) repeat(var(--cols), 1fr); position: sticky; top: 0; z-index: 6; background: rgba(255, 255, 255, .95); backdrop-filter: blur(10px); border-bottom: 1px solid var(--linea); border-radius: var(--radio) var(--radio) 0 0; }
 .ag-col-titulo { padding: 10px 6px; display: grid; justify-items: center; border-left: 1px solid var(--linea); }
 .ag-persona { display: grid; justify-items: center; gap: 4px; font-size: .85rem; }
@@ -277,3 +277,7 @@ body.con-hoja .dock { visibility: hidden; }
 .lista-errores.ok { color: var(--gris); }
 html:not(.puede-instalar) .instalar-app #instalar { display: none; }
 html.instalada .instalar-app { display: none; }
+
+.ag-grilla[data-modo="semana"] { --ancho-col: 86px; }
+.ag-grilla[data-modo="semana"] .ag-cita { left: 2px; right: 2px; padding: 4px 5px; }
+@media (max-width: 899px) { .ag-controles .interruptor { order: 5; } }

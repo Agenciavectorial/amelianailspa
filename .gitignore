@@ -3,3 +3,4 @@ node_modules/
 .dev.vars
 dev/.estado/
 dev/test-results/
+dev/.estado-e2e/

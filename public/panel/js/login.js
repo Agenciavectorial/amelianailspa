@@ -29,9 +29,9 @@ export async function pantallaIngreso(raiz, alEntrar) {
 
 function teclado() {
   return html`<div class="teclado">
-    ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => html`<button class="tecla" data-n="${n}">${n}</button>`)}
+    ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => html`<button type="button" class="tecla" data-n="${n}">${n}</button>`)}
     <span></span><button class="tecla" data-n="0">0</button>
-    <button class="tecla borrar" data-borrar aria-label="Borrar">⌫</button>
+    <button type="button" class="tecla borrar" data-borrar aria-label="Borrar">⌫</button>
   </div>`;
 }
 

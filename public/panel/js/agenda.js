@@ -138,7 +138,7 @@ function pintarGrilla({ citas, bloqueos }, desde) {
   for (let m = ini; m < fin; m += 60) horas.push(m);
 
   pintar(marco, html`
-    <div class="ag-grilla" data-cols="${cols.length}">
+    <div class="ag-grilla" data-cols="${cols.length}" data-modo="${estado.modo}">
       <div class="ag-cabeza">
         <div class="ag-esquina"></div>
         ${cols.map((c) => html`<div class="ag-col-titulo">${c.titulo}</div>`)}
