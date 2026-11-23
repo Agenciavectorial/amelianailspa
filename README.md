@@ -13,17 +13,24 @@ hechas por Agencia Vectorial. Todo se publica en **Cloudflare Pages** (proyecto 
 | `scripts/cambiar-agenda.py` | Cambia el enlace de "Agendar" de toda la página (Kumbio → `/reservar`). |
 | `docs/agentes/` | Prompt del agente de escritorio y formato de importación desde Kumbio. |
 
-## Velocidad (Lighthouse, celular, con compresión como en Cloudflare)
-| | Antes (Netlify) | Ahora |
-|---|---|---|
-| Rendimiento | 66 | **94** |
-| Accesibilidad / Buenas prácticas / SEO | 95 / 100 / 100 | 95 / 100 / 100 |
-| Contenido principal (LCP) | 8,1 s | **3,1 s** |
-| Bloqueo (TBT) | 370 ms | **10 ms** |
-| Peso total | 4,7 MB | **0,7 MB** |
+## Velocidad (Lighthouse, con compresión como en Cloudflare)
+| | Antes (Netlify, celular) | Ahora celular | Ahora computador |
+|---|---|---|---|
+| Rendimiento | 66 | **94** | **100** |
+| Accesibilidad | 95 | **100** | **100** |
+| Buenas prácticas / SEO | 100 / 100 | 100 / 100 | 100 / 100 |
+| Contenido principal (LCP) | 8,1 s | 3,1 s | 0,7 s |
+| Bloqueo (TBT) | 370 ms | 20 ms | 0 ms |
+| Peso total | 4,7 MB | 0,7 MB | 1,0 MB |
 
-Para mantenerlo: fotos nuevas siempre en WebP con varios tamaños y `loading="lazy"` (salvo las del inicio);
-videos con `preload="none"`.
+Para mantenerlo: fotos nuevas siempre por `scripts/optimizar-fotos.py` (WebP en varios tamaños) y con
+`loading="lazy"` (salvo las del inicio); videos con `preload="none"`. Las fuentes están recortadas a los
+caracteres del español.
+
+## Fotos pendientes
+Lifting de pestañas, pestañas punto a punto, laminado, sombreado y depilación de cejas usaban fotos de otros
+negocios; hoy muestran un arte de la marca (`public/img/arte/`). Cuando lleguen las fotos propias a
+`fotos-nuevas/`, se optimizan con el script y se cambia el `<div class="sc-img sc-arte …">` de cada servicio por el `<img>`.
 
 ## SEO local
 - Título, descripción y Open Graph (imagen propia `og.jpg`) con "spa de uñas Medellín / Aranjuez".
