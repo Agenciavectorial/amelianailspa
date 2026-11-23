@@ -4,6 +4,10 @@ import { S, recargar, esDuena, puede, colab } from './estado.js';
 import { editorHorario, urlFeed } from './equipo.js';
 import { salir } from './main.js';
 import { estadoPush, activarPush, desactivarPush } from '/app-citas/js/push.js';
+import { ACENTOS, aplicarAcento } from '/app-citas/js/util.js';
+import { elegirMedio } from './galeria.js';
+
+const COLORES = ['#C2185B', '#00897B', '#F57C00', '#3949AB', '#7A6494', '#8E5579', '#2E7D5B', '#0277BD', '#6D4C41', '#AD1457'];
 
 const PUSH = { sw: '/panel/sw.js', scope: '/panel/' };
 
@@ -107,6 +111,16 @@ async function vistaReglas(v) {
   const general = a.ics_token_general;
   pintar(v, html`
     <header class="cabeza-vista"><div><span class="script">Ajustes</span><h1>Reglas de <em>reserva</em></h1></div></header>
+    <section class="tarjeta bloque-ajustes" id="apariencia">
+      <h2>Apariencia de la reserva</h2>
+      <p class="muted small">Así ven las clientas la página de reservas.</p>
+      <div class="vista-previa-hero" id="previaHero"><span class="script">Bienvenida</span><strong id="previaTitulo"></strong><span id="previaTexto"></span></div>
+      <label class="campo espacio-arriba"><span>Título de bienvenida</span><input id="apTitulo" maxlength="60" value="${a.bienvenida_titulo || 'Reserva tu momento'}"></label>
+      <label class="campo"><span>Texto corto</span><input id="apTexto" maxlength="200" value="${a.bienvenida_texto || ''}"></label>
+      <span class="etiqueta">Color de acento</span>
+      <div class="chips-serv acentos">${Object.entries(ACENTOS).map(([k, x]) => html`<button type="button" class="chip acento" data-acento="${k}" data-c="${x.deep}" aria-pressed="${(a.color_acento || 'lavanda') === k}">${x.nombre}</button>`)}</div>
+      <div class="fila-botones espacio-arriba"><button type="button" class="btn sec" id="apPortada">Cambiar portada</button><button type="button" class="btn" id="apGuardar">Guardar apariencia</button></div>
+    </section>
     <form id="formReglas" class="tarjeta bloque-ajustes">
       <div class="dos-col">
         <label class="campo"><span>Anticipación mínima</span>
@@ -148,6 +162,39 @@ async function vistaReglas(v) {
       try { await api('/api/panel/ajustes', { metodo: 'PUT', datos: d }); await recargar(); toast('Reglas guardadas', 'ok'); } catch (x) { toast(x.message, 'error'); }
     });
   };
+  let portada = a.portada_url || '';
+  let acento = a.color_acento || 'lavanda';
+  const previa = () => {
+    $('#previaTitulo').textContent = $('#apTitulo').value || 'Reserva tu momento';
+    $('#previaTexto').textContent = $('#apTexto').value;
+    const p = $('#previaHero');
+    p.style.setProperty('--portada', portada ? `url("${portada}")` : 'none');
+    p.style.setProperty('--fondo', ACENTOS[acento].deep);
+  };
+  const { aplicarEstilos } = await import('./estado.js');
+  aplicarEstilos(v);
+  previa();
+  $('#apTitulo').oninput = previa;
+  $('#apTexto').oninput = previa;
+  v.querySelector('.acentos').onclick = (e) => {
+    const b = e.target.closest('[data-acento]');
+    if (!b) return;
+    acento = b.dataset.acento;
+    for (const x of $$('[data-acento]', v)) x.setAttribute('aria-pressed', String(x === b));
+    aplicarAcento(acento);
+    previa();
+  };
+  $('#apPortada').onclick = async () => {
+    const m = await elegirMedio({ titulo: 'Portada de la reserva' });
+    if (m) { portada = m.url; previa(); toast('Portada elegida. Toca "Guardar apariencia".'); }
+  };
+  $('#apGuardar').onclick = (e) => ocupado(e.currentTarget, async () => {
+    try {
+      await api('/api/panel/ajustes', { metodo: 'PUT', datos: { bienvenida_titulo: $('#apTitulo').value, bienvenida_texto: $('#apTexto').value, color_acento: acento, portada_url: portada } });
+      await recargar();
+      toast('Apariencia guardada. Ya la ven las clientas.', 'ok');
+    } catch (x) { toast(x.message, 'error'); }
+  });
   let token = general;
   const pintarFeed = () => pintar($('#feedGeneral'), token ? html`
     <div class="feed"><code>${urlFeed(token)}</code></div>
@@ -207,6 +254,15 @@ async function vistaCuenta(v) {
       <p class="muted small" id="pasosIos" hidden>En iPhone: toca el botón <strong>Compartir</strong> de Safari y luego <strong>"Agregar a inicio"</strong>.</p>
     </section>
     <section class="tarjeta bloque-ajustes">
+      <h2>Mi perfil</h2>
+      <div class="perfil-fila">
+        ${yo.foto ? html`<img class="avatar perfil-foto" src="${yo.foto}" alt="">` : html`<span class="avatar inicial perfil-foto">${S.yo.nombre[0]}</span>`}
+        <div><strong>${S.yo.nombre}</strong><button class="btn sec chico" id="cambiarFoto">Cambiar mi foto</button></div>
+      </div>
+      <span class="etiqueta">Mi color en la agenda</span>
+      <div class="colores" id="misColores">${COLORES.map((c) => html`<button type="button" class="color-op" data-color="${c}" data-c="${c}" aria-pressed="${(yo.color || '').toLowerCase() === c.toLowerCase()}" aria-label="Color ${c}"></button>`)}</div>
+    </section>
+    <section class="tarjeta bloque-ajustes">
       <h2>Notificaciones en este celular</h2>
       <p class="muted small">Te avisamos al instante de citas nuevas, cambios y cancelaciones${S.yo.esPropietaria ? ' de todo el spa' : ''}.</p>
       <div id="estadoPush"><span class="girando oscuro"></span></div>
@@ -235,6 +291,7 @@ async function vistaCuenta(v) {
         <button class="btn sec" id="guardarPin">Cambiar PIN</button>
       </form>
     </section>
+    <button class="btn sec bloque" id="verTour">Ver el tour de bienvenida otra vez</button>
     <button class="btn ghost bloque" id="salir">Cerrar sesión</button>`);
   const leer = S.yo.agenda ? editorHorario($('#miHorario'), yo, editaHorario) : null;
   $('#guardarHorario')?.addEventListener('click', (e) => ocupado(e.currentTarget, async () => {
@@ -254,6 +311,24 @@ async function vistaCuenta(v) {
     else if (r === 'manual') toast('Abre el menú del navegador y elige "Instalar app" o "Agregar a pantalla de inicio".');
   };
   $('#salir').onclick = salir;
+  $('#verTour').onclick = () => import('./tour.js').then((t) => t.mostrarTour());
+  const { aplicarEstilos } = await import('./estado.js');
+  aplicarEstilos(v);
+  $('#cambiarFoto').onclick = async () => {
+    const m = await elegirMedio({ titulo: 'Mi foto' });
+    if (!m) return vistaCuenta(v);
+    try { await api('/api/panel/mi-perfil', { metodo: 'PUT', datos: { foto: m.url } }); toast('Foto actualizada', 'ok'); } catch (x) { toast(x.message, 'error'); }
+    vistaCuenta(v);
+  };
+  $('#misColores').onclick = async (e) => {
+    const b = e.target.closest('[data-color]');
+    if (!b) return;
+    try {
+      await api('/api/panel/mi-perfil', { metodo: 'PUT', datos: { color: b.dataset.color } });
+      for (const x of $$('[data-color]', v)) x.setAttribute('aria-pressed', String(x === b));
+      toast('Color guardado', 'ok');
+    } catch (x) { toast(x.message, 'error'); }
+  };
   pintarPush();
   void aMin; void cerrarHoja;
 }

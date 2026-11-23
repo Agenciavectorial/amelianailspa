@@ -1,5 +1,5 @@
 // Service worker de la app de la clienta: cachea la cáscara para abrir rápido. La API siempre va a la red.
-const VERSION = 'amelia-reservar-v2';
+const VERSION = 'amelia-reservar-v3';
 const CASCARA = [
   '/reservar/', '/reservar/reservar.css', '/reservar/reservar.js', '/reservar/selector.js', '/reservar/instalar.js',
   '/reservar/cita/', '/reservar/cita.js', '/reservar/manifest.webmanifest',

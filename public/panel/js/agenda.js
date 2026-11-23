@@ -1,7 +1,8 @@
 // Agenda: vista día (columnas por colaboradora) y semana (una colaboradora), con citas y bloqueos.
 import { api, html, crudo, pintar, $, $$, abrirHoja, cerrarHoja, hora, horaCorta, fechaLarga, fechaCorta, DIAS_CORTOS, fechaD, sumarDias, diaSemana, inicial, ICONOS, toast } from '/app-citas/js/util.js';
 import { S, esDuena, puede, colab, conAgenda, horarioSpa, rangoColab, aplicarEstilos } from './estado.js';
-import { verCita, nuevaCita, nuevoBloqueo, verBloqueo } from './citas.js';
+import { verCita, nuevaCita, nuevoBloqueo, verBloqueo, cobrar, pastillaEstado } from './citas.js';
+import { enviar, textoPlantilla, datosCita } from './mensajes.js';
 
 const PX = 1.5; // píxeles por minuto
 let estado = null;
@@ -16,7 +17,7 @@ export async function vista(v, { resto }) {
   const verEquipo = puede('ver_agenda_equipo');
   estado = {
     fecha: /^\d{4}-\d{2}-\d{2}$/.test(f || '') ? f : (estado?.fecha || S.hoy),
-    modo: modo === 'semana' || modo === 'dia' ? modo : (estado?.modo || (window.innerWidth < 700 && !verEquipo ? 'semana' : 'dia')),
+    modo: ['semana', 'dia', 'lista'].includes(modo) ? modo : (estado?.modo || (window.innerWidth < 700 ? 'lista' : 'dia')),
     colab: Number(c) || estado?.colab || (S.yo.agenda ? S.yo.id : conAgenda()[0]?.id),
     canceladas: estado?.canceladas || false,
   };
@@ -34,7 +35,7 @@ export async function vista(v, { resto }) {
       </div>
       <div class="ag-controles">
         <div class="segmentado" role="tablist">
-          <button data-modo="dia">Día</button><button data-modo="semana">Semana</button>
+          <button data-modo="lista">Tarjetas</button><button data-modo="dia">Día</button><button data-modo="semana">Semana</button>
         </div>
         <select class="input ag-colab" id="agColab" aria-label="Colaboradora" ${verEquipo ? '' : crudo('hidden')}>
           ${conAgenda().map((x) => html`<option value="${x.id}">${x.nombre}</option>`)}
@@ -75,7 +76,7 @@ async function cargar() {
   history.replaceState(null, '', `#/agenda/${e.fecha}/${e.modo}/${e.colab || ''}`);
   for (const b of $$('[data-modo]')) b.setAttribute('aria-pressed', String(b.dataset.modo === e.modo));
   $('#agColab').value = String(e.colab || '');
-  $('#agColab').classList.toggle('atenuado', e.modo === 'dia');
+  $('#agColab').classList.toggle('atenuado', e.modo !== 'semana');
   $('#agFecha').value = e.fecha;
   $('#agCanceladas').checked = e.canceladas;
   const desde = e.modo === 'semana' ? lunesDe(e.fecha) : e.fecha;
@@ -94,8 +95,89 @@ async function cargar() {
     return;
   }
   if (estado !== e) return;
-  pintarGrilla(datos, desde);
+  if (e.modo === 'lista') pintarTarjetas(datos);
+  else pintarGrilla(datos, desde);
 }
+
+// ---------- vista en tarjetas (celular): una tarjeta grande por cita con acciones de un toque ----------
+function tiraDias() {
+  const f0 = sumarDias(estado.fecha, -2);
+  return html`<div class="tira-dias" role="tablist">${Array.from({ length: 12 }, (_, i) => {
+    const f = sumarDias(f0, i);
+    return html`<button class="td-dia ${f === S.hoy ? 'hoy' : ''}" data-fecha="${f}" aria-pressed="${f === estado.fecha}"><small>${DIAS_CORTOS[diaSemana(f)]}</small><strong>${fechaD(f).getUTCDate()}</strong></button>`;
+  })}</div>`;
+}
+
+function pintarTarjetas({ citas, bloqueos }) {
+  const marco = $('#agMarco');
+  const visibles = citas.filter((c) => c.fecha === estado.fecha && (estado.canceladas || c.estado !== 'cancelada'));
+  const bloq = bloqueos.filter((b) => b.fecha === estado.fecha);
+  const items = [
+    ...visibles.map((c) => ({ t: c.inicio, c })),
+    ...bloq.map((b) => ({ t: b.inicio, b })),
+  ].sort((a, b) => a.t - b.t);
+  const ahora = (() => { const d = new Date(Date.now() - 5 * 3600000); return d.getUTCHours() * 60 + d.getUTCMinutes(); })();
+  pintar(marco, html`
+    ${tiraDias()}
+    ${items.length ? html`<div class="tarjetas-dia">${items.map(({ c, b }) => {
+      if (b) {
+        return html`<button class="tarjeta-bloqueo" data-bloqueo="${b.id}"><span>${b.inicio === 0 && b.fin >= 1440 ? 'Todo el día' : `${hora(b.inicio)} – ${hora(Math.min(b.fin, 1439))}`}</span><strong>${b.motivo || 'Bloqueado'}</strong><small>${b.colaboradora_id ? colab(b.colaboradora_id)?.nombre || '' : 'Todo el spa'}</small></button>`;
+      }
+      const co = colab(c.colaboradora_id);
+      const pasada = estado.fecha < S.hoy || (estado.fecha === S.hoy && c.fin <= ahora);
+      return html`<article class="tarjeta-cita estado-${c.estado} ${pasada ? 'pasada' : ''}" data-c="${co?.color || '#A98BBE'}" data-cita="${c.id}">
+        <button class="tc-principal" data-ver="${c.id}">
+          <span class="tc-hora"><strong>${hora(c.inicio)}</strong><small>hasta ${hora(c.fin)}</small></span>
+          <span class="tc-cuerpo"><strong>${c.clienta_nombre}</strong><span>${c.servicios.map((x) => x.nombre).join(' + ')}</span>
+            <span class="tc-con">${co?.foto ? html`<img class="avatar" src="${co.foto}" alt="">` : html`<span class="avatar inicial">${inicial(co?.nombre)}</span>`}${co?.nombre || ''}${c.origen === 'web' ? html` · <em>reservó en línea</em>` : ''}</span></span>
+          ${c.estado !== 'confirmada' ? pastillaEstado(c.estado) : ''}
+        </button>
+        ${c.propia && c.estado !== 'cancelada' ? html`<div class="tc-acciones">
+          <button data-accion="wa" aria-label="WhatsApp a ${c.clienta_nombre}">${crudo(ICONOS.whatsapp)}<span>WhatsApp</span></button>
+          <a href="tel:+${c.clienta_celular}" aria-label="Llamar a ${c.clienta_nombre}">${crudo(TEL)}<span>Llamar</span></a>
+          <button data-accion="asistio" aria-pressed="${c.estado === 'asistio'}">${crudo(ICONOS.check)}<span>${c.estado === 'asistio' ? 'Asistió' : 'Llegó'}</span></button>
+          <button data-accion="cobrar">${crudo(PESOS)}<span>Cobrar</span></button>
+          <button data-accion="mas">${crudo(MAS3)}<span>Más</span></button>
+        </div>` : ''}
+      </article>`;
+    })}</div>`
+    : html`<div class="vacio tarjeta dia-libre">${crudo(ICONOS.chispa)}<p><strong>${estado.fecha === S.hoy ? 'Hoy no hay citas todavía' : 'Día libre'}</strong><br>Toca el botón <b>+</b> para agendar una cita.</p></div>`}`);
+  aplicarEstilos(marco);
+  const activo = marco.querySelector('.td-dia[aria-pressed="true"]');
+  if (activo) activo.parentElement.scrollLeft = activo.offsetLeft - 80;
+  marco.onclick = async (ev) => {
+    const d = ev.target.closest('.td-dia');
+    if (d) { estado.fecha = d.dataset.fecha; return cargar(); }
+    const bl = ev.target.closest('[data-bloqueo]');
+    if (bl) return verBloqueo(bloqueos.find((x) => x.id === Number(bl.dataset.bloqueo)), cargar);
+    const tarjeta = ev.target.closest('.tarjeta-cita');
+    if (!tarjeta) return;
+    const c = citas.find((x) => x.id === Number(tarjeta.dataset.cita));
+    const acc = ev.target.closest('[data-accion]')?.dataset.accion;
+    if (!acc) {
+      if (ev.target.closest('[data-ver]')) return c.propia ? verCita(c.id, cargar) : toast(`Cita de ${colab(c.colaboradora_id)?.nombre}: ${c.clienta_nombre}, ${hora(c.inicio)}`);
+      return;
+    }
+    if (acc === 'mas') return verCita(c.id, cargar);
+    if (acc === 'cobrar') return cobrar({ ...c }, 0, cargar);
+    if (acc === 'wa') {
+      const co = colab(c.colaboradora_id);
+      const clave = estado.fecha < S.hoy || c.estado === 'asistio' ? 'gracias' : 'recordatorio';
+      return enviar(c.clienta_celular, textoPlantilla(clave, datosCita({ ...c, colaboradora_nombre: co?.nombre })), { cita_id: c.id, tipo: clave });
+    }
+    if (acc === 'asistio') {
+      try {
+        await api(`/api/panel/citas/${c.id}`, { metodo: 'PATCH', datos: { accion: 'estado', estado: c.estado === 'asistio' ? 'confirmada' : 'asistio' } });
+        toast(c.estado === 'asistio' ? 'Marcada como pendiente' : '¡Listo! Llegó a su cita', 'ok');
+        cargar();
+      } catch (x) { toast(x.message, 'error'); }
+    }
+  };
+}
+
+const TEL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3.1 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.2 2 2 0 014.1 2h3a2 2 0 012 1.7c.1.9.4 1.8.7 2.7a2 2 0 01-.5 2.1L8 9.8a16 16 0 006 6l1.3-1.3a2 2 0 012.1-.5c.9.3 1.8.6 2.7.7a2 2 0 011.7 2z"/></svg>';
+const PESOS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="6" width="20" height="12" rx="2.5"/><circle cx="12" cy="12" r="2.5"/><path d="M6 10v4M18 10v4"/></svg>';
+const MAS3 = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>';
 
 function columnas(desde) {
   const e = estado;

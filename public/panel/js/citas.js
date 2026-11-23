@@ -195,6 +195,7 @@ export function nuevaCita({ fecha = S.hoy, colaboradoraId, inicio, clienta } = {
         <label class="campo"><span>Fecha</span><input type="date" name="fecha" value="${fecha}" required></label>
       </div>
       <div class="campo"><span>Hora</span><div id="turnosNueva"></div></div>
+      <div class="recientes" id="recientes" hidden><span class="etiqueta">Clientas recientes</span><div class="chips-serv" id="chipsRecientes"></div></div>
       <div class="dos-col">
         <label class="campo"><span>Celular</span><input name="celular" type="tel" inputmode="tel" required placeholder="300 123 4567" value="${clienta?.celular ? String(clienta.celular).replace(/^57/, '') : ''}" list="sugClientas" autocomplete="off"></label>
         <label class="campo"><span>Nombre de la clienta</span><input name="nombre" required maxlength="80" value="${clienta?.nombre || ''}"></label>
@@ -205,6 +206,21 @@ export function nuevaCita({ fecha = S.hoy, colaboradoraId, inicio, clienta } = {
       <button class="btn bloque" type="submit" id="guardarCita">Guardar cita</button>
     </form>`);
   const f = $('#formCita', h);
+  if (puede('ver_clientas') && !clienta) {
+    api('/api/panel/clientas').then((r) => {
+      const l = r.clientas.slice(0, 6);
+      if (!l.length || !document.body.contains(h)) return;
+      $('#recientes', h).hidden = false;
+      pintar($('#chipsRecientes', h), html`${l.map((c) => html`<button type="button" class="chip" data-cel="${c.celular.replace(/^57/, '')}" data-nom="${c.nombre}">${c.nombre.split(' ').slice(0, 2).join(' ')}</button>`)}`);
+      $('#chipsRecientes', h).onclick = (e) => {
+        const b = e.target.closest('[data-cel]');
+        if (!b) return;
+        f.celular.value = b.dataset.cel;
+        f.nombre.value = b.dataset.nom;
+        for (const x of $$('#chipsRecientes .chip', h)) x.setAttribute('aria-pressed', String(x === b));
+      };
+    }).catch(() => {});
+  }
   const sel_ = selectorTurnos($('#turnosNueva', h), {
     permitirForzar: esDuena(),
     obtenerParams: () => (sel.size && f.fecha.value ? { servicios: [...sel], fecha: f.fecha.value, con: String(con) } : null),
@@ -323,6 +339,12 @@ export function nuevoBloqueo({ fecha = S.hoy, colaboradoraId, inicio } = {}, alC
         <label class="campo"><span>Desde el día</span><input type="date" name="fecha" value="${fecha}" required></label>
         <label class="campo"><span>Hasta el día</span><input type="date" name="fecha_hasta" value="${fecha}"></label>
       </div>
+      <div class="campo"><span>Rápido</span><div class="chips-serv atajos-bloqueo">
+        <button type="button" class="chip" data-atajo="hora">La próxima hora</button>
+        <button type="button" class="chip" data-atajo="almuerzo">Almuerzo 1–2 p. m.</button>
+        <button type="button" class="chip" data-atajo="resto">Resto del día</button>
+        <button type="button" class="chip" data-atajo="dia">Todo el día</button>
+      </div></div>
       <label class="interruptor"><input type="checkbox" name="todo_el_dia"> Todo el día</label>
       <div class="dos-col horas-bloq">
         <label class="campo"><span>Desde</span><input type="time" name="inicio" step="300" value="${hhmm(ini)}"></label>
@@ -334,6 +356,17 @@ export function nuevoBloqueo({ fecha = S.hoy, colaboradoraId, inicio } = {}, alC
     </form>`);
   const f = $('#formBloq', h);
   f.todo_el_dia.onchange = () => { $('.horas-bloq', h).hidden = f.todo_el_dia.checked; };
+  $('.atajos-bloqueo', h).onclick = (e) => {
+    const b = e.target.closest('[data-atajo]');
+    if (!b) return;
+    for (const x of $$('[data-atajo]', h)) x.setAttribute('aria-pressed', String(x === b));
+    const ahora = (() => { const d = new Date(Date.now() - 5 * 3600000); return Math.ceil((d.getUTCHours() * 60 + d.getUTCMinutes()) / 5) * 5; })();
+    const fijar = (a, z) => { f.todo_el_dia.checked = false; $('.horas-bloq', h).hidden = false; f.inicio.value = hhmm(a); f.fin.value = hhmm(Math.min(z, 1435)); };
+    if (b.dataset.atajo === 'hora') { f.fecha.value = f.fecha_hasta.value = S.hoy; fijar(ahora, ahora + 60); f.motivo.value ||= 'Ocupada'; }
+    if (b.dataset.atajo === 'almuerzo') { fijar(780, 840); f.motivo.value = 'Almuerzo'; }
+    if (b.dataset.atajo === 'resto') { f.fecha.value = f.fecha_hasta.value = S.hoy; fijar(ahora, 1435); f.motivo.value ||= 'Salida temprano'; }
+    if (b.dataset.atajo === 'dia') { f.todo_el_dia.checked = true; $('.horas-bloq', h).hidden = true; }
+  };
   f.fecha.onchange = () => { if (f.fecha_hasta.value < f.fecha.value) f.fecha_hasta.value = f.fecha.value; };
   f.onsubmit = async (e) => {
     e.preventDefault();

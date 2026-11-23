@@ -479,6 +479,7 @@ test('navegador: panel de Erika (computador y celular) y de una colaboradora', {
   const b = await chromium.launch();
   try {
     const ctx = await b.newContext({ viewport: { width: 1366, height: 860 }, deviceScaleFactor: 1 });
+    await ctx.addInitScript(() => { try { localStorage.setItem('amelia_tour_omitir', '1'); } catch { /* nada */ } });
     const p = await ctx.newPage();
     const errores = [];
     p.on('pageerror', (e) => errores.push(e.message));
@@ -512,6 +513,7 @@ test('navegador: panel de Erika (computador y celular) y de una colaboradora', {
     assert.equal(r.headers.get('x-robots-tag'), 'noindex, nofollow');
 
     const movil = await b.newContext({ ...devices['iPhone 13'] });
+    await movil.addInitScript(() => { try { localStorage.setItem('amelia_tour_omitir', '1'); } catch { /* nada */ } });
     const m = await movil.newPage();
     await m.goto(`${base}/panel/`, { waitUntil: 'networkidle' });
     await m.click('.persona >> text=Karla');
