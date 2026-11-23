@@ -9,9 +9,9 @@ hechas por Agencia Vectorial. Todo se publica en **Cloudflare Pages** (proyecto 
 | `public/styles.css`, `public/app.js` | Estilos e interacción de la página (sin scripts en línea). |
 | `public/img/` | Fotos en WebP en varios tamaños (480/720/960…), servidas desde el mismo sitio. |
 | `public/fonts/` | Playfair Display, DM Sans y Great Vibes servidas localmente (más rápido que Google Fonts). |
-| `public/reservar/`, `public/panel/`, `functions/` | Plataforma de citas (rama `claude/plataforma-citas`, en desarrollo). |
+| `public/reservar/`, `public/panel/`, `functions/` | Plataforma de citas (en desarrollo). |
 | `scripts/cambiar-agenda.py` | Cambia el enlace de "Agendar" de toda la página (Kumbio → `/reservar`). |
-| `docs/agentes/` | Prompt del agente de escritorio y formato de importación desde Kumbio. |
+| `docs/migracion-kumbio/` | Formato de importación desde Kumbio y reporte de la migración. |
 
 ## Velocidad (Lighthouse, con compresión como en Cloudflare)
 | | Antes (Netlify, celular) | Ahora celular | Ahora computador |
