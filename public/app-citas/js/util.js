@@ -214,3 +214,50 @@ export const ICONOS = {
   copiar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="12" height="12" rx="2.5"/><path d="M5 15V5a2 2 0 012-2h10"/></svg>',
   ubicacion: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0114 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
 };
+
+// ---------- imágenes livianas ----------
+// Las fotos del sitio vienen en varios anchos (/img/nombre-320.webp, -480, -720, -960 …).
+// `foto()` arma <img> con srcset/sizes para que cada celular baje solo el tamaño que necesita.
+const RE_IMG = /^\/img\/([\w-]+)-(\d+)\.webp$/;
+const ANCHOS = [320, 480, 720, 960];
+const RE_CLOUD = /^(https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\/)(.+)$/;
+
+/** Lista [url, ancho] de las variantes disponibles, o null si la foto no tiene variantes conocidas. */
+export function variantes(url) {
+  const s = String(url || '');
+  const m = RE_IMG.exec(s);
+  if (m) {
+    const max = Number(m[2]);
+    const l = ANCHOS.filter((a) => a < max).map((a) => [`/img/${m[1]}-${a}.webp`, a]);
+    return [...l, [s, max]];
+  }
+  const c = RE_CLOUD.exec(s);
+  if (c && !/(^|,)w_\d/.test(c[2].split('/')[0])) return [480, 720, 1080].map((a) => [`${c[1]}f_auto,q_auto,c_limit,w_${a}/${c[2]}`, a]);
+  return null;
+}
+
+/** La variante más pequeña que cubre `ancho` píxeles (para fondos y miniaturas). */
+export function fotoAncho(url, ancho) {
+  const v = variantes(url);
+  if (!v) return url;
+  return (v.find(([, a]) => a >= ancho) || v[v.length - 1])[0];
+}
+
+/** <img> responsivo. `ancho`/`alto` reservan el espacio (sin saltos); `prioridad` para la primera pantalla. */
+export function foto(url, { sizes = '100vw', ancho, alto, alt = '', clase = '', prioridad = false, id = '' } = {}) {
+  if (!url) return '';
+  const v = variantes(url);
+  const src = v ? (v.find(([, a]) => a >= 480) || v[v.length - 1])[0] : url;
+  const srcset = v && v.length > 1 ? v.map(([u, a]) => `${u} ${a}w`).join(', ') : '';
+  return html`<img src="${src}"${srcset ? html` srcset="${srcset}" sizes="${sizes}"` : ''}${ancho ? html` width="${ancho}" height="${alto || ancho}"` : ''} alt="${alt}"${clase ? html` class="${clase}"` : ''}${id ? html` id="${id}"` : ''} ${crudo(prioridad ? 'fetchpriority="high"' : 'loading="lazy"')} decoding="async" referrerpolicy="no-referrer">`;
+}
+
+/** Videos de Cloudinary con ancho limitado (no bajar el original en el celular). */
+export function videoLiviano(url) {
+  const m = /^(https:\/\/res\.cloudinary\.com\/[^/]+\/video\/upload\/)(.+)$/.exec(String(url || ''));
+  if (!m) return url;
+  const [primero, ...resto] = m[2].split('/');
+  const esTrans = resto.length && /^[a-z]{1,3}_/.test(primero);
+  if (esTrans && /(^|,)w_\d/.test(primero)) return url;
+  return esTrans ? `${m[1]}${primero},w_720,c_limit/${resto.join('/')}` : `${m[1]}q_auto,f_auto,w_720,c_limit/${m[2]}`;
+}

@@ -1,5 +1,5 @@
 // Promociones (Erika): aparecen arriba en la app/página de reservas mientras estén vigentes.
-import { api, html, crudo, pintar, $, toast, ocupado, confirmar, abrirHoja, cerrarHoja, dinero, fechaLarga, ICONOS } from '/app-citas/js/util.js';
+import { api, html, crudo, pintar, $, toast, ocupado, confirmar, abrirHoja, cerrarHoja, dinero, fechaLarga, ICONOS, foto } from '/app-citas/js/util.js';
 import { S } from './estado.js';
 import { elegirMedio } from './galeria.js';
 
@@ -14,7 +14,7 @@ export async function vista(v) {
     <p class="muted">Las promociones vigentes salen de primeras en la reserva y en la app de la clienta, con botón para agendar.</p>
     <div class="lista-servicios-panel espacio-arriba">${promociones.length ? promociones.map((p) => html`
       <button class="fila-servicio tarjeta ${vigente(p) ? '' : 'oculto'}" data-id="${p.id}">
-        <span class="fs-foto">${p.foto ? html`<img src="${p.foto}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}</span>
+        <span class="fs-foto">${foto(p.foto, { sizes: '58px', ancho: 58 })}</span>
         <span class="fs-cuerpo"><strong>${p.titulo}</strong><span>${p.precio_promo != null ? dinero(p.precio_promo) + ' · ' : ''}${p.hasta ? `hasta el ${fechaLarga(p.hasta)}` : 'sin fecha de fin'}</span></span>
         ${vigente(p) ? html`<span class="pastilla ok">Vigente</span>` : html`<span class="pastilla aviso">No visible</span>`}
       </button>`) : html`<div class="vacio">${crudo(ICONOS.chispa)}<p>Crea tu primera promoción (ej. "Semipermanente + Pedi Spa en combo").</p></div>`}</div>`);

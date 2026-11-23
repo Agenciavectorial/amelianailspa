@@ -1,5 +1,5 @@
 // Servicios (solo Erika): catálogo con foto, precio, duración, quién lo hace y visibilidad.
-import { api, html, crudo, pintar, $, $$, toast, ocupado, confirmar, abrirHoja, cerrarHoja, duracion, dinero, ICONOS } from '/app-citas/js/util.js';
+import { api, html, crudo, pintar, $, $$, toast, ocupado, confirmar, abrirHoja, cerrarHoja, duracion, dinero, ICONOS, foto } from '/app-citas/js/util.js';
 import { S, recargar, categorias, conAgenda } from './estado.js';
 import { editorGaleria, elegirMedio, agregarAGaleria } from './galeria.js';
 
@@ -17,7 +17,7 @@ export async function vista(v) {
         <div class="lista-servicios-panel">
           ${S.servicios.filter((s) => s.categoria === cat).map((s) => html`
             <button class="fila-servicio tarjeta ${s.visible ? '' : 'oculto'}" data-id="${s.id}">
-              <span class="fs-foto">${s.foto ? html`<img src="${s.foto}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}</span>
+              <span class="fs-foto">${foto(s.foto, { sizes: '58px', ancho: 58 })}</span>
               <span class="fs-cuerpo"><strong>${s.nombre}</strong><span>${duracion(s.duracion)} · ${s.precio != null ? (s.precio_desde ? 'desde ' : '') + dinero(s.precio) : 'precio a consultar'}</span></span>
               ${s.visible ? '' : html`<span class="pastilla aviso">Oculto</span>`}
             </button>`)}

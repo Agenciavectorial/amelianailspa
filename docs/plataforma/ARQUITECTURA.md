@@ -201,3 +201,17 @@ toques y no hay datos que robar con un número de teléfono.
   `workers/recordatorios/` cada 15 min con la misma base D1. Tope de 10 envíos por ejecución.
 - Los service workers de `/panel` y `/reservar` muestran la notificación y abren la cita al tocarla.
 - `enviarWhatsAppAutomatico()` es el punto de integración para WhatsApp Business API (hoy no envía).
+
+## Velocidad y caché
+
+- **Fotos:** `foto()` en `app-citas/js/util.js` arma `<img>` con `srcset`/`sizes` a partir de las variantes
+  `-320/-480/-720/-960` de `/img/`, con `width`/`height` (sin saltos), `loading="lazy"` fuera de la primera
+  pantalla y `fetchpriority="high"` en la primera foto de la ficha. Las fotos de Cloudinary se piden con
+  `f_auto,q_auto,c_limit,w_…`, y los videos con un ancho máximo de 720 (`videoLiviano()`). La portada usa la
+  variante justa para el ancho de la pantalla (`fotoAncho()`).
+- **Caché:** `functions/_lib/cabeceras.js` (`cacheDe`) pone `no-cache` a HTML, CSS, JS, manifiestos y service
+  workers de `/reservar`, `/panel` y `/app-citas`: el navegador y el edge de Cloudflare revalidan con ETag
+  (304 si no cambió), así un despliegue se ve de inmediato sin versionar a mano cada módulo ES. Las fuentes
+  van con un año (`immutable`) y las fotos de `/img/` ya traen un año desde `public/_headers`.
+- **Service workers:** red primero (`cache: 'no-cache'`) y caché solo sin conexión; al instalar descargan la
+  cáscara saltándose la caché HTTP. Subir `VERSION` cuando cambie la lista de la cáscara.

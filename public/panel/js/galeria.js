@@ -1,6 +1,6 @@
 // Editor de galería (fotos y videos por servicio) y selector de imagen reutilizable
 // (galerías, promociones, portada de la reserva y foto de perfil).
-import { api, html, crudo, pintar, $, $$, toast, ocupado, abrirHoja, cerrarHoja, ICONOS } from '/app-citas/js/util.js';
+import { api, html, crudo, pintar, $, $$, toast, ocupado, abrirHoja, cerrarHoja, ICONOS, foto } from '/app-citas/js/util.js';
 
 let fotosSpa = null;
 async function cargarFotosSpa() {
@@ -40,7 +40,7 @@ export function elegirMedio({ video = false, titulo = 'Agregar foto' } = {}) {
         <button data-tab="enlace">Pegar enlace</button>
       </div>
       <section data-panel="spa">
-        <div class="selector-fotos">${fotos.map((f) => html`<button type="button" class="sf-foto" data-url="${f}"><img src="${f.replace('-720.', '-480.').replace('-1080.', '-480.')}" alt="" loading="lazy"></button>`)}</div>
+        <div class="selector-fotos">${fotos.map((f) => html`<button type="button" class="sf-foto" data-url="${f}">${foto(f, { sizes: '(min-width: 760px) 140px, 30vw', ancho: 140 })}</button>`)}</div>
       </section>
       <section data-panel="subir" hidden>
         ${puedeSubir ? html`<label class="zona-subir"><input type="file" id="archivoMedio" accept="image/*${video ? ',video/mp4' : ''}" class="sr">
@@ -103,7 +103,7 @@ export async function editorGaleria(cont, servicioId, { alAgregar } = {}) {
       <p class="muted small">Las clientas las ven al tocar el servicio. La primera foto es la principal. Los cambios se guardan solos.</p>
       <div class="galeria-editor">
         ${medios.map((m, i) => html`<div class="ge-item" data-i="${i}">
-          <span class="ge-mini">${m.tipo === 'video' ? html`<img src="${m.portada || ''}" alt=""><span class="ge-video">▶</span>` : html`<img src="${m.url}" alt="" loading="lazy" referrerpolicy="no-referrer">`}</span>
+          <span class="ge-mini">${m.tipo === 'video' ? html`${foto(m.portada, { sizes: '30vw', ancho: 140 })}<span class="ge-video">▶</span>` : foto(m.url, { sizes: '(min-width: 760px) 140px, 30vw', ancho: 140 })}</span>
           <span class="ge-botones">
             <button type="button" class="icono-btn chico" data-mover="-1" aria-label="Mover antes" ${i === 0 ? crudo('disabled') : ''}>‹</button>
             <button type="button" class="icono-btn chico" data-mover="1" aria-label="Mover después" ${i === medios.length - 1 ? crudo('disabled') : ''}>›</button>

@@ -1,7 +1,7 @@
 // Reserva de citas para clientas (sin cuenta). Pasos: servicios → profesional → horario → datos → listo.
 import {
   api, html, crudo, pintar, $, $$, toast, ocupado, hora, duracion, dinero, fechaLarga, ICONOS, inicial, celularBonito, abrirHoja, cerrarHoja,
-  SITIO, aplicarAcento,
+  SITIO, aplicarAcento, foto, fotoAncho, videoLiviano,
 } from '/app-citas/js/util.js';
 import { crearSelector } from './selector.js';
 import { estadoPush, activarPush } from '/app-citas/js/push.js';
@@ -119,12 +119,12 @@ function pasoServicios() {
       <div id="avisosInicio"></div>
       ${!conColab && C.promociones?.length ? html`<h2 class="titulo-bloque">Promociones</h2><div class="promos">${C.promociones.map((p) => html`
         <button class="promo" data-promo="${p.id}">
-          ${p.foto ? html`<img src="${p.foto}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}
+          ${foto(p.foto, { sizes: '(min-width: 760px) 320px, 80vw' })}
           <span class="promo-texto"><strong>${p.titulo}</strong>${p.descripcion ? html`<span>${p.descripcion}</span>` : ''}
             <span class="promo-pie">${p.precio_promo != null ? html`<b>${dinero(p.precio_promo)}</b>` : ''}${p.hasta ? html`<small>hasta ${fechaLarga(p.hasta).replace(/^\S+ /, '')}</small>` : ''}</span></span>
         </button>`)}</div>` : ''}
       ${!conColab && populares().length ? html`<h2 class="titulo-bloque">Lo más pedido</h2><div class="populares">${populares().map((s) => html`
-        <button class="popular" data-pop="${s.id}">${s.foto ? html`<img src="${s.foto}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}<span>${s.nombre}</span></button>`)}</div>
+        <button class="popular" data-pop="${s.id}">${foto(s.foto, { sizes: '116px', ancho: 116 })}<span>${s.nombre}</span></button>`)}</div>
         <h2 class="titulo-bloque">Todos los servicios</h2>` : ''}
       ${conColab ? html`<div class="con-colab"><img class="avatar" src="${conColab.foto}" alt=""><span>Reservando con <strong>${conColab.nombre}</strong></span><button class="btn ghost chico" id="quitarCon">Cambiar</button></div>` : ''}
       <div class="categorias" role="tablist">
@@ -205,7 +205,7 @@ function tarjetaServicio(s) {
   return html`
     <div class="servicio ${marcado ? 'marcado' : ''} ${noHace ? 'no-disponible' : ''}" data-id="${s.id}">
       <button type="button" class="servicio-abrir" data-abrir="${s.id}" ${noHace ? crudo('disabled') : ''} aria-label="Ver ${s.nombre}">
-      <span class="servicio-foto">${s.foto ? html`<img src="${s.foto}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}${s.medios?.length > 1 ? html`<span class="servicio-num">${s.medios.length} ${crudo(s.medios.some((m) => m.tipo === 'video') ? '▶' : '')}</span>` : ''}</span>
+      <span class="servicio-foto">${foto(s.foto, { sizes: '112px', ancho: 112 })}${s.medios?.length > 1 ? html`<span class="servicio-num">${s.medios.length} ${crudo(s.medios.some((m) => m.tipo === 'video') ? '▶' : '')}</span>` : ''}</span>
       <span class="servicio-cuerpo">
         <span class="servicio-nombre">${s.nombre}</span>
         <span class="servicio-desc">${noHace ? `${conColab.nombre} no hace este servicio` : s.descripcion}</span>
@@ -246,7 +246,7 @@ function portada() {
 function aplicarPortada() {
   const h = $('#heroReserva');
   const url = C.ajustes.portada_url;
-  if (h && url && /^(https:\/\/|\/)[^"'()\s]+$/.test(url)) h.style.setProperty('--portada', `url("${url}")`);
+  if (h && url && /^(https:\/\/|\/)[^"'()\s]+$/.test(url)) h.style.setProperty('--portada', `url("${fotoAncho(url, Math.min(1080, innerWidth * (devicePixelRatio || 1)))}")`);
 }
 
 function abrirFicha(id) {
@@ -258,8 +258,8 @@ function abrirFicha(id) {
   const h = abrirHoja(html`
     ${medios.length ? html`<div class="ficha-carrusel" id="fichaCarrusel">
       ${medios.map((m, i) => m.tipo === 'video'
-        ? html`<div class="ficha-medio"><video muted loop playsinline preload="none" ${crudo(reducido ? 'controls' : '')} poster="${m.portada || ''}" aria-label="Video de ${s.nombre}"><source src="${m.url}" type="video/mp4"></video></div>`
-        : html`<div class="ficha-medio"><img src="${m.url}" alt="${s.nombre} ${i + 1}" ${crudo(i ? 'loading="lazy"' : '')} referrerpolicy="no-referrer"></div>`)}
+        ? html`<div class="ficha-medio"><video muted loop playsinline preload="none" ${crudo(reducido ? 'controls' : '')} poster="${fotoAncho(m.portada || '', 720)}" aria-label="Video de ${s.nombre}"><source src="${videoLiviano(m.url)}" type="video/mp4"></video></div>`
+        : html`<div class="ficha-medio">${foto(m.url, { sizes: '(min-width: 760px) 600px, 100vw', ancho: 720, alto: 900, alt: `${s.nombre} ${i + 1}`, prioridad: !i })}</div>`)}
     </div>
     ${medios.length > 1 ? html`<div class="ficha-puntos" aria-hidden="true">${medios.map((_, i) => html`<span class="${i ? '' : 'activo'}"></span>`)}</div>` : ''}` : ''}
     <div class="ficha-cuerpo">
@@ -317,7 +317,7 @@ function pasoProfesional() {
         </button>
         ${aptas.map((c) => html`
         <button class="pro" data-slug="${c.slug}">
-          ${c.foto ? html`<img class="avatar" src="${c.foto}" alt="" loading="lazy">` : html`<span class="avatar inicial">${inicial(c.nombre)}</span>`}
+          ${c.foto ? foto(c.foto, { sizes: '56px', ancho: 56, clase: 'avatar' }) : html`<span class="avatar inicial">${inicial(c.nombre)}</span>`}
           <span class="pro-texto"><strong>${c.nombre}</strong><span>${c.cargo || 'Manicurista'}</span></span>
           <span class="flecha-pro">${crudo(ICONOS.atras)}</span>
         </button>`)}

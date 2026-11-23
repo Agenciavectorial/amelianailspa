@@ -529,6 +529,24 @@ test('navegador: panel de Erika (computador y celular) y de una colaboradora', {
   } finally { await b.close(); }
 });
 
+test('caché: HTML/CSS/JS de la plataforma siempre se revalidan; fuentes por un año; pestañas y cejas con su foto', async () => {
+  for (const ruta of ['/reservar/', '/reservar/reservar.js', '/reservar/reservar.css', '/panel/', '/panel/js/main.js', '/panel/sw.js', '/app-citas/base.css', '/app-citas/js/util.js']) {
+    const r = await fetch(base + ruta);
+    assert.equal(r.status, 200, ruta);
+    assert.equal(r.headers.get('cache-control'), 'no-cache', ruta);
+    const etag = r.headers.get('etag');
+    if (etag) assert.equal((await fetch(base + ruta, { headers: { 'If-None-Match': etag } })).status, 304, `${ruta} responde 304 si no cambió`);
+  }
+  assert.match((await fetch(base + '/app-citas/fonts/dmsans.woff2')).headers.get('cache-control'), /max-age=31536000/);
+  const cat = await cliente(base).pedir('/api/public/catalogo');
+  for (const slug of ['lifting-pestanas', 'pestanas-punto-a-punto', 'laminado-cejas', 'sombreado-cejas']) {
+    const s = cat.cuerpo.servicios.find((x) => x.slug === slug);
+    if (!s) continue;
+    assert.doesNotMatch(s.foto, /\/arte\//, `${slug} ya no usa el arte`);
+    assert.ok(s.medios.some((m) => m.url === `/img/${slug}-720.webp`), `${slug} tiene su foto en la galería`);
+  }
+});
+
 test('galerías: catálogo con fotos y video, edición solo de Erika, subida sin R2 responde amable', async () => {
   const cat = await cliente(base).pedir('/api/public/catalogo');
   const press = cat.cuerpo.servicios.find((s) => s.slug === 'press-on');
@@ -579,6 +597,10 @@ for (const [nombre, disp] of [['iPhone 13', 'iPhone 13'], ['Android 360 px', 'Ga
       }
       const suf = disp === 'Galaxy S8' ? '-android' : '';
       await p.screenshot({ path: CAPTURAS + `movil-reservar-1-inicio${suf}.png` });
+      const img = await p.$eval('.servicio-foto img[srcset]', (e) => ({ srcset: e.getAttribute('srcset') || '', w: e.getAttribute('width'), lazy: e.loading, actual: e.currentSrc }));
+      assert.match(img.srcset, /-320\.webp 320w/, 'fotos con srcset');
+      assert.ok(img.w && img.lazy === 'lazy', 'tamaño reservado y carga diferida');
+      assert.doesNotMatch(img.actual, /-(960|1080|1200|1440)\.webp/, 'el celular no baja la foto grande');
       // Toque 1: abrir la ficha de Press On (galería con video)
       await p.click('.servicio-abrir >> text=Press On');
       await p.waitForSelector('.ficha-carrusel .ficha-medio');
