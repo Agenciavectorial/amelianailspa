@@ -21,26 +21,23 @@ Falta:
   borrar desde el panel (Cancelar) o pedir una limpieza antes de abrir al público.
 - Recomendado: base D1 aparte para pruebas (§10) cuando ya haya citas reales.
 
-## Datos del spa (confirmar con Erika)
+## Datos del spa
 
-- **Precios:** la página no los publica, así que todos quedaron "Precio en el spa". → Se extraen
-  de Kumbio y Erika los carga con **Importar CSV → Servicios** (o a mano en Servicios).
-- **Duraciones:** se tomó el valor alto de los rangos de la página (p. ej. Acrílicas "90–120 min" →
-  120). → Confirmar o corregir con lo de Kumbio.
-- **Quién hace qué:** por defecto Leidy, Karla, Julieth y Daily hacen **todos** los servicios
-  (incluidos pestañas, cejas y faciales). → Erika debe desmarcar en Equipo → Servicios lo que cada
-  una no hace; si no, una clienta podría reservar un facial con quien no lo hace.
-- **Erika no recibe citas** (`agenda` apagado), igual que en la página (`data-no-agenda`). → Si ella
-  también atiende, encender "Recibe citas" en su tarjeta.
-- **Valentina** (redes) no está en la plataforma. Se puede agregar si necesita entrar.
-- **Horario:** el de los datos estructurados de la página (L‑V 9–19, S 10–19, D 11–17). Confirmar.
-- **Festivos:** no se cargó ninguno porque el spa está en un centro comercial y seguramente abre.
-  En *Horario y festivos* hay una lista de festivos de Colombia 2026–2027 para cerrar con un toque.
-- **Fotos de servicios en sitios externos:** Lifting, Punto a punto, Laminado, Sombreado y
-  Depilación usan fotos de otros sitios (catalinajaramillo.com, wixstatic, youtube, etc.) igual que la
-  página. Pueden desaparecer o no ser de uso libre. → Subir fotos propias a Cloudinary y cambiarlas
-  en Servicios.
-- La foto de Daily en la página era `.heic`; aquí se pide a Cloudinary en `.jpg` (misma imagen).
+Cargados de Kumbio como punto de partida (`migrations/0006_datos_kumbio.sql`, aplicada en la base real el
+2026-11-23). Erika los ajusta desde el panel:
+- **Horario:** el de Kumbio (L‑J 9–20, V 10–19, S 8–18, D 11–17). La página y Google dicen otro
+  (L‑V 9–19, S 10–19, D 11–17): conviene igualarlos cuando el spa confirme.
+- **Quién hace qué:** Leidy todo; Julieth y Daily uñas; Karla faciales, cejas y pestañas (Karla y Daily
+  figuraban inactivas en Kumbio; aquí quedan activas porque aparecen en la página).
+- **Duraciones:** las de Kumbio (Acrílicas y Poligel 135 min, Dipping/Forrado/Press On 105…). Sombreado no
+  existe en Kumbio: 90 min.
+- **Veloterapia** agregada al catálogo (60 min, sin foto propia todavía).
+- **Precios:** Kumbio no tiene ninguno (todos en $0). Se muestran como "Precio en el spa" hasta que Erika
+  los ponga en Servicios.
+- **Reseñas:** enlace directo de Google ya configurado.
+- **Clientas y citas de Kumbio** (6 y 6, una futura el 24 nov 2026): están en el Drive de la agencia, no
+  en el repositorio. Se importan desde el panel (Importar CSV) o se crea la cita futura a mano.
+- Fotos sin licencia clara: Limpieza facial y Dermapen parecen fotos de banco; confirmar o reemplazar.
 
 ## Reglas de reserva (valores por defecto, Erika los cambia en *Reglas de reserva*)
 
