@@ -28,8 +28,8 @@ Para mantenerlo: fotos nuevas siempre por `scripts/optimizar-fotos.py` (WebP en 
 caracteres del español.
 
 ## Fotos pendientes
-Lifting de pestañas, pestañas punto a punto, laminado, sombreado y depilación de cejas usaban fotos de otros
-negocios; hoy muestran un arte de la marca (`public/img/arte/`). Cuando lleguen las fotos propias a
+Lifting de pestañas, pestañas punto a punto, laminado y sombreado de cejas usaban fotos de otros negocios;
+hoy muestran un arte de la marca (depilación ya tiene foto propia) (`public/img/arte/`). Cuando lleguen las fotos propias a
 `fotos-nuevas/`, se optimizan con el script y se cambia el `<div class="sc-img sc-arte …">` de cada servicio por el `<img>`.
 
 ## SEO local
@@ -37,11 +37,15 @@ negocios; hoy muestran un arte de la marca (`public/img/arte/`). Cuando lleguen 
 - Datos estructurados (JSON-LD): `NailSalon` con dirección, horario, zona, redes, catálogo de servicios y
   acción de reserva; `WebSite` y `FAQPage` con las mismas preguntas que se ven en la sección de preguntas.
 - `sitemap.xml` con imágenes, `robots.txt` (excluye `/panel` y `/api/`), `404.html`, manifest e íconos propios.
-- Pendiente con datos reales: coordenadas exactas del pin de Google Maps y calificación real (no se marca
-  `aggregateRating` hasta tenerla), y ID de Google Analytics 4.
+- Coordenadas exactas de la ficha de Google Maps; "Cómo llegar" y "Dejar reseña" abren directamente la ficha del spa.
+- Google Analytics 4 (`G-PPSD6EHCEW`, `public/analitica.js`) con eventos de agendar, WhatsApp, cómo llegar y reseña.
 
 ## Agenda
-Hoy los botones "Agendar" apuntan a Kumbio. Cuando la plataforma propia esté en producción:
+Los botones "Agendar" ya apuntan a la plataforma propia (`/reservar`). Para volver a Kumbio en una emergencia:
+```bash
+python3 scripts/cambiar-agenda.py https://agenda.kumbio.com/amelia-nail-spa
+```
+El cambio se hizo con:
 ```bash
 python3 scripts/cambiar-agenda.py /reservar
 ```
