@@ -2,17 +2,19 @@
 //   node dev/video/grabar.mjs <erika|chicas|pagina> [--chica Leidy]
 // Usa el screencast de Chromium (cuadros JPEG con su hora) y luego arma un MP4 a 30 cps.
 // Resultado: dev/video/salida/<video>[-chica]/pantalla.mp4 y tiempos.json (inicio/fin de cada escena)
-import { chromium } from 'playwright';
+import { createRequire } from 'node:module';
+const { chromium } = createRequire(import.meta.url)('playwright'); // instalado globalmente en el entorno
 import { mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs';
 import { execFileSync, spawn } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { levantar, datosDemo, cliente } from '../servidor.mjs';
 import { cargarGuion } from './voz.mjs';
-import { prepararDatos, TOQUE } from './acciones.mjs';
+import { generarVapid } from '../../functions/_lib/push.js';
+import { prepararDatos, TOQUE, limpiar } from './acciones.mjs';
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
-export const PUERTO = 8789;
+export const PUERTO = Number(process.env.PUERTO_VIDEO || 8789); // otro puerto permite grabar dos a la vez
 const PAUSA = 0.55; // segundos de aire después de cada párrafo
 
 const dur = (f) => Number(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', f]).toString());
@@ -22,16 +24,18 @@ export function duracionEscena(video, e) {
   return { voz: e.texto.split(/\s+/).length / 2.6, audio: null }; // borrador sin voz: estimado
 }
 
-export async function grabar(video, { chica } = {}) {
+export async function grabar(video, { chica, rapido = false, solo = null } = {}) {
   const guion = await cargarGuion(video);
   const escenas = chica ? guion.version(chica) : guion.escenas;
   const nombre = chica ? `${video}-${chica.toLowerCase()}` : video;
-  const dir = path.join(AQUI, 'salida', nombre);
+  const dir = path.join(AQUI, 'salida', rapido ? `${nombre}-prueba` : nombre);
   const cuadros = path.join(dir, 'cuadros');
-  rmSync(cuadros, { recursive: true, force: true });
+  rmSync(dir, { recursive: true, force: true });
   mkdirSync(cuadros, { recursive: true });
 
-  const srv = await levantar({ puerto: PUERTO, estado: 'dev/.estado-video' });
+  // Llaves VAPID desechables, solo para este servidor local (así la pantalla de avisos se ve configurada).
+  const { publica, privada } = await generarVapid();
+  const srv = await levantar({ puerto: PUERTO, estado: `dev/.estado-video-${PUERTO}`, variables: { VAPID_PUBLICA: publica, VAPID_PRIVADA: privada, VAPID_SUJETO: 'mailto:video@ejemplo.local', PUSH_PERMITIR_LOCAL: '1' } });
   const base = srv.base;
   let srvAntes = null;
   let srvNuevo = null;
@@ -40,11 +44,12 @@ export async function grabar(video, { chica } = {}) {
     await prepararDatos(base, video);
     if (video === 'pagina') srvAntes = await servirAntes();
     // Para mostrar la pantalla de "primera vez" (crear PIN) se usa otra base local sin configurar.
-    if (video === 'erika') srvNuevo = await levantar({ puerto: PUERTO + 4, estado: 'dev/.estado-video-nuevo' });
+    if (video === 'erika') srvNuevo = await levantar({ puerto: PUERTO + 4, estado: `dev/.estado-video-nuevo-${PUERTO}` });
 
     const navegador = await chromium.launch();
     const ctx = await navegador.newContext({
       viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true,
+      userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1',
       locale: 'es-CO', timezoneId: 'America/Bogota', colorScheme: 'light',
       permissions: ['notifications'],
     });
@@ -74,10 +79,15 @@ export async function grabar(video, { chica } = {}) {
       const { voz, audio } = duracionEscena(video, e);
       const d = voz + PAUSA;
       const ini = Date.now() / 1000;
-      const hasta = async (frac) => { const falta = ini + d * frac - Date.now() / 1000; if (falta > 0) await page.waitForTimeout(falta * 1000); };
+      const hasta = rapido ? async () => {} : async (frac) => { const falta = ini + d * frac - Date.now() / 1000; if (falta > 0) await page.waitForTimeout(falta * 1000); };
       process.stdout.write(`  ${e.id} (${d.toFixed(1)} s) … `);
-      try { await e.accion({ ...ayuda, d, hasta, escena: e }); } catch (x) { console.error(`\n  ⚠ ${e.id}: ${x.message.split('\n')[0]}`); }
+      if (!e.mantener) await limpiar(page);
+      try { await e.accion({ ...ayuda, d, hasta, escena: e }); } catch (x) {
+        console.error(`\n  ⚠ ${e.id}: ${x.message.split('\n')[0]}`);
+        await page.screenshot({ path: path.join(dir, `error-${e.id}.png`) }).catch(() => {});
+      }
       await hasta(1);
+      if (rapido) await page.screenshot({ path: path.join(dir, `fin-${e.id}.png`) }).catch(() => {});
       const fin = Date.now() / 1000;
       tiempos.push({ id: e.id, capitulo: e.capitulo, texto: e.texto, audio, voz, ini: ini - t0, fin: fin - t0 });
       console.log(`${(fin - ini).toFixed(1)} s${fin - ini > d + 0.3 ? ' (se alargó)' : ''}`);
@@ -118,14 +128,15 @@ async function servirAntes() {
   const dir = path.join(AQUI, 'salida', 'pagina-antes');
   mkdirSync(dir, { recursive: true });
   writeFileSync(path.join(dir, 'index.html'), execFileSync('git', ['show', 'e68a802:index.html'], { cwd: path.join(AQUI, '..', '..') }));
-  const proc = spawn('python3', ['-m', 'http.server', '8792', '--bind', '127.0.0.1'], { cwd: dir, stdio: 'ignore' });
+  const proc = spawn('python3', ['-m', 'http.server', String(PUERTO + 3), '--bind', '127.0.0.1'], { cwd: dir, stdio: 'ignore' });
   await new Promise((r) => setTimeout(r, 800));
-  return { base: 'http://127.0.0.1:8792', cerrar: () => proc.kill() };
+  return { base: `http://127.0.0.1:${PUERTO + 3}`, cerrar: () => proc.kill() };
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const [video, ...resto] = process.argv.slice(2);
   const i = resto.indexOf('--chica');
-  await grabar(video, { chica: i >= 0 ? resto[i + 1] : undefined });
+  // --rapido: sin esperar la voz y con captura al final de cada escena (para depurar las acciones)
+  await grabar(video, { chica: i >= 0 ? resto[i + 1] : undefined, rapido: resto.includes('--rapido') });
   process.exit(0);
 }

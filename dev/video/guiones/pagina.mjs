@@ -23,7 +23,7 @@ const escenas = [
 export default {
   id: 'pagina',
   titulo: 'Tu nueva página',
-  subtitulo: 'La página y la reserva en línea',
+  subtitulo: 'Lo que cambió y cómo reservan tus clientas',
   escenas,
   bloques: [...new Set(escenas.map((e) => e.bloque))].map((id) => ({ id, escenas: escenas.filter((e) => e.bloque === id) })),
 };

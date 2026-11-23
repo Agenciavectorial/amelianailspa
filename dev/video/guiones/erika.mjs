@@ -44,7 +44,7 @@ const escenas = [
 export default {
   id: 'erika',
   titulo: 'Tu panel de Amelia',
-  subtitulo: 'Para Erika · panel de propietaria',
+  subtitulo: 'Tu negocio en el celular, paso a paso',
   escenas,
   bloques: [...new Set(escenas.map((e) => e.bloque))].map((id) => ({ id, escenas: escenas.filter((e) => e.bloque === id) })),
 };

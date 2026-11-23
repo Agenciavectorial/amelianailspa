@@ -36,6 +36,33 @@ export const TOQUE = `(() => {
     document.documentElement.appendChild(c);
     setTimeout(() => c.remove(), 6000);
   };
+  // Notificaciones simuladas SOLO para la grabación local (el navegador sin pantalla no tiene servicio push).
+  try {
+    let permiso = 'default', sub = null;
+    Object.defineProperty(Notification, 'permission', { get: () => permiso });
+    Notification.requestPermission = async () => (permiso = 'granted');
+    const b64u = (u) => btoa(String.fromCharCode(...new Uint8Array(u))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    const falsa = async () => {
+      const par = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits']);
+      const p256dh = b64u(await crypto.subtle.exportKey('raw', par.publicKey));
+      const auth = b64u(crypto.getRandomValues(new Uint8Array(16)));
+      return { endpoint: 'http://127.0.0.1:9/push-del-video-' + Date.now(), expirationTime: null, options: {},
+        getKey: () => new Uint8Array(65), toJSON() { return { endpoint: this.endpoint, expirationTime: null, keys: { p256dh, auth } }; },
+        unsubscribe: async () => { sub = null; return true; } };
+    };
+    PushManager.prototype.getSubscription = async () => sub;
+    PushManager.prototype.subscribe = async () => (sub = await falsa());
+  } catch {}
+  try { localStorage.setItem('amelia-promo-visto', String(Date.now())); } catch {} // sin ventana de promo encima
+  window.__etiqueta = (texto, color) => {
+    const pon = () => {
+      document.querySelectorAll('.__etq').forEach((x) => x.remove());
+      const e = document.createElement('div'); e.className = '__etq'; e.textContent = texto;
+      e.style.cssText = 'position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:2147483647;padding:8px 22px;border-radius:999px;font:700 15px/1.2 system-ui,sans-serif;letter-spacing:.18em;color:#fff;box-shadow:0 8px 24px rgba(0,0,0,.25);background:' + color;
+      document.documentElement.appendChild(e);
+    };
+    if (document.body) pon(); else addEventListener('DOMContentLoaded', pon);
+  };
   const abrir = window.open;
   window.open = function (url, ...r) { if (String(url).includes('wa.me')) { window.__mostrarWA(String(url)); return null; } return abrir.call(this, url, ...r); };
   addEventListener('click', (e) => {
@@ -93,16 +120,28 @@ async function ir(page, base, hash) {
   await pausa(page, 900);
 }
 async function dock(page, nombre) {
-  await tocar(page, page.locator(`.dock a:has-text("${nombre}")`), { centrar: false, espera: 900 });
+  const l = page.locator(`.dock a:has-text("${nombre}")`);
+  try { await l.click({ timeout: 2500 }); } catch { await l.evaluate((el) => el.click()); }
+  await pausa(page, 900);
 }
 async function seccionMas(page, nombre) {
   await dock(page, 'Más');
   await tocar(page, page.locator(`.fila-mas:has-text("${nombre}")`), { espera: 1000 });
 }
 async function cerrarHoja(page) {
-  const x = page.locator('[data-cerrar]:visible').last();
-  if (await x.count()) { await x.click().catch(() => {}); await pausa(page, 500); }
+  for (let i = 0; i < 3; i++) {
+    const habia = await page.evaluate(() => {
+      const x = document.querySelector('.hoja.abierta [data-cerrar], .hoja.abierta [data-no]');
+      if (x) x.click(); else if (document.querySelector('.hoja.abierta')) document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+      return !!document.querySelector('.hoja.abierta') || !!x;
+    });
+    if (!habia) break;
+    await pausa(page, 420);
+  }
+  await page.evaluate(() => { if (window.scrollX) window.scrollTo(0, window.scrollY); document.querySelectorAll('.hoja').forEach((h) => { h.scrollLeft = 0; }); });
 }
+/** Se llama antes de cada escena: deja la pantalla sin hojas abiertas. */
+export const limpiar = (page) => cerrarHoja(page).catch(() => {});
 async function ingresar(page, base, nombre, pin) {
   if (!page.url().startsWith(base + '/panel/')) await page.goto(base + '/panel/', { waitUntil: 'networkidle' });
   await tocar(page, page.locator(`.persona:has-text("${nombre}")`), { espera: 600 });
@@ -167,17 +206,16 @@ export const erika = {
     await hasta(0.3);
     await tocar(page, '#agDespues', { centrar: false });
     await hasta(0.42);
-    await tocar(page, page.locator('[data-modo="semana"]'), { centrar: false });
+    await tocar(page, page.locator('[data-modo="semana"]:visible').first(), { centrar: false });
     await hasta(0.62);
-    await tocar(page, page.locator('[data-modo="dia"]'), { centrar: false });
-    await hasta(0.7);
-    await tocar(page, '#agHoy', { centrar: false });
+    await tocar(page, page.locator('[data-modo="dia"]:visible').first(), { centrar: false });
+    await hasta(0.75);
+    await tocar(page, '#agDespues', { centrar: false }); // queda en mañana: ahí se crea la cita de ejemplo
   },
   async crearCita({ page, hasta }) {
     await tocar(page, '#agNueva', { centrar: false, espera: 700 });
     await tocar(page, page.locator('.hoja [data-serv]:has-text("Semipermanente")'));
     await hasta(0.3);
-    await page.locator('.hoja select[name="colaboradora"]').selectOption({ label: 'Karla' }).catch(() => {});
     await pausa(page, 900);
     await tocar(page, page.locator('#turnosNueva .turno').nth(2), { espera: 400 });
     await hasta(0.55);
@@ -196,7 +234,7 @@ export const erika = {
     await tocar(page, page.locator('.agenda-marco :text("Gina Ejemplo")'), { espera: 900 });
     await tocar(page, page.locator('.hoja [data-accion="cancelar"]'), { espera: 900 });
     await hasta(0.8);
-    await tocar(page, page.locator('.dialogo button:has-text("Cancelar cita"), [role="dialog"] button:has-text("Cancelar cita")').last(), { centrar: false, espera: 900 });
+    await tocar(page, page.locator('.hoja [data-si]'), { centrar: false, espera: 900 });
   },
   async cobrar({ page, hasta }) {
     await dock(page, 'Inicio');
@@ -215,13 +253,13 @@ export const erika = {
   async clientas({ page, hasta }) {
     await dock(page, 'Clientas');
     await hasta(0.12);
-    await escribir(page, '.vista input[type="search"], .vista input', 'Ana', { retraso: 150 });
+    await escribir(page, '#buscarClienta', 'Ana', { retraso: 150 });
     await pausa(page, 800);
     await hasta(0.3);
     await tocar(page, page.locator('.vista :text("Ana Prueba")'), { espera: 1200 });
     await hasta(0.55);
-    const notas = page.locator('.hoja textarea').first();
-    if (await notas.count()) await escribir(page, notas, 'Le encanta el nude con brillo. Sin alergias.', { retraso: 45 });
+    const pref = page.locator('.hoja input[name="preferencias"]');
+    if (await pref.count()) await escribir(page, pref, 'Nude con brillo, almendra corta. Sin alergias.', { retraso: 45 });
     await hasta(0.85);
     await bajar(page, 500, 1500, '.hoja');
   },
@@ -347,11 +385,11 @@ export const chicas = {
     await hasta(0.6);
     await tocar(page, '#agDespues', { centrar: false });
     await hasta(0.75);
-    await tocar(page, page.locator('[data-modo="semana"]'), { centrar: false });
+    await tocar(page, page.locator('[data-modo="semana"]:visible').first(), { centrar: false });
   },
   async citas({ page, hasta }) {
     await tocar(page, '#agHoy', { centrar: false, espera: 700 });
-    await tocar(page, page.locator('[data-modo="dia"]'), { centrar: false, espera: 800 });
+    await tocar(page, page.locator('[data-modo="dia"]:visible').first(), { centrar: false, espera: 800 });
     const c = page.locator('.agenda-marco [data-cita], .agenda-marco .cita').first();
     await tocar(page, c, { espera: 1200 });
     await hasta(0.55);
@@ -396,15 +434,18 @@ export const chicas = {
 export const pagina = {
   async antes({ page, baseAntes, hasta }) {
     await page.goto(baseAntes + '/', { waitUntil: 'load' }).catch(() => {});
-    await hasta(0.25);
-    await bajar(page, 900, 2500);
+    await page.evaluate(() => window.__etiqueta('ANTES', '#9a8f9f'));
+    await hasta(0.3);
+    await bajar(page, 700, 2200);
   },
   async ahora({ page, base, hasta }) {
     await page.goto(base + '/', { waitUntil: 'networkidle' });
+    await page.evaluate(() => window.__etiqueta('AHORA', '#7A6494'));
     await hasta(0.2);
     await bajar(page, 800, 2500);
     await hasta(0.55);
     await bajar(page, 900, 2500);
+    await page.evaluate(() => document.querySelectorAll('.__etq').forEach((x) => x.remove()));
   },
   async velocidad({ page, hasta }) {
     await page.evaluate((h) => {
@@ -433,15 +474,38 @@ export const pagina = {
     await hasta(0.95);
     await page.evaluate(() => window.__tarjeta?.remove());
   },
-  async reserva({ page, base, hasta }) {
+  async reserva({ page, hasta }) {
     await tocar(page, page.locator('.dock .dock-main'), { centrar: false, espera: 300 });
     await page.waitForURL('**/reservar/**').catch(() => {});
-    await pausa(page, 1200);
-    await tocar(page, page.locator('[data-servicio]:has-text("Semipermanente") button, .servicio:has-text("Semipermanente") button, :text("Semipermanente") >> xpath=ancestor::*[contains(@class,"serv")][1]').first(), { espera: 700 }).catch(() => {});
-    await hasta(0.25);
+    await pausa(page, 900);
+    await hasta(0.12);
+    await tocar(page, page.locator('.servicio:has-text("Semipermanente")'), { espera: 500 });
+    await tocar(page, '#btnSeguir', { centrar: false, espera: 900 });
+    await hasta(0.3);
+    await tocar(page, page.locator('.pro.cualquiera'), { espera: 900 });
+    await tocar(page, page.locator('.dia').nth(1), { centrar: false, espera: 700 });
+    await hasta(0.45);
+    await tocar(page, page.locator('.turno').nth(3), { espera: 400 });
+    await tocar(page, '#btnSeguir', { centrar: false, espera: 900 });
+    await hasta(0.58);
+    await escribir(page, 'input[name="nombre"]', 'Gina Ejemplo', { retraso: 55 });
+    await escribir(page, 'input[name="celular"]', '3009998877', { retraso: 55 });
+    await tocar(page, 'input[name="politica"]', { espera: 300 });
+    await hasta(0.86);
+    await tocar(page, '#btnReservar', { espera: 1500 });
   },
-  async app({ page, hasta }) {
-    await hasta(0.5);
+  async app({ page, base, hasta }) {
+    await arriba(page, 400);
+    const av = page.locator('#activarAvisos');
+    if (await av.count()) await tocar(page, av, { espera: 1300 });
+    await hasta(0.3);
+    await page.goto(base + '/reservar/', { waitUntil: 'networkidle' });
+    await hasta(0.45);
+    await bajar(page, 350, 1500);
+    await hasta(0.62);
+    await arriba(page, 600);
+    const rep = page.locator('#repetir');
+    if (await rep.count()) await tocar(page, rep, { espera: 1200 });
   },
   async cierre({ page, base }) {
     await page.goto(base + '/', { waitUntil: 'networkidle' });
