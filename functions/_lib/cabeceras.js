@@ -1,11 +1,12 @@
 // Cabeceras de seguridad para /reservar, /panel y /app-citas (sin tocar public/_headers).
 export const CSP = [
   "default-src 'self'",
-  "script-src 'self'",
+  // Cloudflare Web Analytics (sin cookies) se inyecta en el dominio publicado.
+  "script-src 'self' https://static.cloudflareinsights.com",
   "style-src 'self'",
   "img-src 'self' data: https:",
   "font-src 'self'",
-  "connect-src 'self'",
+  "connect-src 'self' https://cloudflareinsights.com",
   "manifest-src 'self'",
   "worker-src 'self'",
   "frame-ancestors 'none'",

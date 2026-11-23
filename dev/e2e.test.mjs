@@ -471,7 +471,7 @@ test('navegador: reserva en celular desde un botón "Agendar" de la página', { 
     assert.deepEqual(errores, []);
     // CSP estricta en /reservar
     const r = await fetch(`${base}/reservar/`);
-    assert.match(r.headers.get('content-security-policy'), /script-src 'self'/);
+    assert.match(r.headers.get('content-security-policy'), /script-src 'self'( https:\/\/static\.cloudflareinsights\.com)?;/);
   } finally { await b.close(); }
 });
 
