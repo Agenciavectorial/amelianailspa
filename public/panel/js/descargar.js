@@ -1,6 +1,7 @@
 // Botón "Descargar la app" del panel, visible apenas se abre (ingreso e Inicio) mientras no esté instalada.
 // Android/Chrome: abre el instalador del sistema. iPhone y otros navegadores: muestra los pasos.
-import { html, crudo, $, toast, abrirHoja, ICONOS } from '/app-citas/js/util.js?v=363881ba72';
+import { html, crudo, $, toast, abrirHoja, ICONOS } from '/app-citas/js/util.js?v=f24229204c';
+import { esDuena } from './estado.js?v=f24229204c';
 
 const ICONO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>';
 const CLAVE_OCULTO = 'amelia_descarga_oculta';
@@ -73,20 +74,31 @@ const PUSH = { sw: '/panel/sw.js', scope: '/panel/' };
 
 export async function tarjetaAvisos(caja) {
   if (!caja) return;
-  const { estadoPush, activarPush } = await import('/app-citas/js/push.js?v=363881ba72');
+  const { estadoPush, activarPush } = await import('/app-citas/js/push.js?v=f24229204c');
   const estado = await estadoPush(PUSH).catch(() => 'no-soportado');
-  if (estado !== 'inactivo') return;
-  caja.innerHTML = String(html`<section class="tarjeta tarjeta-descarga">
+  const ruta = '/api/panel/push/suscribir';
+  // Ya activos: se vuelve a registrar en silencio por si el servidor la perdió (cambio de celular, vencida…)
+  if (estado === 'activo') { activarPush({ ...PUSH, ruta }).catch(() => {}); return; }
+  const quien = esDuena() ? 'cuando alguien agenda, cambia o cancela una cita' : 'cuando te agendan, mueven o cancelan una cita, y 1 hora antes de cada una';
+  const textos = {
+    inactivo: [`Te llega una notificación ${quien}.`, html`<button type="button" class="btn" id="activarAvisosEquipo">Activar avisos</button>`],
+    'ios-instalar': ['En iPhone los avisos solo funcionan con la app descargada: toca "Descargar la app", ábrela desde el ícono y vuelve a entrar.', html`<button type="button" class="btn" data-descargar>Descargar la app</button>`],
+    bloqueado: ['Los avisos están bloqueados en este celular. Actívalos en los ajustes del navegador para amelianailspa.com y vuelve a entrar.', ''],
+  }[estado];
+  if (!textos) return;
+  caja.innerHTML = String(html`<section class="tarjeta tarjeta-descarga tarjeta-avisos">
     <span class="td-icono" aria-hidden="true">🔔</span>
-    <div><strong>Activa tus avisos</strong><p class="muted small">Te llega una notificación cuando te agendan, mueven o cancelan una cita, y 1 hora antes de cada una.</p></div>
-    <div class="td-botones"><button type="button" class="btn" id="activarAvisosEquipo">Activar avisos</button></div>
+    <div><strong>Activa tus avisos</strong><p class="muted small">${textos[0]}</p></div>
+    ${textos[1] ? html`<div class="td-botones">${textos[1]}</div>` : ''}
   </section>`);
-  $('#activarAvisosEquipo', caja).onclick = async (e) => {
-    e.currentTarget.disabled = true;
+  activarDescarga(caja);
+  $('#activarAvisosEquipo', caja)?.addEventListener('click', async (e) => {
+    const b = e.currentTarget;
+    b.disabled = true;
     try {
-      await activarPush({ ...PUSH, ruta: '/api/panel/push/suscribir' });
-      toast('¡Listo! Te avisaremos de tus citas.', 'ok');
+      await activarPush({ ...PUSH, ruta });
+      toast('¡Listo! Te avisaremos al instante.', 'ok');
       caja.innerHTML = '';
-    } catch (x) { toast(x.message, 'error'); e.currentTarget.disabled = false; }
-  };
+    } catch (x) { toast(x.message, 'error'); b.disabled = false; }
+  });
 }

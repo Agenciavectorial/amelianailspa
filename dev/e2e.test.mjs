@@ -319,6 +319,58 @@ test('fidelización: a quién le toca volver, inactivas y registro del mensaje',
   assert.equal((await karla.pedir('/api/panel/fidelizacion')).status, 403);
 });
 
+test('solo el negocio contacta a las clientas: las colaboradoras ven el celular oculto y agendan a una clienta reciente sin verlo', async () => {
+  const karla = cliente(base);
+  assert.equal((await karla.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.karla, pin: '1357' } })).status, 200);
+  const nueva = await reservar({ servicios: [ids['lifting-pestanas']], con: 'karla', fecha: DIA, inicio: 1020, nombre: 'Oculta Ficticia', celular: '3005550777' });
+  assert.equal(nueva.status, 200, JSON.stringify(nueva.cuerpo));
+  const ag = await karla.pedir(`/api/panel/agenda?desde=${DIA}&hasta=${DIA}`);
+  const mia = ag.cuerpo.citas.find((c) => c.clienta_nombre.startsWith('Oculta'));
+  assert.ok(mia, 've su cita');
+  assert.equal(mia.clienta_celular, '•••• 0777', 'celular oculto para la colaboradora');
+  const det = await karla.pedir(`/api/panel/citas/${mia.id}`);
+  assert.doesNotMatch(JSON.stringify(det.cuerpo), /3005550777|573005550777/, 'el detalle tampoco trae el celular');
+  const cls = await karla.pedir('/api/panel/clientas');
+  if (cls.status === 200) assert.ok(cls.cuerpo.clientas.every((c) => c.celular.startsWith('••••')));
+  // Erika sí lo ve
+  const agE = await erika.pedir(`/api/panel/agenda?desde=${DIA}&hasta=${DIA}`);
+  assert.equal(agE.cuerpo.citas.find((c) => c.id === mia.id).clienta_celular, '573005550777');
+  // Karla agenda otra vez a esa clienta por id, sin saber su celular
+  const otra = await karla.pedir('/api/panel/citas', { metodo: 'POST', datos: { servicios: [ids['lifting-pestanas']], colaboradora_id: ids.karla, fecha: proximoDiaHabil(6), inicio: 600, clienta_id: mia.clienta_id } });
+  assert.equal(otra.status, 200, JSON.stringify(otra.cuerpo));
+  // Novedades al instante: Karla se entera de una reserva nueva suya, no de las de otras
+  const base0 = (await karla.pedir('/api/panel/novedades?desde=0')).cuerpo.ultimo;
+  await reservar({ servicios: [ids['lifting-pestanas']], con: 'karla', fecha: proximoDiaHabil(6), inicio: 780, nombre: 'Novedad Ficticia', celular: '3005550778' });
+  await reservar({ servicios: [ids.tradicional], con: 'leidy', fecha: proximoDiaHabil(6), inicio: 780, nombre: 'Ajena Ficticia', celular: '3005550779' });
+  const nov = (await karla.pedir(`/api/panel/novedades?desde=${base0}`)).cuerpo;
+  assert.deepEqual(nov.novedades.map((n) => n.clienta), ['Novedad Ficticia']);
+  const novE = (await erika.pedir(`/api/panel/novedades?desde=${base0}`)).cuerpo;
+  assert.equal(novE.novedades.length, 2, 'Erika ve todas');
+});
+
+test('equipo: el PIN escrito en Acceso se guarda también con el botón "Guardar"', { skip: !chromium && 'Playwright no disponible' }, async () => {
+  const b = await chromium.launch();
+  try {
+    const ctx = await b.newContext({ viewport: { width: 390, height: 800 }, isMobile: true, hasTouch: true });
+    await ctx.addInitScript(() => localStorage.setItem('amelia_tour_omitir', '1'));
+    const p = await ctx.newPage();
+    await p.goto(`${base}/panel/`, { waitUntil: 'networkidle' });
+    await p.click('.persona >> text=Erika');
+    for (const d of '2468') await p.click(`.tecla[data-n="${d}"]`);
+    await p.click('#entrar');
+    await p.waitForSelector('.dock');
+    await p.goto(`${base}/panel/#/equipo`);
+    await p.click('.tarjeta-equipo >> text=Julieth');
+    await p.click('[data-tab="acceso"]');
+    await p.fill('#formColab [name=pin]', '2580');
+    await p.click('#guardarColab');
+    await p.waitForSelector('#formColab', { state: 'detached' });
+    const jul = cliente(base);
+    assert.equal((await jul.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.julieth, pin: '2580' } })).status, 200, 'el PIN quedó guardado');
+    await erika.pedir(`/api/panel/colaboradoras/${ids.julieth}/pin`, { metodo: 'POST', datos: { pin: '1357' } });
+  } finally { await b.close(); }
+});
+
 test('notas, plantillas y promociones con sus permisos', async () => {
   const karla = cliente(base);
   await karla.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.karla, pin: '1357' } });

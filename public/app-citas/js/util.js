@@ -125,6 +125,7 @@ export function hoyBogota() {
 }
 export function celularBonito(c) {
   const d = String(c || '');
+  if (d.includes('•')) return d; // oculto para las colaboradoras
   if (/^573\d{9}$/.test(d)) return `+57 ${d.slice(2, 5)} ${d.slice(5, 8)} ${d.slice(8)}`;
   return d ? '+' + d : '';
 }

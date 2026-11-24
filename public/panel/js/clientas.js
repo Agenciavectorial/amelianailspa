@@ -1,7 +1,7 @@
 // Clientas: búsqueda, historial y notas.
-import { api, html, crudo, pintar, $, toast, ocupado, abrirHoja, cerrarHoja, hora, dinero, fechaCorta, celularBonito, inicial, ICONOS } from '/app-citas/js/util.js?v=363881ba72';
-import { esDuena, puede } from './estado.js?v=363881ba72';
-import { nuevaCita, pastillaEstado } from './citas.js?v=363881ba72';
+import { api, html, crudo, pintar, $, toast, ocupado, abrirHoja, cerrarHoja, hora, dinero, fechaCorta, celularBonito, inicial, ICONOS } from '/app-citas/js/util.js?v=f24229204c';
+import { esDuena, puede } from './estado.js?v=f24229204c';
+import { nuevaCita, pastillaEstado } from './citas.js?v=f24229204c';
 
 let pagina = 0, texto = '';
 
@@ -48,7 +48,7 @@ async function verClienta(id) {
     <div class="dc-clienta tarjeta">
       <span class="avatar inicial grande">${inicial(c.nombre)}</span>
       <div><strong>${celularBonito(c.celular)}</strong><span class="muted small">Cliente desde ${c.creado.slice(0, 10)}</span></div>
-      <a class="icono-btn wa-btn" href="https://wa.me/${c.celular}" target="_blank" rel="noopener" aria-label="WhatsApp">${crudo(ICONOS.whatsapp)}</a>
+      ${esDuena() ? html`<a class="icono-btn wa-btn" href="https://wa.me/${c.celular}" target="_blank" rel="noopener" aria-label="WhatsApp">${crudo(ICONOS.whatsapp)}</a>` : ''}
     </div>
     <div class="stats mini">
       <div class="stat"><span>Visitas</span><strong>${asistidas.length}</strong></div>

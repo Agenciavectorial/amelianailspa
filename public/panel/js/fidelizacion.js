@@ -1,8 +1,8 @@
 // Fidelización: a quién le toca volver (ciclo de retorno del servicio), cumpleaños e inactivas para recuperar.
-import { api, html, crudo, pintar, $, $$, fechaLarga, celularBonito, ICONOS, SITIO } from '/app-citas/js/util.js?v=363881ba72';
-import { S } from './estado.js?v=363881ba72';
-import { enviar, textoPlantilla } from './mensajes.js?v=363881ba72';
-import { enlaceRepetir } from './inicio.js?v=363881ba72';
+import { api, html, crudo, pintar, $, $$, fechaLarga, celularBonito, ICONOS, SITIO } from '/app-citas/js/util.js?v=f24229204c';
+import { S, esDuena } from './estado.js?v=f24229204c';
+import { enviar, textoPlantilla } from './mensajes.js?v=f24229204c';
+import { enlaceRepetir } from './inicio.js?v=f24229204c';
 
 let pestana = 'contactar';
 
@@ -25,7 +25,7 @@ export async function vista(v) {
     <div class="lista-citas">${listas[pestana].length ? listas[pestana].map((c, i) => html`
       <div class="fila-gestionar tarjeta">
         <span class="fg-texto"><strong>${c.nombre}</strong><span>${c.motivo}</span>${c.extra ? html`<small>${c.extra}</small>` : html`<small>${celularBonito(c.celular)}</small>`}</span>
-        <button class="btn wa chico" data-i="${i}">${crudo(ICONOS.whatsapp)} Escribir</button>
+        ${esDuena() ? html`<button class="btn wa chico" data-i="${i}">${crudo(ICONOS.whatsapp)} Escribir</button>` : ''}
       </div>`) : html`<div class="vacio">${crudo(ICONOS.chispa)}<p>Nadie en esta lista por ahora.</p></div>`}</div>`);
   for (const b of $$('[data-p]', v)) b.onclick = () => { pestana = b.dataset.p; vista(v); };
   v.querySelector('.lista-citas').onclick = (e) => {

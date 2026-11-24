@@ -1,7 +1,7 @@
 // Promociones (Erika): aparecen arriba en la app/página de reservas mientras estén vigentes.
-import { api, html, crudo, pintar, $, toast, ocupado, confirmar, abrirHoja, cerrarHoja, dinero, fechaLarga, ICONOS, foto } from '/app-citas/js/util.js?v=363881ba72';
-import { S } from './estado.js?v=363881ba72';
-import { elegirMedio } from './galeria.js?v=363881ba72';
+import { api, html, crudo, pintar, $, toast, ocupado, confirmar, abrirHoja, cerrarHoja, dinero, fechaLarga, ICONOS, foto } from '/app-citas/js/util.js?v=f24229204c';
+import { S } from './estado.js?v=f24229204c';
+import { elegirMedio } from './galeria.js?v=f24229204c';
 
 export async function vista(v) {
   const { promociones } = await api('/api/panel/promociones');
