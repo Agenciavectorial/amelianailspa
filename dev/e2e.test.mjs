@@ -622,6 +622,7 @@ test('galerías: catálogo con fotos y video, edición solo de Erika, subida sin
   assert.equal(press.medios[0].tipo, 'video');
   assert.match(press.medios[0].portada, /^\/img\//);
   assert.ok(cat.cuerpo.ajustes.bienvenida_titulo);
+  assert.ok(Array.isArray(cat.cuerpo.festivos), 'el catálogo trae los días cerrados');
   const karla = cliente(base);
   await karla.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.karla, pin: '1357' } });
   assert.equal((await karla.pedir(`/api/panel/servicios/${press.id}/medios`, { metodo: 'PUT', datos: { medios: [] } })).status, 403);

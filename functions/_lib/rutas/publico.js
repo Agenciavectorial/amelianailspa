@@ -50,7 +50,7 @@ export function rutasPublicas(r) {
   r.get('/api/public/catalogo', 'publico', async ({ db }) => {
     const ajustes = await leerAjustes(db);
     const hoy = ahoraBogota().fecha;
-    const [serv, colab, cs, spa, promo, pop, med] = await db.batch([
+    const [serv, colab, cs, spa, promo, pop, med, fest] = await db.batch([
       db.prepare('SELECT id, slug, nombre, categoria, descripcion, foto, precio, precio_desde, duracion FROM servicios WHERE visible = 1 ORDER BY orden, nombre'),
       db.prepare('SELECT id, slug, nombre, cargo, foto FROM colaboradoras WHERE activa = 1 AND agenda = 1 ORDER BY orden, nombre'),
       db.prepare('SELECT cs.colaboradora_id, cs.servicio_id FROM colaboradora_servicios cs JOIN servicios s ON s.id = cs.servicio_id WHERE s.visible = 1'),
@@ -61,6 +61,8 @@ export function rutasPublicas(r) {
       db.prepare(`SELECT cs.servicio_id AS id, COUNT(*) AS n FROM cita_servicios cs JOIN citas c ON c.id = cs.cita_id JOIN servicios s ON s.id = cs.servicio_id
                    WHERE c.fecha >= ? AND c.estado <> 'cancelada' AND s.visible = 1 GROUP BY cs.servicio_id ORDER BY n DESC LIMIT 4`).bind(sumarDias(hoy, -90)),
       db.prepare('SELECT m.servicio_id, m.tipo, m.url, m.portada FROM servicio_medios m JOIN servicios s ON s.id = m.servicio_id WHERE s.visible = 1 ORDER BY m.servicio_id, m.orden, m.id'),
+      // Días cerrados (festivos) de hoy a 60 días: la página principal no dice "Abierto ahora" esos días
+      db.prepare('SELECT fecha FROM festivos WHERE fecha BETWEEN ? AND ? ORDER BY fecha').bind(hoy, sumarDias(hoy, 60)),
     ]);
     const colaboradoras = colab.results.map((c) => ({
       ...c, servicios: cs.results.filter((x) => x.colaboradora_id === c.id).map((x) => x.servicio_id),
@@ -68,7 +70,7 @@ export function rutasPublicas(r) {
     return {
       ajustes: Object.fromEntries(AJUSTES_PUBLICOS.map((k) => [k, ajustes[k]])),
       servicios: serv.results.map((s) => ({ ...s, medios: med.results.filter((m) => m.servicio_id === s.id).map(({ servicio_id, ...m }) => m) })),
-      colaboradoras, horario: spa.results, hoy,
+      colaboradoras, horario: spa.results, hoy, festivos: fest.results.map((f) => f.fecha),
       promociones: promo.results, populares: pop.results.map((x) => x.id),
     };
   });
