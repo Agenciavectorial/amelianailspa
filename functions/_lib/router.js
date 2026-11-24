@@ -43,6 +43,7 @@ export function crearRouter() {
       const body = !ruta.crudo && ['POST', 'PUT', 'PATCH'].includes(request.method) ? await leerJSON(request) : {};
       const enSegundoPlano = (p) => { const seguro = Promise.resolve(p).catch((e) => console.error('segundo plano', e?.message || e)); if (context.waitUntil) context.waitUntil(seguro); };
       const r = await ruta.manejador({ request, env, db: env.DB, url, params, sesion, body, q: url.searchParams, context, enSegundoPlano });
+      if (sesion && !sesion.esPropietaria && r && !(r instanceof Response)) ocultarCelulares(r);
       return r instanceof Response ? r : json(r ?? { ok: true });
     } catch (e) {
       if (e instanceof HttpError) return json({ error: e.message, ...e.extra }, e.status);
@@ -51,4 +52,18 @@ export function crearRouter() {
     }
   };
   return api;
+}
+
+// Decisión de la dueña: solo el negocio se comunica con las clientas (WhatsApp del spa). Por eso a las
+// colaboradoras el servidor les entrega el celular oculto ("•••• 4567"): ven a quién atienden, pero no pueden
+// escribirle ni llamarla. Se aplica a toda respuesta del panel, sin depender de cada ruta.
+const CLAVES_CELULAR = new Set(['celular', 'clienta_celular']);
+export function ocultarCelulares(x, prof = 0) {
+  if (!x || typeof x !== 'object' || prof > 6) return x;
+  if (Array.isArray(x)) { for (const i of x) ocultarCelulares(i, prof + 1); return x; }
+  for (const [k, val] of Object.entries(x)) {
+    if (CLAVES_CELULAR.has(k) && typeof val === 'string') x[k] = val ? `•••• ${val.replace(/\D/g, '').slice(-4)}` : '';
+    else if (val && typeof val === 'object') ocultarCelulares(val, prof + 1);
+  }
+  return x;
 }

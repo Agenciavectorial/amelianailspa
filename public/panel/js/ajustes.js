@@ -1,11 +1,11 @@
 // Secciones "Horario y festivos", "Reglas de reserva" y "Mi cuenta".
-import { api, html, crudo, pintar, $, $$, toast, ocupado, abrirHoja, cerrarHoja, hhmm, aMin, fechaLarga, DIAS, ICONOS } from '/app-citas/js/util.js?v=363881ba72';
-import { S, recargar, esDuena, puede, colab } from './estado.js?v=363881ba72';
-import { editorHorario, urlFeed } from './equipo.js?v=363881ba72';
-import { salir } from './main.js?v=363881ba72';
-import { estadoPush, activarPush, desactivarPush } from '/app-citas/js/push.js?v=363881ba72';
-import { ACENTOS, aplicarAcento } from '/app-citas/js/util.js?v=363881ba72';
-import { elegirMedio } from './galeria.js?v=363881ba72';
+import { api, html, crudo, pintar, $, $$, toast, ocupado, abrirHoja, cerrarHoja, hhmm, aMin, fechaLarga, DIAS, ICONOS } from '/app-citas/js/util.js?v=f24229204c';
+import { S, recargar, esDuena, puede, colab } from './estado.js?v=f24229204c';
+import { editorHorario, urlFeed } from './equipo.js?v=f24229204c';
+import { salir } from './main.js?v=f24229204c';
+import { estadoPush, activarPush, desactivarPush } from '/app-citas/js/push.js?v=f24229204c';
+import { ACENTOS, aplicarAcento } from '/app-citas/js/util.js?v=f24229204c';
+import { elegirMedio } from './galeria.js?v=f24229204c';
 
 const COLORES = ['#C2185B', '#00897B', '#F57C00', '#3949AB', '#7A6494', '#8E5579', '#2E7D5B', '#0277BD', '#6D4C41', '#AD1457'];
 
@@ -171,7 +171,7 @@ async function vistaReglas(v) {
     p.style.setProperty('--portada', portada ? `url("${portada}")` : 'none');
     p.style.setProperty('--fondo', ACENTOS[acento].deep);
   };
-  const { aplicarEstilos } = await import('./estado.js?v=363881ba72');
+  const { aplicarEstilos } = await import('./estado.js?v=f24229204c');
   aplicarEstilos(v);
   previa();
   $('#apTitulo').oninput = previa;
@@ -303,10 +303,10 @@ async function vistaCuenta(v) {
       try { await api('/api/auth/cambiar-pin', { metodo: 'POST', datos: Object.fromEntries(new FormData(e.target)) }); e.target.reset(); toast('PIN cambiado', 'ok'); } catch (x) { toast(x.message, 'error'); }
     });
   };
-  import('./descargar.js?v=363881ba72').then((d) => d.activarDescarga(v));
+  import('./descargar.js?v=f24229204c').then((d) => d.activarDescarga(v));
   $('#salir').onclick = salir;
-  $('#verTour').onclick = () => import('./tour.js?v=363881ba72').then((t) => t.mostrarTour());
-  const { aplicarEstilos } = await import('./estado.js?v=363881ba72');
+  $('#verTour').onclick = () => import('./tour.js?v=f24229204c').then((t) => t.mostrarTour());
+  const { aplicarEstilos } = await import('./estado.js?v=f24229204c');
   aplicarEstilos(v);
   $('#cambiarFoto').onclick = async () => {
     const m = await elegirMedio({ titulo: 'Mi foto' });

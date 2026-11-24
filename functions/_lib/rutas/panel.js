@@ -54,6 +54,25 @@ function quien(sesion) { return `${sesion.nombre} (#${sesion.id})`; }
 
 export function rutasPanel(r) {
   // ---------- arranque: todo lo que el panel necesita en una sola llamada ----------
+  // Novedades para el panel abierto (se consulta cada 30 s): citas nuevas, movidas o canceladas por otras
+  // personas (clientas en línea o compañeras). La dueña ve todas; cada colaboradora, las suyas.
+  r.get('/api/panel/novedades', 'sesion', async ({ db, sesion, q }) => {
+    const desde = Number(q.get('desde') || 0);
+    const ultimo = (await db.prepare('SELECT COALESCE(MAX(id), 0) AS id FROM registro').first()).id;
+    if (!desde || desde >= ultimo) return { ultimo, novedades: [] };
+    const filtro = sesion.esPropietaria ? '' : 'AND ci.colaboradora_id = ?';
+    const { results } = await db.prepare(
+      `SELECT r.id, r.accion, ci.id AS cita_id, ci.fecha, ci.inicio, ci.origen, cl.nombre AS clienta, co.nombre AS colaboradora
+         FROM registro r JOIN citas ci ON ci.id = r.cita_id JOIN clientas cl ON cl.id = ci.clienta_id JOIN colaboradoras co ON co.id = ci.colaboradora_id
+        WHERE r.id > ? AND r.accion IN ('creada', 'movida', 'cancelada') AND r.quien <> ? ${filtro}
+        ORDER BY r.id LIMIT 20`
+    ).bind(desde, quien(sesion), ...(sesion.esPropietaria ? [] : [sesion.id])).all();
+    return {
+      ultimo,
+      novedades: results.map((x) => ({ ...x, clienta: sesion.esPropietaria || x.colaboradora === sesion.nombre ? x.clienta : x.clienta.split(' ')[0] })),
+    };
+  });
+
   r.get('/api/panel/arranque', 'sesion', async ({ db, sesion }) => {
     const ajustes = await leerAjustes(db);
     const hoy = ahoraBogota().fecha;
@@ -157,8 +176,10 @@ export function rutasPanel(r) {
     const servicioIds = v.listaIds(body.servicios);
     const fecha = v.fecha(body.fecha);
     const inicio = minutos(body.inicio, 'hora');
-    const nombre = v.texto(body.nombre, 'nombre de la clienta', { min: 2, max: 80 });
-    const celular = v.celular(body.celular);
+    // Clienta existente por id (las colaboradoras no ven celulares) o nueva por nombre + celular
+    const clientaExistente = body.clienta_id ? v.entero(Number(body.clienta_id), 'clienta', { min: 1 }) : null;
+    const nombre = clientaExistente ? '' : v.texto(body.nombre, 'nombre de la clienta', { min: 2, max: 80 });
+    const celular = clientaExistente ? '' : v.celular(body.celular);
     const notas = v.texto(body.notas, 'notas', { max: 400, opcional: true });
     const forzar = sesion.esPropietaria && v.bool(body.forzar);
     let servicios;
@@ -173,7 +194,12 @@ export function rutasPanel(r) {
       }
       servicios = d.servicios;
     }
-    const clientaId = await clientaPorCelular(db, nombre, celular);
+    let clientaId;
+    if (clientaExistente) {
+      const cl = await db.prepare('SELECT id FROM clientas WHERE id = ?').bind(clientaExistente).first();
+      if (!cl) falla(404, 'La clienta no existe.');
+      clientaId = cl.id;
+    } else clientaId = await clientaPorCelular(db, nombre, celular);
     const c = await insertarCita(db, { clientaId, colaboradoraId, fecha, inicio, servicios, origen: 'panel', notas, quien: quien(sesion), forzar });
     enSegundoPlano(avisarEquipo(env, c.id, 'nueva', { excluirId: sesion.id }));
     enSegundoPlano(avisarClienta(env, c.id, 'nueva'));

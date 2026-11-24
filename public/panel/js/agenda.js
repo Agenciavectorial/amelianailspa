@@ -1,8 +1,8 @@
 // Agenda: vista día (columnas por colaboradora) y semana (una colaboradora), con citas y bloqueos.
-import { api, html, crudo, pintar, $, $$, abrirHoja, cerrarHoja, hora, horaCorta, fechaLarga, fechaCorta, DIAS_CORTOS, fechaD, sumarDias, diaSemana, inicial, ICONOS, toast } from '/app-citas/js/util.js?v=363881ba72';
-import { S, esDuena, puede, colab, conAgenda, horarioSpa, rangoColab, aplicarEstilos } from './estado.js?v=363881ba72';
-import { verCita, nuevaCita, nuevoBloqueo, verBloqueo, cobrar, pastillaEstado } from './citas.js?v=363881ba72';
-import { enviar, textoPlantilla, datosCita } from './mensajes.js?v=363881ba72';
+import { api, html, crudo, pintar, $, $$, abrirHoja, cerrarHoja, hora, horaCorta, fechaLarga, fechaCorta, DIAS_CORTOS, fechaD, sumarDias, diaSemana, inicial, ICONOS, toast } from '/app-citas/js/util.js?v=f24229204c';
+import { S, esDuena, puede, colab, conAgenda, horarioSpa, rangoColab, aplicarEstilos } from './estado.js?v=f24229204c';
+import { verCita, nuevaCita, nuevoBloqueo, verBloqueo, cobrar, pastillaEstado } from './citas.js?v=f24229204c';
+import { enviar, textoPlantilla, datosCita } from './mensajes.js?v=f24229204c';
 
 const PX = 1.5; // píxeles por minuto
 let estado = null;
@@ -133,8 +133,8 @@ function pintarTarjetas({ citas, bloqueos }) {
           ${c.estado !== 'confirmada' ? pastillaEstado(c.estado) : ''}
         </button>
         ${c.propia && c.estado !== 'cancelada' ? html`<div class="tc-acciones">
-          <button data-accion="wa" aria-label="WhatsApp a ${c.clienta_nombre}">${crudo(ICONOS.whatsapp)}<span>WhatsApp</span></button>
-          <a href="tel:+${c.clienta_celular}" aria-label="Llamar a ${c.clienta_nombre}">${crudo(TEL)}<span>Llamar</span></a>
+          ${esDuena() ? html`<button data-accion="wa" aria-label="WhatsApp a ${c.clienta_nombre}">${crudo(ICONOS.whatsapp)}<span>WhatsApp</span></button>
+          <a href="tel:+${c.clienta_celular}" aria-label="Llamar a ${c.clienta_nombre}">${crudo(TEL)}<span>Llamar</span></a>` : ''}
           <button data-accion="asistio" aria-pressed="${String(c.estado === 'asistio')}">${crudo(ICONOS.check)}<span>${c.estado === 'asistio' ? 'Asistió' : 'Llegó'}</span></button>
           <button data-accion="cobrar">${crudo(PESOS)}<span>Cobrar</span></button>
           <button data-accion="mas">${crudo(MAS3)}<span>Más</span></button>

@@ -1,5 +1,5 @@
 // Estado compartido del panel. La fuente de verdad es la API (D1); esto es solo lo cargado en pantalla.
-import { api } from '/app-citas/js/util.js?v=363881ba72';
+import { api } from '/app-citas/js/util.js?v=f24229204c';
 
 export const S = {
   yo: null, hoy: null, ajustes: {}, servicios: [], colaboradoras: [], horario_spa: [], festivos: [],

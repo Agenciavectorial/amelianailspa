@@ -1,9 +1,9 @@
 // Inicio: resumen del negocio, citas por gestionar (¿asistió?), próxima cita, hoy/mañana y clientas a contactar.
-import { api, html, crudo, pintar, $, toast, hora, dinero, fechaLarga, fechaCorta, sumarDias, inicial, ICONOS, SITIO } from '/app-citas/js/util.js?v=363881ba72';
-import { tarjetaDescarga, activarDescarga, tarjetaAvisos } from './descargar.js?v=363881ba72';
-import { S, esDuena, puede, colab, aplicarEstilos } from './estado.js?v=363881ba72';
-import { verCita, nuevaCita, nuevoBloqueo, pastillaEstado, cobrar } from './citas.js?v=363881ba72';
-import { enviar, textoPlantilla } from './mensajes.js?v=363881ba72';
+import { api, html, crudo, pintar, $, toast, hora, dinero, fechaLarga, fechaCorta, sumarDias, inicial, ICONOS, SITIO } from '/app-citas/js/util.js?v=f24229204c';
+import { tarjetaDescarga, activarDescarga, tarjetaAvisos } from './descargar.js?v=f24229204c';
+import { S, esDuena, puede, colab, aplicarEstilos } from './estado.js?v=f24229204c';
+import { verCita, nuevaCita, nuevoBloqueo, pastillaEstado, cobrar } from './citas.js?v=f24229204c';
+import { enviar, textoPlantilla } from './mensajes.js?v=f24229204c';
 
 function saludo() {
   const h = new Date(Date.now() - 5 * 3600000).getUTCHours();
@@ -109,7 +109,7 @@ export async function vista(v) {
   pintarLista($('#listaHoy'), S.hoy);
   pintarLista($('#listaManana'), manana);
 
-  if (fid && (fid.a_contactar.length || fid.cumpleanos.length)) {
+  if (esDuena() && fid && (fid.a_contactar.length || fid.cumpleanos.length)) {
     $('#bloqueContactar').hidden = false;
     const lista = [
       ...fid.cumpleanos.map((c) => ({ ...c, motivo: `🎂 Cumple el ${c.cumpleanos.split('-').reverse().join('/')}`, tipo: 'cumple' })),

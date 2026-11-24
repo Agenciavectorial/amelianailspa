@@ -2,9 +2,9 @@
 import {
   api, html, crudo, pintar, $, $$, toast, ocupado, confirmar, abrirHoja, cerrarHoja, hora, hhmm, aMin, duracion, dinero,
   fechaLarga, celularBonito, inicial, ICONOS, sumarDias,
-} from '/app-citas/js/util.js?v=363881ba72';
-import { S, esDuena, puede, colab, conAgenda, categorias, aplicarEstilos } from './estado.js?v=363881ba72';
-import { botonesCita, datosCita, textoPlantilla, enviar } from './mensajes.js?v=363881ba72';
+} from '/app-citas/js/util.js?v=f24229204c';
+import { S, esDuena, puede, colab, conAgenda, categorias, aplicarEstilos } from './estado.js?v=f24229204c';
+import { botonesCita, datosCita, textoPlantilla, enviar } from './mensajes.js?v=f24229204c';
 
 export const METODOS = [['efectivo', 'Efectivo'], ['nequi', 'Nequi'], ['daviplata', 'Daviplata'], ['tarjeta', 'Tarjeta'], ['transferencia', 'Transferencia'], ['otro', 'Otro']];
 
@@ -36,8 +36,9 @@ export async function verCita(id, alCambiar) {
     <div class="detalle-cita">
       <div class="dc-clienta tarjeta">
         <span class="avatar inicial grande">${inicial(c.clienta_nombre)}</span>
-        <div><strong>${c.clienta_nombre}</strong><a href="tel:+${c.clienta_celular}">${celularBonito(c.clienta_celular)}</a></div>
-        <a class="icono-btn wa-btn" href="${wa}" target="_blank" rel="noopener" aria-label="Escribir por WhatsApp">${crudo(ICONOS.whatsapp)}</a>
+        ${esDuena() ? html`<div><strong>${c.clienta_nombre}</strong><a href="tel:+${c.clienta_celular}">${celularBonito(c.clienta_celular)}</a></div>
+        <a class="icono-btn wa-btn" href="${wa}" target="_blank" rel="noopener" aria-label="Escribir por WhatsApp">${crudo(ICONOS.whatsapp)}</a>`
+        : html`<div><strong>${c.clienta_nombre}</strong><span class="muted small">Los mensajes a la clienta los envía el spa</span></div>`}
       </div>
       <div class="tarjeta dc-datos">
         <div class="dc-fila"><span>Estado</span>${pastillaEstado(c.estado)}</div>
@@ -49,7 +50,7 @@ export async function verCita(id, alCambiar) {
       </div>
       ${pagos.length ? html`<div class="tarjeta dc-datos pagos-cita">${pagos.map((p) => html`<div class="dc-fila"><span>Cobrado · ${(METODOS.find((m) => m[0] === p.metodo) || [, p.metodo])[1]}</span><strong>${dinero(p.monto)}${p.propina ? html` <small class="muted">+ ${dinero(p.propina)} propina</small>` : ''}</strong></div>`)}</div>` : ''}
       ${editable && c.estado !== 'cancelada' ? html`<button class="btn ${pagos.length ? 'sec' : ''} bloque" data-accion="cobrar">${pagos.length ? 'Registrar otro pago' : `Cobrar${c.precio_total != null ? ' ' + dinero(Math.max(0, c.precio_total - pagado)) : ''}`}</button>` : ''}
-      ${editable ? botonesCita(c) : ''}
+      ${editable && esDuena() ? botonesCita(c) : ''}
       <label class="campo"><span>Notas</span><textarea id="notasCita" maxlength="400" ${editable ? '' : crudo('readonly')}>${c.notas}</textarea></label>
       ${editable ? html`
         <div class="acciones-cita">
@@ -75,7 +76,7 @@ export async function verCita(id, alCambiar) {
   }
   h.onclick = async (e) => {
     const pl = e.target.closest('[data-plantilla]');
-    if (pl) return enviar(c.clienta_celular, textoPlantilla(pl.dataset.plantilla, datosCita(c)), { cita_id: c.id, tipo: pl.dataset.plantilla });
+    if (pl && esDuena()) return enviar(c.clienta_celular, textoPlantilla(pl.dataset.plantilla, datosCita(c)), { cita_id: c.id, tipo: pl.dataset.plantilla });
     const b = e.target.closest('[data-accion]');
     if (!b) return;
     const a = b.dataset.accion;
@@ -211,13 +212,17 @@ export function nuevaCita({ fecha = S.hoy, colaboradoraId, inicio, clienta } = {
       const l = r.clientas.slice(0, 6);
       if (!l.length || !document.body.contains(h)) return;
       $('#recientes', h).hidden = false;
-      pintar($('#chipsRecientes', h), html`${l.map((c) => html`<button type="button" class="chip" data-cel="${c.celular.replace(/^57/, '')}" data-nom="${c.nombre}">${c.nombre.split(' ').slice(0, 2).join(' ')}</button>`)}`);
+      pintar($('#chipsRecientes', h), html`${l.map((c) => html`<button type="button" class="chip" data-id="${c.id}" data-cel="${c.celular.replace(/^57/, '')}" data-nom="${c.nombre}">${c.nombre.split(' ').slice(0, 2).join(' ')}</button>`)}`);
       $('#chipsRecientes', h).onclick = (e) => {
         const b = e.target.closest('[data-cel]');
         if (!b) return;
+        const yaEstaba = b.getAttribute('aria-pressed') === 'true';
+        for (const x of $$('#chipsRecientes .chip', h)) x.setAttribute('aria-pressed', String(!yaEstaba && x === b));
+        if (yaEstaba) { f.dataset.clienta = ''; f.celular.readOnly = false; f.celular.value = ''; f.nombre.value = ''; return; }
+        f.dataset.clienta = b.dataset.id;
         f.celular.value = b.dataset.cel;
         f.nombre.value = b.dataset.nom;
-        for (const x of $$('#chipsRecientes .chip', h)) x.setAttribute('aria-pressed', String(x === b));
+        f.celular.readOnly = b.dataset.cel.includes('•');
       };
     }).catch(() => {});
   }
@@ -268,7 +273,7 @@ export function nuevaCita({ fecha = S.hoy, colaboradoraId, inicio, clienta } = {
       try {
         await api('/api/panel/citas', {
           metodo: 'POST',
-          datos: { servicios: [...sel], colaboradora_id: con, fecha: f.fecha.value, inicio: turno.inicio, forzar: turno.forzar, nombre: f.nombre.value, celular: f.celular.value, notas: f.notas.value },
+          datos: { servicios: [...sel], colaboradora_id: con, fecha: f.fecha.value, inicio: turno.inicio, forzar: turno.forzar, nombre: f.nombre.value, celular: f.celular.value, notas: f.notas.value, ...(f.dataset.clienta && f.celular.value.includes('•') ? { clienta_id: Number(f.dataset.clienta) } : {}) },
         });
         toast('Cita creada', 'ok');
         cerrarHoja();

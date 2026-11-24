@@ -1,7 +1,7 @@
 // Arranque del panel: sesión, navegación (dock en celular, barra lateral en computador) y rutas por hash.
-import { api, html, crudo, pintar, $, $$, toast, inicial, ICONOS, cerrarHoja } from '/app-citas/js/util.js?v=363881ba72';
-import { S, recargar, esDuena, puede } from './estado.js?v=363881ba72';
-import { pantallaIngreso } from './login.js?v=363881ba72';
+import { api, html, crudo, pintar, $, $$, toast, inicial, ICONOS, cerrarHoja } from '/app-citas/js/util.js?v=f24229204c';
+import { S, recargar, esDuena, puede } from './estado.js?v=f24229204c';
+import { pantallaIngreso } from './login.js?v=f24229204c';
 
 const raiz = $('#raiz');
 
@@ -41,11 +41,11 @@ function secciones() {
 }
 
 const MODULOS = {
-  inicio: () => import('./inicio.js?v=363881ba72'), agenda: () => import('./agenda.js?v=363881ba72'), clientas: () => import('./clientas.js?v=363881ba72'),
-  servicios: () => import('./servicios.js?v=363881ba72'), equipo: () => import('./equipo.js?v=363881ba72'), spa: () => import('./ajustes.js?v=363881ba72'),
-  ajustes: () => import('./ajustes.js?v=363881ba72'), importar: () => import('./importar.js?v=363881ba72'), cuenta: () => import('./ajustes.js?v=363881ba72'),
-  fidelizacion: () => import('./fidelizacion.js?v=363881ba72'), analitica: () => import('./analitica.js?v=363881ba72'), notas: () => import('./notas.js?v=363881ba72'),
-  promociones: () => import('./promociones.js?v=363881ba72'), mensajes: () => import('./plantillas.js?v=363881ba72'),
+  inicio: () => import('./inicio.js?v=f24229204c'), agenda: () => import('./agenda.js?v=f24229204c'), clientas: () => import('./clientas.js?v=f24229204c'),
+  servicios: () => import('./servicios.js?v=f24229204c'), equipo: () => import('./equipo.js?v=f24229204c'), spa: () => import('./ajustes.js?v=f24229204c'),
+  ajustes: () => import('./ajustes.js?v=f24229204c'), importar: () => import('./importar.js?v=f24229204c'), cuenta: () => import('./ajustes.js?v=f24229204c'),
+  fidelizacion: () => import('./fidelizacion.js?v=f24229204c'), analitica: () => import('./analitica.js?v=f24229204c'), notas: () => import('./notas.js?v=f24229204c'),
+  promociones: () => import('./promociones.js?v=f24229204c'), mensajes: () => import('./plantillas.js?v=f24229204c'),
   mas: null,
 };
 
@@ -122,15 +122,46 @@ async function entrar() {
   }
   shell();
   $('#fab')?.addEventListener('click', async () => {
-    const { nuevaCita } = await import('./citas.js?v=363881ba72');
+    const { nuevaCita } = await import('./citas.js?v=f24229204c');
     const m = /^#\/agenda\/(\d{4}-\d{2}-\d{2})/.exec(location.hash);
     nuevaCita({ fecha: m ? m[1] : S.hoy, colaboradoraId: esDuena() ? undefined : S.yo.id }, () => navegar());
   });
-  setTimeout(() => import('./tour.js?v=363881ba72').then((t) => t.tourSiEsPrimeraVez()), 700);
+  vigilarNovedades();
+  setTimeout(() => import('./tour.js?v=f24229204c').then((t) => t.tourSiEsPrimeraVez()), 700);
   window.removeEventListener('hashchange', navegar);
   window.addEventListener('hashchange', navegar);
   navegar();
 }
+
+// ---------- novedades al instante con el panel abierto ----------
+// Además de las notificaciones push, cada 30 s (solo con la pantalla visible) pregunta si hubo citas nuevas,
+// movidas o canceladas; las muestra en un aviso y refresca Inicio o Agenda.
+let ultimoRegistro = 0, relojNovedades = null, consultarNovedades = null;
+const TEXTO_NOVEDAD = { creada: ['💜', 'Nueva cita'], movida: ['🔁', 'Cita movida'], cancelada: ['✖️', 'Cita cancelada'] };
+function vigilarNovedades() {
+  clearInterval(relojNovedades);
+  ultimoRegistro = 0;
+  const consultar = async () => {
+    if (document.hidden) return;
+    try {
+      const r = await api(`/api/panel/novedades?desde=${ultimoRegistro}`);
+      const habiaBase = ultimoRegistro > 0;
+      ultimoRegistro = r.ultimo;
+      if (!habiaBase || !r.novedades.length) return;
+      for (const n of r.novedades.slice(-3)) {
+        const [ic, t] = TEXTO_NOVEDAD[n.accion] || ['📅', 'Agenda actualizada'];
+        const [y, mes, d] = n.fecha.split('-');
+        const h = Math.floor(n.inicio / 60), m = n.inicio % 60;
+        toast(`${ic} ${t}${n.origen === 'web' && n.accion === 'creada' ? ' en línea' : ''}: ${n.clienta} · ${d}/${mes} ${((h + 11) % 12) + 1}:${String(m).padStart(2, '0')} ${h < 12 ? 'a. m.' : 'p. m.'} con ${n.colaboradora}`, 'ok');
+      }
+      if (['inicio', 'agenda'].includes(rutaActual) && !document.body.classList.contains('con-hoja')) navegar();
+    } catch { /* sin conexión: se intenta en la próxima vuelta */ }
+  };
+  consultarNovedades = consultar;
+  consultar();
+  relojNovedades = setInterval(consultar, 30000);
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) consultarNovedades?.(); });
 
 // Si cualquier llamada responde 401, vuelve a la pantalla de ingreso.
 window.addEventListener('unhandledrejection', (e) => {
