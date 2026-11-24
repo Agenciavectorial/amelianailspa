@@ -433,27 +433,33 @@ document.addEventListener('DOMContentLoaded', function () {
     var h12 = h % 12 || 12;
     return h12 + (m ? ':' + String(m).padStart(2, '0') : '') + ' ' + suf;
   }
+  var FESTIVOS = [];
   function pintarEstado(horario) {
     var el = document.getElementById('heroEstado');
     if (!el) return;
     // Hora de Medellín (UTC-5, sin horario de verano)
     var ahora = new Date(Date.now() - 5 * 3600e3);
     var dia = ahora.getUTCDay(), min = ahora.getUTCHours() * 60 + ahora.getUTCMinutes();
-    var hoy = horario[dia];
+    var fechaHoy = ahora.toISOString().slice(0, 10);
+    var esFestivo = function (offset) {
+      var f = new Date(ahora.getTime() + offset * 864e5).toISOString().slice(0, 10);
+      return FESTIVOS.indexOf(f) !== -1;
+    };
+    var hoy = esFestivo(0) ? null : horario[dia];
     if (hoy && min >= hoy[0] && min < hoy[1]) {
       el.textContent = 'Abierto ahora · hasta las ' + horaTexto(hoy[1]);
       el.classList.remove('cerrado');
     } else {
       var d = dia, txt = '';
       for (var i = 0; i < 7; i++) {
-        var h2 = horario[d];
+        var h2 = esFestivo(i) ? null : horario[d];
         if (h2 && (i > 0 || min < h2[0])) {
           txt = (i === 0 ? 'hoy' : i === 1 ? 'mañana' : ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][d]) + ' a las ' + horaTexto(h2[0]);
           break;
         }
         d = (d + 1) % 7;
       }
-      el.textContent = 'Cerrado · abrimos ' + txt;
+      el.textContent = (esFestivo(0) ? 'Hoy es festivo · abrimos ' : 'Cerrado · abrimos ') + txt;
       el.classList.add('cerrado');
     }
     el.hidden = false;
@@ -468,7 +474,8 @@ document.addEventListener('DOMContentLoaded', function () {
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) {
         if (!d) return;
-        // Horario real de la plataforma (lo edita Erika en el panel)
+        // Horario real de la plataforma (lo edita Erika en el panel) y festivos
+        if (Array.isArray(d.festivos)) FESTIVOS = d.festivos;
         if (Array.isArray(d.horario) && d.horario.length) {
           var hz = [];
           d.horario.forEach(function (x) { hz[x.dia] = x.abierto ? [x.abre, x.cierra] : null; });
