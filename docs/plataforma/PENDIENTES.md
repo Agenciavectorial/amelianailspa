@@ -115,3 +115,10 @@ Cargados de Kumbio como punto de partida (`migrations/0006_datos_kumbio.sql`, ap
 - Formato real de la exportación de Kumbio: el importador reconoce muchos encabezados (cliente,
   teléfono, profesional, fecha, hora, servicio, estado…). Si el archivo de Kumbio trae otros nombres,
   basta renombrar las columnas o agregar sinónimos en `public/app-citas/js/csv.js` (`ALIAS`).
+
+
+## Resuelto el 24 de noviembre de 2026
+
+- Horario real aplicado (migración 0012): lunes a viernes 9:00 a. m.–7:00 p. m., sábados 10:00 a. m.–7:00 p. m., domingos 11:00 a. m.–5:00 p. m.
+- Festivos de Colombia cargados hasta diciembre de 2027: esos días no se trabaja.
+- Todo el equipo sigue activo (Leidy, Karla, Julieth y Daily).
