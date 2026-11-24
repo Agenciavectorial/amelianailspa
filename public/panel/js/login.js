@@ -1,6 +1,6 @@
 // Ingreso por persona con PIN (patrón MaxCool) y configuración del primer PIN de Erika.
-import { api, html, crudo, pintar, $, $$, toast, inicial, ICONOS, foto } from '/app-citas/js/util.js?v=f24229204c';
-import { botonDescarga, activarDescarga } from './descargar.js?v=f24229204c';
+import { api, html, crudo, pintar, $, $$, toast, inicial, ICONOS, foto } from '/app-citas/js/util.js?v=9cba0f01ac';
+import { botonDescarga, activarDescarga } from './descargar.js?v=9cba0f01ac';
 
 export async function pantallaIngreso(raiz, alEntrar) {
   let datos;
@@ -17,9 +17,9 @@ export async function pantallaIngreso(raiz, alEntrar) {
       <h1>¿Quién <em>eres</em>?</h1>
       <div class="personas">
         ${datos.personas.map((p) => html`
-          <button class="persona" data-id="${p.id}" data-nombre="${p.nombre}">
+          <button class="persona ${p.tiene_pin ? '' : 'sin-pin'}" data-id="${p.id}" data-nombre="${p.nombre}" data-pin="${p.tiene_pin ? '1' : ''}">
             ${p.foto ? foto(p.foto, { sizes: '96px', ancho: 96 }) : html`<span class="avatar inicial">${inicial(p.nombre)}</span>`}
-            <strong>${p.nombre}</strong>${p.rol === 'propietaria' ? html`<span class="pastilla">Propietaria</span>` : ''}
+            <strong>${p.nombre}</strong>${p.rol === 'propietaria' ? html`<span class="pastilla">Propietaria</span>` : ''}${p.tiene_pin ? '' : html`<span class="pastilla aviso">Sin PIN</span>`}
           </button>`)}
       </div>
       ${!datos.personas.length ? html`<p class="aviso info">Aún no hay personas con PIN.</p>` : ''}
@@ -27,7 +27,7 @@ export async function pantallaIngreso(raiz, alEntrar) {
       <p class="muted small ingreso-pie">¿Olvidaste tu PIN? Pídele a Erika que te asigne uno nuevo.</p>
     </div>`);
   activarDescarga(raiz);
-  for (const b of $$('.persona', raiz)) b.onclick = () => pedirPin(raiz, { id: Number(b.dataset.id), nombre: b.dataset.nombre, foto: b.querySelector('img')?.src }, alEntrar);
+  for (const b of $$('.persona', raiz)) b.onclick = () => !b.dataset.pin ? toast(`${b.dataset.nombre}, aún no tienes PIN. Pídele a Erika que te lo asigne en Equipo → Acceso.`) : pedirPin(raiz, { id: Number(b.dataset.id), nombre: b.dataset.nombre, foto: b.querySelector('img')?.src }, alEntrar);
 }
 
 function teclado() {

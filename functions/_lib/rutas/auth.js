@@ -25,7 +25,8 @@ export function rutasAuth(r) {
     ).all();
     const duena = results.find((p) => p.rol === 'propietaria');
     return {
-      personas: results.filter((p) => p.tiene_pin).map(({ tiene_pin, ...p }) => p),
+      // Se muestran todas las activas; las que aún no tienen PIN aparecen marcadas para que Erika se lo asigne.
+      personas: results.map((p) => ({ ...p, tiene_pin: !!p.tiene_pin })),
       necesita_configurar: !!duena && !duena.tiene_pin,
     };
   });

@@ -56,6 +56,10 @@ test('configuración inicial: solo con CLAVE_INICIAL y una sola vez', async () =
   assert.match(ok.headers.get('set-cookie'), /HttpOnly; Secure; SameSite=Strict/);
   const otra = await cliente(base).pedir('/api/auth/configurar', { metodo: 'POST', datos: { clave: CLAVE_INICIAL, pin: '9999' } });
   assert.equal(otra.status, 409);
+  // El ingreso muestra a todo el equipo activo, aunque aún no tenga PIN (marcadas para que Erika se lo asigne)
+  const todas = (await cliente(base).pedir('/api/auth/personas')).cuerpo.personas;
+  assert.ok(todas.length >= 5, 'aparecen todas las chicas');
+  assert.ok(todas.filter((x) => x.rol !== 'propietaria').every((x) => x.tiene_pin === false));
   const { cuerpo } = await erika.pedir('/api/panel/arranque');
   assert.equal(cuerpo.yo.esPropietaria, true);
   for (const c of cuerpo.colaboradoras) ids[c.slug] = c.id;
