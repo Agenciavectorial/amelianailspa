@@ -1,5 +1,5 @@
 // Selector de día + turno (lo usan la reserva y la página para reprogramar).
-import { html, crudo, pintar, $, $$, DIAS_CORTOS, MESES, fechaD, sumarDias, hora, fechaLarga, ICONOS } from '/app-citas/js/util.js?v=f24229204c';
+import { html, crudo, pintar, $, $$, DIAS_CORTOS, MESES, fechaD, sumarDias, hora, fechaLarga, ICONOS } from '/app-citas/js/util.js?v=9cba0f01ac';
 
 const TRAMO = 14;
 

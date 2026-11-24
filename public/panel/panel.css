@@ -465,3 +465,7 @@ body.con-hoja .fab { visibility: hidden; }
 .td-botones .btn:first-child { flex: 1; min-height: 48px; }
 .pasos-descarga { margin: 8px 0 14px; padding-left: 22px; display: grid; gap: 10px; font-size: 1rem; line-height: 1.45; }
 html.instalada .descargar-app, html.instalada .tarjeta-descarga { display: none; }
+
+/* Ingreso: quien aún no tiene PIN aparece, pero atenuada */
+.persona.sin-pin { opacity: .62; }
+.persona .pastilla.aviso { background: #FFF3E0; color: #9A5B00; }
