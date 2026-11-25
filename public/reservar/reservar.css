@@ -384,3 +384,27 @@ body.reservar { font-size: 17px; }
 .saludo { padding-top: 12px; }
 .saludo .script { line-height: 1.25; }
 .resumen-cita li span:last-child { color: var(--gris); font-size: .9rem; }
+
+/* ---------- Combos (lo más vendido) y promociones agendables ---------- */
+.titulo-combos span { font-family: var(--sans); font-size: .85rem; color: var(--gris); font-weight: 500; margin-left: 6px; }
+.combos { display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; margin: 0 -16px 8px; padding: 4px 16px 12px; }
+.combos::-webkit-scrollbar { display: none; }
+.combo { flex: none; width: min(86%, 340px); scroll-snap-align: start; background: var(--blanco); border-radius: 22px; overflow: hidden; box-shadow: var(--sombra-m); display: grid; grid-template-rows: auto 1fr; border: 1.5px solid var(--rosa-soft); }
+.combo-foto { display: block; width: 100%; aspect-ratio: 34 / 22; overflow: hidden; padding: 0; }
+.combo-foto img { width: 100%; height: 100%; object-fit: cover; }
+.combo-cuerpo { position: relative; display: grid; gap: 8px; padding: 16px; align-content: start; }
+.combo-cuerpo h3 { font-size: 1.3rem; }
+.combo-ahorro { justify-self: start; background: var(--grad); color: #fff; font-size: .75rem; font-weight: 700; padding: 4px 10px; border-radius: 99px; letter-spacing: .02em; }
+.combo-incluye { list-style: none; display: grid; gap: 4px; font-size: .92rem; }
+.combo-incluye li { display: flex; gap: 8px; align-items: center; }
+.combo-incluye svg { width: 16px; height: 16px; color: var(--exito); flex: none; }
+.combo-pie { display: flex; align-items: end; justify-content: space-between; gap: 10px; margin-top: auto; padding-top: 6px; }
+.combo-precio { display: grid; line-height: 1.1; }
+.combo-precio s { color: var(--gris); font-size: .85rem; }
+.combo-precio b { font-family: var(--serif); font-size: 1.55rem; color: var(--rosa-deep); }
+.combo-precio small { color: var(--gris); font-size: .78rem; }
+@media (min-width: 760px) { .combos { flex-wrap: wrap; overflow: visible; margin: 0 0 8px; padding: 4px 0 12px; } .combo { width: calc(50% - 7px); } }
+.promo-pie s { opacity: .8; font-size: .85rem; }
+.promo-agendar { justify-self: start; margin-top: 8px; background: #fff; color: var(--rosa-deep); font-weight: 700; padding: 8px 16px; border-radius: 99px; font-size: .9rem; }
+.pausa-reservas { display: grid; gap: 4px; margin: 12px 0; }
+.avisos-cta { font-weight: 700; color: var(--rosa-deep); }

@@ -2,9 +2,9 @@
 import {
   api, html, crudo, pintar, $, $$, toast, ocupado, hora, duracion, dinero, fechaLarga, ICONOS, inicial, celularBonito, abrirHoja, cerrarHoja,
   SITIO, aplicarAcento, foto, fotoAncho, videoLiviano, verFotos, trasHistorial, avatarAmpliable, activarAmpliar,
-} from '/app-citas/js/util.js?v=9cba0f01ac';
-import { crearSelector } from './selector.js?v=9cba0f01ac';
-import { estadoPush, activarPush } from '/app-citas/js/push.js?v=9cba0f01ac';
+} from '/app-citas/js/util.js?v=0059637289';
+import { crearSelector } from './selector.js?v=0059637289';
+import { estadoPush, activarPush } from '/app-citas/js/push.js?v=0059637289';
 
 const PUSH = { sw: '/reservar/sw.js', scope: '/reservar/' };
 
@@ -23,17 +23,20 @@ if (cabecera && 'ResizeObserver' in window) {
   new ResizeObserver(() => document.documentElement.style.setProperty('--alto-cabecera', cabecera.offsetHeight + 'px')).observe(cabecera);
 }
 const bandeja = $('#bandeja');
-const E = { cat: null, sel: [], con: null, fecha: null, turno: null, paso: 'servicios', reserva: null };
+const E = { cat: null, sel: [], con: null, fecha: null, turno: null, paso: 'servicios', reserva: null, promo: null };
+const ABIERTA = Date.now(); // tiempo mínimo antes de reservar (freno para robots)
 let C; // catálogo
 
 const porId = (id) => C.servicios.find((s) => s.id === id);
 const colabPorSlug = (slug) => C.colaboradoras.find((c) => c.slug === slug);
 const elegidos = () => E.sel.map(porId).filter(Boolean);
 const durTotal = () => elegidos().reduce((a, s) => a + s.duracion, 0);
+const promoActiva = () => (E.promo ? C.promociones.find((p) => p.id === E.promo && E.sel.includes(p.servicio_id)) : null);
 function precioTotal() {
   const l = elegidos();
   if (!l.length || l.some((s) => s.precio == null)) return null;
-  return l.reduce((a, s) => a + s.precio, 0);
+  const pr = promoActiva();
+  return l.reduce((a, s) => a + (pr && s.id === pr.servicio_id ? pr.precio_promo : s.precio), 0);
 }
 const hacenTodo = (c) => E.sel.every((id) => c.servicios.includes(id));
 
@@ -117,12 +120,28 @@ function pasoServicios() {
           ${crudo(ICONOS.calendario)}<span><strong>Tu próxima cita</strong>${fechaLarga(proxima.fecha)} · ${hora(proxima.inicio)}</span><span class="flecha">Ver</span></a>` : ''}
       <div id="misCitas"></div>
       <div id="avisosInicio"></div>
+      ${C.ajustes.reservas_pausadas === '1' ? html`<div class="aviso pausa-reservas" role="alert"><strong>Reservas en línea en pausa</strong><span>${C.ajustes.pausa_mensaje}</span>
+        <a class="btn wa bloque espacio-arriba" href="https://wa.me/${C.ajustes.whatsapp}" target="_blank" rel="noopener">${crudo(ICONOS.whatsapp)} Escribir por WhatsApp</a></div>` : ''}
+      ${!conColab && combos().length ? html`<h2 class="titulo-bloque titulo-combos">✨ Combos <span>los favoritos</span></h2><div class="combos">${combos().map((c) => html`
+        <article class="combo">
+          ${c.foto ? html`<button type="button" class="combo-foto" data-ampliar-lista="servicio:${c.id}" aria-label="Ver fotos de ${c.nombre}">${foto(c.foto, { sizes: '(min-width: 760px) 340px, 86vw', ancho: 340, alto: 220 })}</button>` : ''}
+          <div class="combo-cuerpo">
+            ${c.precio_antes && c.precio != null && c.precio_antes > c.precio ? html`<span class="combo-ahorro">Ahorras ${dinero(c.precio_antes - c.precio)}</span>` : ''}
+            <h3>${c.nombre}</h3>
+            ${c.incluye ? html`<ul class="combo-incluye">${c.incluye.split('\n').filter(Boolean).map((x) => html`<li>${crudo(ICONOS.check)}${x}</li>`)}</ul>` : (c.descripcion ? html`<p>${c.descripcion}</p>` : '')}
+            <div class="combo-pie">
+              <span class="combo-precio">${c.precio_antes ? html`<s>${dinero(c.precio_antes)}</s>` : ''}<b>${c.precio != null ? dinero(c.precio) : 'Precio en el spa'}</b><small>${duracion(c.duracion)}</small></span>
+              <button class="btn" data-combo="${c.id}">Agendar</button>
+            </div>
+          </div>
+        </article>`)}</div>` : ''}
       ${!conColab && C.promociones?.length ? html`<h2 class="titulo-bloque">Promociones</h2><div class="promos">${C.promociones.map((p) => html`
         <div class="promo-caja">${p.foto ? html`<button type="button" class="mini-zoom" data-ampliar-url="${p.foto}" data-ampliar-titulo="${p.titulo}" data-ampliar-texto="${p.descripcion || ''}" aria-label="Ver la foto de ${p.titulo} en grande">${crudo(ICONOS.lupa)}</button>` : ''}
         <button class="promo" data-promo="${p.id}">
           ${foto(p.foto, { sizes: '(min-width: 760px) 320px, 80vw' })}
           <span class="promo-texto"><strong>${p.titulo}</strong>${p.descripcion ? html`<span>${p.descripcion}</span>` : ''}
-            <span class="promo-pie">${p.precio_promo != null ? html`<b>${dinero(p.precio_promo)}</b>` : ''}${p.hasta ? html`<small>hasta ${fechaLarga(p.hasta).replace(/^\S+ /, '')}</small>` : ''}</span></span>
+            <span class="promo-pie">${p.precio_normal != null && p.precio_normal > p.precio_promo ? html`<s>${dinero(p.precio_normal)}</s>` : ''}<b>${dinero(p.precio_promo)}</b>${p.hasta ? html`<small>hasta ${fechaLarga(p.hasta).replace(/^\S+ /, '')}</small>` : ''}</span>
+            <span class="promo-agendar">Agendar →</span></span>
         </button></div>`)}</div>` : ''}
       ${!conColab && populares().length ? html`<h2 class="titulo-bloque">Lo más pedido</h2><div class="populares">${populares().map((s) => html`
         <div class="popular-caja"><button class="popular" data-pop="${s.id}">${foto(s.foto, { sizes: '116px', ancho: 116 })}<span>${s.nombre}</span></button>${fotosDe(s).length ? html`<button type="button" class="mini-zoom" data-ampliar-lista="servicio:${s.id}" aria-label="Ver fotos de ${s.nombre}">${crudo(ICONOS.lupa)}</button>` : ''}</div>`)}</div>
@@ -138,10 +157,11 @@ function pasoServicios() {
   for (const b of $$('.categorias .chip', app)) b.onclick = () => { E.cat = b.dataset.cat; pasoServicios(); };
   for (const b of $$('[data-promo]', app)) {
     b.onclick = () => {
-      const p = C.promociones.find((x) => x.id === Number(b.dataset.promo));
-      const s = p.servicio_id && porId(p.servicio_id);
-      if (s) { E.sel = [s.id]; E.cat = s.categoria; irA(siguienteDespuesDeServicios()); } else toast('Escríbenos por WhatsApp para esta promoción 💜');
+      elegirPromo(C.promociones.find((x) => x.id === Number(b.dataset.promo)));
     };
+  }
+  for (const b of $$('[data-combo]', app)) {
+    b.onclick = () => { const s = porId(Number(b.dataset.combo)); E.sel = [s.id]; E.promo = null; E.cat = s.categoria; irA(siguienteDespuesDeServicios()); };
   }
   for (const b of $$('[data-pop]', app)) {
     b.onclick = () => { const s = porId(Number(b.dataset.pop)); if (!E.sel.includes(s.id)) E.sel.push(s.id); E.cat = s.categoria; irA(siguienteDespuesDeServicios()); };
@@ -160,6 +180,16 @@ function pasoServicios() {
   const chipActivo = $('.categorias .chip[aria-pressed="true"]', app);
   if (chipActivo) chipActivo.parentElement.scrollLeft = chipActivo.offsetLeft - 16;
 }
+
+/** Toda promoción se agenda: elige su servicio o combo y la cita queda con el precio de la promo. */
+function elegirPromo(p) {
+  const s = p && porId(p.servicio_id);
+  if (!s) return;
+  E.sel = [s.id]; E.promo = p.id; E.cat = s.categoria;
+  irA(siguienteDespuesDeServicios());
+}
+
+const combos = () => C.servicios.filter((s) => s.tipo === 'combo' || s.destacado).sort((a, b) => (b.tipo === 'combo') - (a.tipo === 'combo'));
 
 function populares() {
   const ids = C.populares?.length ? C.populares : [];
@@ -440,7 +470,7 @@ async function reservar(e) {
     try {
       const r = await api('/api/public/reservar', {
         metodo: 'POST',
-        datos: { servicios: E.sel, con: E.con, fecha: E.fecha, inicio: E.turno.inicio, nombre: datos.nombre, celular: datos.celular, notas: datos.notas, sitio_web: datos.sitio_web },
+        datos: { servicios: E.sel, con: E.con, fecha: E.fecha, inicio: E.turno.inicio, nombre: datos.nombre, celular: datos.celular, notas: datos.notas, sitio_web: datos.sitio_web, promo: promoActiva()?.id, ms: Date.now() - ABIERTA },
       });
       E.reserva = r;
       try {
@@ -513,13 +543,15 @@ function pasoListo() {
 export async function ofrecerAvisos(caja) {
   if (!caja) return;
   const estado = await estadoPush(PUSH).catch(() => 'no-soportado');
-  if (estado === 'activo') { pintar(caja, html`<p class="avisos-ok">🔔 Te avisaremos un día antes y 2 horas antes de tu cita.</p>`); return; }
+  if (estado === 'activo') { pintar(caja, html`<p class="avisos-ok">🔔 Te avisaremos el día de tu cita y 1 hora antes.</p>`); return; }
   if (estado === 'ios-instalar') {
-    pintar(caja, html`<div class="tarjeta avisos"><strong>🔔 ¿Quieres recordatorios?</strong><span>En iPhone, instala la app de Amelia (Compartir → Agregar a inicio) y actívalos desde ahí.</span></div>`);
+    // En iPhone las notificaciones solo existen con la app instalada (iOS 16.4 o más nuevo): primero se instala.
+    pintar(caja, html`<button class="tarjeta avisos" id="instalarParaAvisos"><strong>🔔 ¿Quieres recordatorios de tu cita?</strong><span>En iPhone primero agrega la app de Amelia a tu inicio (es gratis y no ocupa espacio). Luego ábrela desde el ícono y toca "Avísame".</span><span class="avisos-cta">Ver cómo →</span></button>`);
+    $('#instalarParaAvisos').onclick = () => window.ameliaGuiaInstalar?.();
     return;
   }
   if (estado !== 'inactivo') return;
-  pintar(caja, html`<button class="tarjeta avisos" id="activarAvisos"><strong>🔔 Avísame antes de mi cita</strong><span>Te confirmamos al instante y te recordamos la víspera y 1 hora antes. Sin mensajes de más.</span></button>`);
+  pintar(caja, html`<button class="tarjeta avisos" id="activarAvisos"><strong>🔔 Avísame antes de mi cita</strong><span>Te llega la confirmación ahora, un recordatorio el día de tu cita y otro 1 hora antes. Nada más: no enviamos publicidad. Tu celular te pedirá permiso.</span></button>`);
   $('#activarAvisos').onclick = async () => {
     let tokens = [];
     try { tokens = JSON.parse(localStorage.getItem('amelia_citas') || '[]').map((x) => x.token); } catch { /* sin almacenamiento */ }
@@ -561,7 +593,9 @@ async function iniciar() {
   const slugServicio = q.get('servicio');
   const slugCon = q.get('con');
   if (slugCon && colabPorSlug(slugCon)) E.con = slugCon;
-  if (slugServicio) {
+  // Enlace directo de una promoción: /reservar/?promo=ID
+  const promoUrl = C.promociones.find((p) => p.id === Number(q.get('promo')));
+  if (promoUrl && porId(promoUrl.servicio_id)) { E.sel = [promoUrl.servicio_id]; E.promo = promoUrl.id; E.cat = porId(promoUrl.servicio_id).categoria; } else if (slugServicio) {
     const ss = slugServicio.split(',').map((sl) => C.servicios.find((x) => x.slug === sl.trim())).filter(Boolean);
     if (ss.length) { E.sel = ss.slice(0, 4).map((s) => s.id); E.cat = ss[0].categoria; }
   }

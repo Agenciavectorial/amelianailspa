@@ -451,3 +451,26 @@ export function activarAmpliar(resolver = () => null) {
     verFotos([{ url: b.dataset.ampliarUrl, titulo: b.dataset.ampliarTitulo || '', texto: b.dataset.ampliarTexto || '' }]);
   }, true);
 }
+
+// ---------- tema del panel (cada dispositivo elige el suyo) ----------
+const TEMAS = ['lavanda', 'ciruela', 'rosa', 'malva', 'oscuro'];
+const NOMBRE_TEMA = { lavanda: 'Lavanda', ciruela: 'Ciruela', rosa: 'Rosa antiguo', malva: 'Malva', oscuro: 'Oscuro' };
+export function temaGuardado() { try { return localStorage.getItem('amelia_tema') || ''; } catch { return ''; } }
+export function aplicarTema(t) {
+  const tema = TEMAS.includes(t) ? t : 'lavanda';
+  if (tema === 'oscuro') { document.documentElement.dataset.tema = 'oscuro'; aplicarAcento('lavanda'); }
+  else { delete document.documentElement.dataset.tema; aplicarAcento(tema); }
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', tema === 'oscuro' ? '#16131A' : '#F7F4FA');
+}
+export function botonTema() {
+  return html`<button type="button" class="boton-tema" data-tema-btn aria-label="Cambiar colores del panel" title="Cambiar colores">${crudo('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 100 18c1.1 0 1.5-.8 1.5-1.5 0-.9-.6-1.2-.6-2 0-.8.7-1.5 1.5-1.5H17a4 4 0 004-4c0-5-4-9-9-9z"/><circle cx="7.5" cy="11" r="1.2"/><circle cx="10.5" cy="7" r="1.2"/><circle cx="15" cy="7.5" r="1.2"/></svg>')}</button>`;
+}
+/** Un toque cambia al siguiente tema (lavanda → ciruela → rosa → malva → oscuro). */
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('[data-tema-btn]')) return;
+  const actual = temaGuardado() || 'lavanda';
+  const sig = TEMAS[(TEMAS.indexOf(actual) + 1) % TEMAS.length];
+  try { localStorage.setItem('amelia_tema', sig); } catch { /* sin almacenamiento */ }
+  aplicarTema(sig);
+  toast(`Tema: ${NOMBRE_TEMA[sig]}`);
+});

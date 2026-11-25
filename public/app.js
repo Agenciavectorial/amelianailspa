@@ -134,7 +134,10 @@ document.addEventListener('DOMContentLoaded', function () {
     var item = galleryImgs[lbIndex];
     if (!item) return;
     var img = item.querySelector('img');
-    lbImg.src = img.src;
+    // La variante más grande del srcset (no la miniatura estirada); el CSS la limita al tamaño de la pantalla.
+    var mayor = (img.getAttribute('srcset') || '').split(',').map(function (x) { var p = x.trim().split(/\s+/); return { u: p[0], w: parseInt(p[1], 10) || 0 }; })
+      .filter(function (x) { return x.u; }).sort(function (a, b) { return b.w - a.w; })[0];
+    lbImg.src = mayor ? mayor.u : (img.currentSrc || img.src);
     lbImg.alt = img.alt;
     lbCaption.textContent = img.alt;
   }
@@ -481,18 +484,24 @@ document.addEventListener('DOMContentLoaded', function () {
           d.horario.forEach(function (x) { hz[x.dia] = x.abierto ? [x.abre, x.cierra] : null; });
           pintarEstado(hz);
         }
-        // Promociones vigentes
+        // Combos (lo que más se vende) y promociones vigentes: todos se agendan con un toque
         var cont = document.getElementById('destPromos');
-        if (cont && Array.isArray(d.promociones) && d.promociones.length) {
-          cont.innerHTML = d.promociones.slice(0, 4).map(function (p) {
-            var serv = p.servicio_slug || p.slug || '';
-            var href = '/reservar/' + (serv ? '?servicio=' + encodeURIComponent(serv) : '');
+        var combos = Array.isArray(d.servicios) ? d.servicios.filter(function (x) { return x.tipo === 'combo'; }) : [];
+        var promos = Array.isArray(d.promociones) ? d.promociones : [];
+        if (cont && (combos.length || promos.length)) {
+          var tarjeta = function (etiqueta, titulo, texto, foto, precio, antes, href) {
             return '<a class="promo-card" href="' + href + '">' +
-              (p.foto ? '<img loading="lazy" decoding="async" src="' + esc(p.foto) + '" alt="">' : '') +
-              '<div><small>Promoción</small><strong>' + esc(p.titulo) + '</strong>' +
-              (p.descripcion ? '<p>' + esc(p.descripcion) + '</p>' : '') +
-              (p.precio_promo ? '<span class="precio">' + pesos(p.precio_promo) + '</span>' : '') + '</div></a>';
-          }).join('');
+              (foto ? '<img loading="lazy" decoding="async" src="' + esc(foto) + '" alt="">' : '') +
+              '<div><small>' + etiqueta + '</small><strong>' + esc(titulo) + '</strong>' +
+              (texto ? '<p>' + esc(texto) + '</p>' : '') +
+              (precio != null ? '<span class="precio">' + (antes && antes > precio ? '<s>' + pesos(antes) + '</s> ' : '') + pesos(precio) + '</span>' : '') +
+              '<span class="promo-card-cta">Agendar →</span></div></a>';
+          };
+          cont.innerHTML = combos.slice(0, 4).map(function (c) {
+            return tarjeta('Combo', c.nombre, (c.incluye || c.descripcion || '').split('\n').filter(Boolean).join(' + '), c.foto, c.precio, c.precio_antes, '/reservar/?servicio=' + encodeURIComponent(c.slug));
+          }).concat(promos.slice(0, 4).map(function (p) {
+            return tarjeta('Promoción', p.titulo, p.descripcion, p.foto, p.precio_promo, p.precio_normal, '/reservar/?promo=' + p.id);
+          })).join('');
           cont.hidden = false;
         }
         // Lo más pedido primero

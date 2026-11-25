@@ -1,5 +1,5 @@
 // Suscripción a notificaciones push desde el navegador (clienta en /reservar, equipo en /panel).
-import { api } from './util.js?v=9cba0f01ac';
+import { api } from './util.js?v=0059637289';
 
 function deB64u(s) {
   const t = s.replace(/-/g, '+').replace(/_/g, '/');

@@ -1,9 +1,9 @@
 // Service worker de la app de la clienta: cachea la cáscara para abrir rápido. La API siempre va a la red.
 // Subir VERSION cuando cambie la lista de la cáscara. La red va primero, así que un cambio de CSS/JS
 // llega sin subirla; la versión solo limpia copias viejas de los celulares.
-const VERSION = 'amelia-reservar-v5';
+const VERSION = 'amelia-reservar-v6';
 const CASCARA = [
-  '/reservar/', '/reservar/reservar.css', '/reservar/reservar.js', '/reservar/selector.js', '/reservar/instalar.js',
+  '/reservar/', '/reservar/reservar.css', '/reservar/reservar.js', '/reservar/selector.js', '/reservar/instalar.js', '/app-citas/instalar-guia.js',
   '/reservar/cita/', '/reservar/cita.js', '/reservar/manifest.webmanifest',
   '/app-citas/base.css', '/app-citas/js/util.js', '/app-citas/js/push.js', '/app-citas/fonts/dmsans.woff2', '/app-citas/fonts/playfair.woff2',
   '/app-citas/fonts/playfair-italic.woff2', '/app-citas/fonts/greatvibes.woff2', '/app-citas/img/logo.webp', '/app-citas/img/icono-192.png',

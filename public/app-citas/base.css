@@ -158,3 +158,46 @@ h1 em, h2 em, h3 em { color: var(--rosa-deep); font-style: italic; }
 body.con-visor { overflow: hidden; }
 @keyframes aparecer { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .visor { animation: none; } .visor-marco img { transition: none; } }
+
+/* ---------- Guía para instalar la app ---------- */
+.instalar-guia { position: fixed; inset: 0; z-index: 900; background: rgba(34, 30, 40, .5); display: flex; align-items: flex-end; justify-content: center; padding: 12px 12px calc(12px + env(safe-area-inset-bottom, 0px)); opacity: 0; transition: opacity .25s; }
+.instalar-guia.abierta { opacity: 1; }
+.ig-tarjeta { position: relative; width: min(100%, 420px); max-height: calc(100dvh - 24px); overflow: auto; background: var(--blanco); border-radius: 24px; padding: 22px 20px 16px; box-shadow: var(--sombra-l); text-align: center; transform: translateY(24px); transition: transform .25s; }
+.instalar-guia.abierta .ig-tarjeta { transform: none; }
+@media (min-width: 700px) { .instalar-guia { align-items: center; } }
+.ig-cerrar { position: absolute; top: 8px; right: 10px; width: 40px; height: 40px; font-size: 1.6rem; color: var(--gris); }
+.ig-icono { width: 64px; height: 64px; border-radius: 16px; margin: 0 auto 10px; box-shadow: var(--sombra-s); }
+.ig-tarjeta h2 { font-size: 1.3rem; margin-bottom: 6px; }
+.ig-texto { color: var(--gris); font-size: .95rem; margin-bottom: 14px; }
+.ig-pasos { list-style: none; display: grid; gap: 10px; text-align: left; margin: 0 0 12px; }
+.ig-pasos li { display: flex; gap: 10px; align-items: center; background: var(--gris-claro); border-radius: 14px; padding: 10px 12px; font-size: .95rem; }
+.ig-pasos svg { vertical-align: -4px; color: #1a73e8; }
+.ig-num { flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--rosa-deep); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: .9rem; }
+.ig-nota { font-size: .82rem; color: var(--gris); margin-bottom: 10px; }
+.ig-pie { display: flex; gap: 8px; justify-content: center; margin-top: 6px; }
+.ig-pie button { flex: 1; min-height: 44px; border-radius: 999px; font-weight: 600; }
+.ig-ya { background: var(--rosa-soft); color: var(--rosa-deep); }
+.ig-luego { color: var(--gris); border: 1.5px solid var(--linea) !important; }
+.ig-nunca { margin-top: 8px; font-size: .82rem; color: var(--gris); text-decoration: underline; min-height: 36px; }
+body.con-guia { overflow: hidden; }
+
+/* ---------- Tema oscuro (botón de tema junto al logo del panel; elección de cada dispositivo) ---------- */
+:root[data-tema="oscuro"] {
+  --crema: #16131A; --blanco: #221E28; --negro: #F3EFF7; --gris: #B9B0C4; --gris-claro: #2C2733; --linea: #3B3444;
+  --rosa-soft: #3A2F47; --lila: #5B4C6B;
+  --exito: #7FD3A8; --exito-soft: #1E3A2C; --alerta: #F0B07F; --alerta-soft: #3D2A1C; --error: #FF9A92; --error-soft: #43201E;
+  --sombra-s: 0 1px 2px rgba(0, 0, 0, .4); --sombra-m: 0 6px 24px rgba(0, 0, 0, .45); --sombra-l: 0 18px 50px rgba(0, 0, 0, .55);
+  color-scheme: dark;
+}
+:root[data-tema="oscuro"] h1 em, :root[data-tema="oscuro"] h2 em, :root[data-tema="oscuro"] .script, :root[data-tema="oscuro"] a { color: #D4BEE6; }
+:root[data-tema="oscuro"] .chip[aria-pressed="true"], :root[data-tema="oscuro"] .chip.activo { background: var(--rosa-deep); border-color: var(--rosa-deep); color: #fff; }
+:root[data-tema="oscuro"] .toast { background: #3A3444; color: #fff; }
+:root[data-tema="oscuro"] .btn.sec { background: var(--gris-claro); color: var(--negro); }
+:root[data-tema="oscuro"] img.ingreso-logo, :root[data-tema="oscuro"] .lp-marca img { background: #fff; border-radius: 50%; }
+.boton-tema { display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--gris-claro); color: var(--rosa-deep); flex: none; }
+.boton-tema svg { width: 20px; height: 20px; }
+/* En computador (y con zoom del navegador) la foto no se estira a toda la pantalla: tamaño cómodo y centrada. */
+@media (pointer: fine), (min-width: 900px) {
+  .visor-marco { padding: 56px 72px 8px; }
+  .visor-marco img { width: auto; height: auto; max-width: min(100%, 1000px); max-height: 100%; border-radius: 14px; }
+}
