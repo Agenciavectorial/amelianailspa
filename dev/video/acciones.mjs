@@ -159,7 +159,7 @@ async function salir(page, base) {
 const hace = (n) => { const d = new Date(Date.now() - 5 * 3600000); d.setUTCDate(d.getUTCDate() - n); return d.toISOString().slice(0, 10); };
 export async function prepararDatos(base, video) {
   const c = cliente(base);
-  await c.pedir('/api/auth/login', { metodo: 'POST', datos: { id: (await c.pedir('/api/auth/personas')).cuerpo.personas.find((p) => p.rol === 'propietaria').id, pin: '1234' } });
+  await c.pedir('/api/auth/login', { metodo: 'POST', datos: { id: (await c.pedir('/api/auth/personas')).cuerpo.personas.find((p) => p.rol === 'propietaria').id, pin: '246813' } });
   const filas = [
     { fecha: hace(26), hora: '15:00', colaboradora: 'Karla', servicio: 'Semipermanente', nombre: 'Laura Ficticia', celular: '3000000011', estado: 'asistio' },
     { fecha: hace(30), hora: '11:00', colaboradora: 'Leidy', servicio: 'Acrílicas', nombre: 'Sofi Demo', celular: '3000000012', estado: 'asistio' },
@@ -186,12 +186,12 @@ export const erika = {
       await page.goto(baseNuevo + '/panel/', { waitUntil: 'networkidle' });
       await pausa(page, 500);
       await escribir(page, 'input[name="clave"]', 'clave-inicial', { retraso: 45 });
-      await escribir(page, 'input[name="pin"]', '1234', { retraso: 140 });
-      await escribir(page, 'input[name="pin2"]', '1234', { retraso: 140 });
+      await escribir(page, 'input[name="pin"]', '246813', { retraso: 140 });
+      await escribir(page, 'input[name="pin2"]', '246813', { retraso: 140 });
       await hasta(0.45);
       await page.goto(base + '/panel/', { waitUntil: 'networkidle' });
     }
-    await ingresar(page, base, 'Erika', '1234');
+    await ingresar(page, base, 'Erika', '246813');
   },
   async inicio({ page, hasta }) {
     await hasta(0.3);

@@ -142,13 +142,15 @@ test('ICS: escapa, pliega líneas largas y usa UTC', () => {
 });
 
 test('PIN: hash con sal, verificación y rechazo', async () => {
-  const h1 = await hashPin('2468');
-  const h2 = await hashPin('2468');
+  const h1 = await hashPin('246813');
+  const h2 = await hashPin('246813');
   assert.notEqual(h1, h2);
-  assert.ok(await verificarPin('2468', h1));
-  assert.ok(!(await verificarPin('2469', h1)));
-  assert.ok(!(await verificarPin('abcd', h1)));
+  assert.ok(await verificarPin('246813', h1));
+  assert.ok(!(await verificarPin('246814', h1)));
+  assert.ok(!(await verificarPin('abcdef', h1)));
   await assert.rejects(hashPin('12'));
+  await assert.rejects(hashPin('2468'), /6 números/, 'los PIN nuevos son de 6 números');
+  for (const facil of ['123456', '000000', '121212', '123123', '654321']) await assert.rejects(hashPin(facil), /fácil/, facil);
 });
 
 test('tiempo en Bogotá (UTC-5)', () => {
@@ -219,4 +221,81 @@ test('push: solo se aceptan servicios de push reales', () => {
 test('los JS y CSS de la plataforma tienen la versión al día (node dev/versionar.mjs)', async () => {
   const { execFileSync } = await import('node:child_process');
   execFileSync(process.execPath, [new URL('../dev/versionar.mjs', import.meta.url).pathname, '--revisar'], { stdio: 'pipe' });
+});
+
+// ---------- cuentas, fidelidad, respaldos ----------
+import { repartir, calcularComision, tablaComisiones, resumir, gastosHormiga, lunesDe } from '../functions/_lib/cuentas.js';
+import { fidelidad } from '../functions/_lib/rutas/clientas.js';
+import { sqlDeRestauracion, comprimir, descomprimir } from '../functions/_lib/respaldo.js';
+import { nombreDispositivo, pinDebil } from '../functions/_lib/auth.js';
+
+test('comisiones: % por chica y por servicio, redondeo a pesos y reparto exacto', () => {
+  const tabla = tablaComisiones([{ id: 1, comision_pct: 40 }, { id: 2, comision_pct: 0 }], [{ colaboradora_id: 1, servicio_id: 9, pct: 50 }]);
+  // Un servicio sin % propio usa el general (40 %)
+  assert.equal(calcularComision(tabla, 1, 45000, [{ servicio_id: 3, nombre: 'Semi', precio: 45000 }]), 18000);
+  // Combo manos (45.000, 40 %) + pies (35.000, 50 % por servicio) cobrado con descuento a 70.000
+  const l = [{ servicio_id: 3, nombre: 'Manos', precio: 45000 }, { servicio_id: 9, nombre: 'Pies', precio: 35000 }];
+  const r = repartir(70000, l);
+  assert.equal(r.reduce((a, x) => a + x.monto, 0), 70000, 'el reparto suma exacto');
+  assert.deepEqual(r.map((x) => x.monto), [39375, 30625]);
+  assert.equal(calcularComision(tabla, 1, 70000, l), Math.round(39375 * 0.4 + 30625 * 0.5));
+  // Sin precios: partes iguales; montos impares sin perder pesos
+  assert.deepEqual(repartir(100001, [{ nombre: 'a' }, { nombre: 'b' }, { nombre: 'c' }]).map((x) => x.monto), [33334, 33334, 33333]);
+  assert.equal(calcularComision(tabla, 2, 50000, l), 0);
+  assert.equal(calcularComision(tabla, 99, 50000, l), 0, 'chica sin configurar: 0 %');
+});
+
+test('cuentas: resumen por servicio, chica, ticket promedio y servicio más rentable', () => {
+  const partes = [
+    { fecha: '2026-11-23', colaboradora_id: 1, servicio_id: 3, nombre: 'Semi', monto: 45000, comision: 18000, costo: 5000, propina: 2000, metodo: 'nequi', ticket: 'p1' },
+    { fecha: '2026-11-23', colaboradora_id: 1, servicio_id: 9, nombre: 'Pies', monto: 35000, comision: 17500, costo: 3000, propina: 0, metodo: 'nequi', ticket: 'p1' },
+    { fecha: '2026-11-24', colaboradora_id: 2, servicio_id: 3, nombre: 'Semi', monto: 45000, comision: 0, costo: 5000, propina: 0, metodo: 'efectivo', ticket: 'p2' },
+  ];
+  const r = resumir(partes, [{ fecha: '2026-11-24', monto: 10000 }], { agrupar: 'dia' });
+  assert.equal(r.ingresos, 125000);
+  assert.equal(r.tickets, 2);
+  assert.equal(r.ticket_promedio, 62500);
+  assert.equal(r.utilidad, 125000 - 35500 - 13000 - 10000);
+  assert.equal(r.mas_rentable.nombre, 'Semi');
+  assert.deepEqual(r.serie.map((x) => [x.periodo, x.ingresos, x.gastos]), [['2026-11-23', 80000, 0], ['2026-11-24', 45000, 10000]]);
+  assert.equal(resumir(partes, [], { agrupar: 'semana' }).serie[0].periodo, '2026-11-23');
+  assert.equal(lunesDe('2026-11-29'), '2026-11-23', 'domingo cuenta en la semana del lunes anterior');
+  assert.equal(r.chicas[0].colaboradora_id, 1);
+});
+
+test('gastos hormiga: suma los gastos pequeños y avisa cuando pesan', () => {
+  const g = [...Array(12)].map(() => ({ concepto: 'Tinto', monto: 3000 })).concat([{ concepto: 'Arriendo', monto: 1800000 }, { concepto: 'Domicilio', monto: 15000 }]);
+  const h = gastosHormiga(g, { umbral: 20000, alerta: 40000 });
+  assert.equal(h.total, 51000);
+  assert.equal(h.cantidad, 13);
+  assert.ok(h.alerta);
+  assert.equal(h.top[0].concepto, 'Tinto');
+  assert.equal(gastosHormiga(g, { umbral: 20000, alerta: 100000 }).alerta, false);
+});
+
+test('fidelidad: última visita, frecuencia y próxima estimada', () => {
+  assert.deepEqual(fidelidad([], '2026-11-25').visitas, 0);
+  const f = fidelidad(['2026-09-01', '2026-09-22', '2026-10-13'], '2026-11-25');
+  assert.equal(f.ultima, '2026-10-13');
+  assert.equal(f.frecuencia_dias, 21);
+  assert.equal(f.proxima_estimada, '2026-11-03');
+  assert.equal(f.dias_sin_venir, 43);
+});
+
+test('respaldo: comprime y genera SQL de restauración con comillas y binarios', async () => {
+  const datos = { app: 'amelia-citas', version: 1, tablas: { clientas: [{ id: 1, nombre: "D'Amelia", celular: '573000000001' }], citas: [{ id: 5, clienta_id: 1, notas: null }], medios: [{ id: 1, datos: { b64: btoa('ab') } }] } };
+  const sql = sqlDeRestauracion(datos);
+  assert.match(sql, /INSERT INTO "clientas" \("id", "nombre", "celular"\) VALUES \(1, 'D''Amelia', '573000000001'\);/);
+  assert.match(sql, /X'6162'/);
+  assert.ok(sql.indexOf('INSERT INTO "clientas"') < sql.indexOf('INSERT INTO "citas"'), 'primero las clientas, luego sus citas');
+  assert.throws(() => sqlDeRestauracion({ tablas: {} }), /no es un respaldo/);
+  const gz = await comprimir(JSON.stringify(datos));
+  assert.deepEqual(JSON.parse(await descomprimir(gz)), datos);
+});
+
+test('seguridad: nombre del dispositivo y PIN débiles', () => {
+  assert.equal(nombreDispositivo('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Version/17.0 Mobile/15E148 Safari/604.1'), 'iPhone · Safari');
+  assert.equal(nombreDispositivo('Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36'), 'Android · Chrome');
+  for (const p of ['111111', '123456', '987654', '121212', '456456']) assert.ok(pinDebil(p), p);
+  for (const p of ['246813', '135792', '903172']) assert.ok(!pinDebil(p), p);
 });

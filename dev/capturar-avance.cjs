@@ -47,7 +47,7 @@ async function entrar(p, quien, pin) {
   const pd = await b.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1.5 });
   const p = await pd.newPage(); vigilar(p);
   await p.goto(B + '/panel/', { waitUntil: 'networkidle' }); await foto(p, 'e0-ingreso');
-  await entrar(p, 'Erika', '1234'); await foto(p, 'e1-inicio');
+  await entrar(p, 'Erika', '246813'); await foto(p, 'e1-inicio');
   const hoy = new Date(Date.now() - 5 * 3600000).toISOString().slice(0, 10);
   await p.goto(B + `/panel/#/agenda/${hoy}/dia/`); await p.waitForSelector('.ag-cita'); await foto(p, 'e2-agenda-dia');
   await p.click('.ag-cita >> nth=0'); await p.waitForSelector('.mensajes-cita'); await foto(p, 'e3-cita');
@@ -84,7 +84,7 @@ async function entrar(p, quien, pin) {
   await m.goto(B + '/panel/#/cuenta'); await m.waitForSelector('#formPin'); await foto(m, 'm5-cuenta-chica');
   const pe = await b.newContext({ ...devices['iPhone 13'], deviceScaleFactor: 2 });
   const e = await pe.newPage(); vigilar(e);
-  await entrar(e, 'Erika', '1234'); await foto(e, 'm6-inicio-erika');
+  await entrar(e, 'Erika', '246813'); await foto(e, 'm6-inicio-erika');
   await e.goto(B + `/panel/#/agenda/${hoy}/dia/`); await e.waitForSelector('.ag-cita'); await foto(e, 'm7-agenda-erika');
   await e.goto(B + '/panel/#/mas'); await e.waitForSelector('.lista-mas'); await foto(e, 'm8-mas-erika');
 

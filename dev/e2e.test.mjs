@@ -36,7 +36,7 @@ before(async () => {
   PUSH.base = `http://127.0.0.1:${servidorPush.address().port}`;
   VAPID = await generarVapid();
   srv = await levantar({ puerto: 8799, estado: 'dev/.estado-e2e', variables: {
-    LIMITE_RESERVAS_HORA: 500, VAPID_PUBLICA: VAPID.publica, VAPID_PRIVADA: VAPID.privada, VAPID_SUJETO: 'mailto:pruebas@example.com',
+    LIMITE_RESERVAS_HORA: 500, LIMITE_RESERVAS_CELULAR_HORA: 500, LIMITE_RESERVAS_GLOBAL_HORA: 5000, VAPID_PUBLICA: VAPID.publica, VAPID_PRIVADA: VAPID.privada, VAPID_SUJETO: 'mailto:pruebas@example.com',
     PUSH_PERMITIR_LOCAL: '1', CRON_CLAVE,
   } });
   base = srv.base;
@@ -51,7 +51,7 @@ test('configuración inicial: solo con CLAVE_INICIAL y una sola vez', async () =
   assert.equal(p.cuerpo.necesita_configurar, true);
   const mala = await cliente(base).pedir('/api/auth/configurar', { metodo: 'POST', datos: { clave: 'no-es', pin: '1234' } });
   assert.equal(mala.status, 401);
-  const ok = await erika.pedir('/api/auth/configurar', { metodo: 'POST', datos: { clave: CLAVE_INICIAL, pin: '2468' } });
+  const ok = await erika.pedir('/api/auth/configurar', { metodo: 'POST', datos: { clave: CLAVE_INICIAL, pin: '246813' } });
   assert.equal(ok.status, 200);
   assert.match(ok.headers.get('set-cookie'), /HttpOnly; Secure; SameSite=Strict/);
   const otra = await cliente(base).pedir('/api/auth/configurar', { metodo: 'POST', datos: { clave: CLAVE_INICIAL, pin: '9999' } });
@@ -73,7 +73,7 @@ test('configuración inicial: solo con CLAVE_INICIAL y una sola vez', async () =
     assert.equal(r.status, 200);
   }
   for (const slug of ['leidy', 'karla']) {
-    const r = await erika.pedir(`/api/panel/colaboradoras/${ids[slug]}/pin`, { metodo: 'POST', datos: { pin: '1357' } });
+    const r = await erika.pedir(`/api/panel/colaboradoras/${ids[slug]}/pin`, { metodo: 'POST', datos: { pin: '135792' } });
     assert.equal(r.status, 200);
   }
 });
@@ -156,7 +156,7 @@ test('validación de entradas públicas', async () => {
 
 test('permisos: una colaboradora no ve ni edita lo que no le corresponde', async () => {
   const karla = cliente(base);
-  const login = await karla.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.karla, pin: '1357' } });
+  const login = await karla.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.karla, pin: '135792' } });
   assert.equal(login.status, 200);
   // Cita de Leidy creada por Erika
   const deLeidy = await erika.pedir('/api/panel/citas', { metodo: 'POST', datos: { servicios: [ids.tradicional], colaboradora_id: ids.leidy, fecha: DIA, inicio: 1080, nombre: 'Privada Ficticia', celular: '3005550300' } });
@@ -202,7 +202,7 @@ test('permisos: una colaboradora no ve ni edita lo que no le corresponde', async
 test('sin sesión no hay panel; cerrar sesión revoca la cookie', async () => {
   assert.equal((await cliente(base).pedir('/api/panel/arranque')).status, 401);
   const leidy = cliente(base);
-  await leidy.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.leidy, pin: '1357' } });
+  await leidy.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.leidy, pin: '135792' } });
   const cookieVieja = leidy.cookie;
   assert.equal((await leidy.pedir('/api/auth/yo')).status, 200);
   await leidy.pedir('/api/auth/logout', { metodo: 'POST', datos: {} });
@@ -291,7 +291,7 @@ test('citas por gestionar, cobro con método de pago, resumen y analítica', asy
   const pend = pg.cuerpo.citas.find((c) => c.clienta_nombre === 'Pendiente Ficticia');
   assert.ok(pend, 'una cita pasada sin marcar aparece para preguntar ¿asistió?');
   const karla = cliente(base);
-  await karla.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.karla, pin: '1357' } });
+  await karla.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.karla, pin: '135792' } });
   assert.equal((await karla.pedir(`/api/panel/citas/${pend.id}/pagos`, { metodo: 'POST', datos: { monto: 50000, metodo: 'nequi' } })).status, 403, 'no cobra citas ajenas');
   assert.equal((await erika.pedir(`/api/panel/citas/${pend.id}/pagos`, { metodo: 'POST', datos: { monto: 50000, metodo: 'bitcoin' } })).status, 400);
   const ok = await erika.pedir(`/api/panel/citas/${pend.id}/pagos`, { metodo: 'POST', datos: { monto: 50000, propina: 5000, metodo: 'nequi' } });
@@ -319,13 +319,13 @@ test('fidelización: a quién le toca volver, inactivas y registro del mensaje',
   const f2 = await erika.pedir('/api/panel/fidelizacion');
   assert.ok(!f2.cuerpo.a_contactar.some((c) => c.nombre === 'Vuelve Ficticia'), 'tras escribirle sale de la lista');
   const karla = cliente(base);
-  await karla.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.karla, pin: '1357' } });
+  await karla.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.karla, pin: '135792' } });
   assert.equal((await karla.pedir('/api/panel/fidelizacion')).status, 403);
 });
 
 test('solo el negocio contacta a las clientas: las colaboradoras ven el celular oculto y agendan a una clienta reciente sin verlo', async () => {
   const karla = cliente(base);
-  assert.equal((await karla.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.karla, pin: '1357' } })).status, 200);
+  assert.equal((await karla.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.karla, pin: '135792' } })).status, 200);
   const nueva = await reservar({ servicios: [ids['lifting-pestanas']], con: 'karla', fecha: DIA, inicio: 1020, nombre: 'Oculta Ficticia', celular: '3005550777' });
   assert.equal(nueva.status, 200, JSON.stringify(nueva.cuerpo));
   const ag = await karla.pedir(`/api/panel/agenda?desde=${DIA}&hasta=${DIA}`);
@@ -360,24 +360,24 @@ test('equipo: el PIN escrito en Acceso se guarda también con el botón "Guardar
     const p = await ctx.newPage();
     await p.goto(`${base}/panel/`, { waitUntil: 'networkidle' });
     await p.click('.persona >> text=Erika');
-    for (const d of '2468') await p.click(`.tecla[data-n="${d}"]`);
+    for (const d of '246813') await p.click(`.tecla[data-n="${d}"]`);
     await p.click('#entrar');
     await p.waitForSelector('.dock');
     await p.goto(`${base}/panel/#/equipo`);
     await p.click('.tarjeta-equipo >> text=Julieth');
     await p.click('[data-tab="acceso"]');
-    await p.fill('#formColab [name=pin]', '2580');
+    await p.fill('#formColab [name=pin]', '258036');
     await p.click('#guardarColab');
     await p.waitForSelector('#formColab', { state: 'detached' });
     const jul = cliente(base);
-    assert.equal((await jul.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.julieth, pin: '2580' } })).status, 200, 'el PIN quedó guardado');
-    await erika.pedir(`/api/panel/colaboradoras/${ids.julieth}/pin`, { metodo: 'POST', datos: { pin: '1357' } });
+    assert.equal((await jul.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.julieth, pin: '258036' } })).status, 200, 'el PIN quedó guardado');
+    await erika.pedir(`/api/panel/colaboradoras/${ids.julieth}/pin`, { metodo: 'POST', datos: { pin: '135792' } });
   } finally { await b.close(); }
 });
 
 test('notas, plantillas y promociones con sus permisos', async () => {
   const karla = cliente(base);
-  await karla.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.karla, pin: '1357' } });
+  await karla.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.karla, pin: '135792' } });
   const n = await karla.pedir('/api/panel/notas', { metodo: 'POST', datos: { texto: 'Pedir esmalte nude' } });
   assert.equal(n.status, 200);
   const nE = await erika.pedir('/api/panel/notas', { metodo: 'POST', datos: { texto: 'Nota de Erika' } });
@@ -405,7 +405,7 @@ test('mis citas (app de la clienta) con los enlaces guardados en el celular', as
   assert.ok(!('clienta_celular' in m.cuerpo.citas[0]), 'no expone el celular');
 });
 
-test('notificaciones push: equipo avisado de citas nuevas, recordatorios 24 h / 2 h a la clienta, sin duplicados', async () => {
+test('notificaciones push: equipo avisado de citas nuevas, recordatorios al agendar, el mismo día y 1 h antes a la clienta, sin duplicados', async () => {
   const { descifrarPush } = await import('../tests/ayuda-push.mjs');
   const navegador = async (nombre) => {
     const par = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits']);
@@ -421,7 +421,7 @@ test('notificaciones push: equipo avisado de citas nuevas, recordatorios 24 h / 
 
   assert.equal((await cliente(base).pedir('/api/public/push/clave')).cuerpo.clave, VAPID.publica);
   const karla = cliente(base);
-  await karla.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.karla, pin: '1357' } });
+  await karla.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.karla, pin: '135792' } });
   const navK = await navegador('karla'), navE = await navegador('erika');
   assert.equal((await karla.pedir('/api/panel/push/suscribir', { metodo: 'POST', datos: { suscripcion: navK.sub } })).status, 200);
   assert.equal((await erika.pedir('/api/panel/push/suscribir', { metodo: 'POST', datos: { suscripcion: navE.sub } })).status, 200);
@@ -453,7 +453,7 @@ test('notificaciones push: equipo avisado de citas nuevas, recordatorios 24 h / 
 
   // 3) Suscripción vencida (410) se borra sola
   const leidy = cliente(base);
-  await leidy.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.leidy, pin: '1357' } });
+  await leidy.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.leidy, pin: '135792' } });
   const navL = await navegador('expirada');
   await leidy.pedir('/api/panel/push/suscribir', { metodo: 'POST', datos: { suscripcion: navL.sub } });
   const cv = await erika.pedir('/api/panel/citas', { metodo: 'POST', datos: { servicios: [ids.forrado], colaboradora_id: ids.leidy, fecha: DIA, inicio: 1200, nombre: 'Vence Ficticia', celular: '3005550802', forzar: true } });
@@ -477,14 +477,16 @@ test('notificaciones push: equipo avisado de citas nuevas, recordatorios 24 h / 
   // Confirmación al activar los avisos (una sola vez por cita)
   assert.ok(await esperar(() => navC.recibidos().length >= 1), 'llega la confirmación al agendar');
   assert.match((await navC.ultimo()).titulo, /Tu cita quedó agendada/);
-  // Víspera: el día anterior entre 6 y 9 p. m. (aquí 7:00 p. m.)
+  // Sin aviso la víspera (solo al agendar, el mismo día y 1 hora antes)
   const vis = await (await disparar(inicioMs - 15 * 3600000)).json();
-  assert.equal(vis.vispera, 1, JSON.stringify(vis));
-  assert.equal((await (await disparar(inicioMs - 14.5 * 3600000)).json()).vispera, 0, 'no se repite');
-  // Mañana del mismo día: no repite si ya recibió la de la víspera; Erika recibe el resumen del día
+  assert.equal(vis.dia + vis.r1, 0, JSON.stringify(vis));
+  // Mañana del mismo día (7:45 a. m.): "hoy es tu cita"; no se repite; Erika recibe el resumen del día
   const man = await (await disparar(inicioMs - 135 * 60000)).json();
-  assert.equal(man.dia, 0, JSON.stringify(man));
+  assert.equal(man.dia, 1, JSON.stringify(man));
   assert.ok(man.eq_dia >= 1, 'resumen de la mañana al equipo');
+  assert.equal((await (await disparar(inicioMs - 125 * 60000)).json()).dia, 0, 'no se repite');
+  assert.ok(await esperar(() => navC.recibidos().length >= 2));
+  assert.match((await navC.ultimo()).titulo, /Hoy es tu cita/);
   // 1 hora antes
   const r1 = await (await disparar(inicioMs - 60 * 60000)).json();
   assert.equal(r1.r1, 1, JSON.stringify(r1));
@@ -551,7 +553,7 @@ test('navegador: panel de Erika (computador y celular) y de una colaboradora', {
     await p.goto(`${base}/panel/`, { waitUntil: 'networkidle' });
     await p.screenshot({ path: CAPTURAS + 'panel-1-ingreso.png' });
     await p.click('.persona >> text=Erika');
-    for (const d of '2468') await p.click(`.tecla[data-n="${d}"]`);
+    for (const d of '246813') await p.click(`.tecla[data-n="${d}"]`);
     await p.click('#entrar');
     await p.waitForSelector('.stats .stat:not(.esqueleto)');
     await p.screenshot({ path: CAPTURAS + 'panel-2-inicio.png' });
@@ -582,7 +584,7 @@ test('navegador: panel de Erika (computador y celular) y de una colaboradora', {
     const m = await movil.newPage();
     await m.goto(`${base}/panel/`, { waitUntil: 'networkidle' });
     await m.click('.persona >> text=Karla');
-    for (const d of '1357') await m.click(`.tecla[data-n="${d}"]`);
+    for (const d of '135792') await m.click(`.tecla[data-n="${d}"]`);
     await m.click('#entrar');
     await m.waitForSelector('.dock');
     await m.screenshot({ path: CAPTURAS + 'panel-7-colaboradora-inicio.png' });
@@ -615,7 +617,7 @@ test('caché: HTML/CSS/JS de la plataforma siempre se revalidan; fuentes por un 
   }
 });
 
-test('galerías: catálogo con fotos y video, edición solo de Erika, subida sin R2 responde amable', async () => {
+test('galerías: catálogo con fotos y video, edición solo de Erika, subida de fotos sin configurar almacenamiento', async () => {
   const cat = await cliente(base).pedir('/api/public/catalogo');
   const press = cat.cuerpo.servicios.find((s) => s.slug === 'press-on');
   assert.ok(press.medios.length >= 5, 'Press On trae su galería');
@@ -624,7 +626,7 @@ test('galerías: catálogo con fotos y video, edición solo de Erika, subida sin
   assert.ok(cat.cuerpo.ajustes.bienvenida_titulo);
   assert.ok(Array.isArray(cat.cuerpo.festivos), 'el catálogo trae los días cerrados');
   const karla = cliente(base);
-  await karla.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.karla, pin: '1357' } });
+  await karla.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.karla, pin: '135792' } });
   assert.equal((await karla.pedir(`/api/panel/servicios/${press.id}/medios`, { metodo: 'PUT', datos: { medios: [] } })).status, 403);
   const malo = await erika.pedir(`/api/panel/servicios/${press.id}/medios`, { metodo: 'PUT', datos: { medios: [{ tipo: 'foto', url: 'javascript:alert(1)' }] } });
   assert.equal(malo.status, 400, 'solo enlaces https o fotos del sitio');
@@ -634,8 +636,18 @@ test('galerías: catálogo con fotos y video, edición solo de Erika, subida sin
   const press2 = cat2.cuerpo.servicios.find((s) => s.slug === 'press-on');
   assert.equal(press2.medios[0].url, '/img/press-on-3-720.webp', 'respeta el orden');
   assert.equal(press2.foto, '/img/press-on-3-720.webp', 'la primera foto es la principal');
-  const sub = await fetch(base + '/api/panel/subir', { method: 'POST', headers: { 'Content-Type': 'image/png', Cookie: erika.cookie }, body: new Uint8Array([137, 80, 78, 71]) });
-  assert.equal(sub.status, 501, 'sin bucket R2 avisa que la subida no está activa');
+  // Sin R2 ni Cloudinary la foto (ya comprimida en el navegador) se guarda en la base y se sirve desde /api/medios
+  const png = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82]);
+  const sub = await fetch(base + '/api/panel/subir', { method: 'POST', headers: { 'Content-Type': 'image/png', Cookie: erika.cookie }, body: png });
+  assert.equal(sub.status, 200, 'la subida funciona sin configurar almacenamiento');
+  const { url } = await sub.json();
+  assert.match(url, /^\/api\/medios\/\d{4}-\d{2}\/[\w-]+\.png$/);
+  const servida = await fetch(base + url);
+  assert.equal(servida.headers.get('content-type'), 'image/png');
+  assert.equal((await servida.arrayBuffer()).byteLength, png.byteLength);
+  const falsa = await fetch(base + '/api/panel/subir', { method: 'POST', headers: { 'Content-Type': 'image/png', Cookie: erika.cookie }, body: new TextEncoder().encode('<script>alert(1)</script>') });
+  assert.equal(falsa.status, 415, 'rechaza archivos que no son imágenes aunque digan serlo');
+  assert.equal((await fetch(base + '/api/panel/subir', { method: 'POST', headers: { 'Content-Type': 'image/png' }, body: png })).status, 401, 'sin sesión no se sube nada');
   // perfil propio y apariencia
   assert.equal((await karla.pedir('/api/panel/mi-perfil', { metodo: 'PUT', datos: { color: '#00897B', foto: '/img/karla-600.webp' } })).status, 200);
   assert.equal((await karla.pedir('/api/panel/mi-perfil', { metodo: 'PUT', datos: { color: 'rojo' } })).status, 400);
@@ -682,7 +694,7 @@ for (const ancho of [360, 390]) {
       await p.waitForSelector('.pasos-descarga li');
       if (ancho === 390) await p.screenshot({ path: CAPTURAS + 'movil-panel-9-descargar.png' });
       await p.click('.hoja-descarga .btn.bloque');
-      await entrar('Erika', '2468');
+      await entrar('Erika', '246813');
       await p.waitForSelector('#tarjetaDescarga [data-descargar]');
       await p.click('#tdOcultar');
       await p.waitForSelector('#tarjetaDescarga', { state: 'detached' });
@@ -708,7 +720,7 @@ for (const ancho of [360, 390]) {
       await p.click('.dock a[data-sec="mas"]');
       await p.waitForURL(/#\/mas/);
       await p.context().clearCookies();
-      await entrar('Karla', '1357');
+      await entrar('Karla', '135792');
       for (const sec of ['inicio', `agenda/${DIA}/lista/`, 'notas', 'cuenta', 'mas']) {
         await p.goto(`${base}/panel/#/${sec}`);
         await revisar(`colaboradora #/${sec}`);
@@ -828,7 +840,7 @@ for (const [nombre, disp] of [['iPhone 13', 'iPhone 13'], ['Android 360 px', 'Ga
       const suf = disp === 'Galaxy S8' ? '-android' : '';
       await p.goto(`${base}/panel/`, { waitUntil: 'networkidle' });
       await p.click('.persona >> text=Erika');
-      for (const d of '2468') await p.click(`.tecla[data-n="${d}"]`);
+      for (const d of '246813') await p.click(`.tecla[data-n="${d}"]`);
       await p.click('#entrar');
       // Tour de bienvenida (primera vez): se puede saltar
       await p.waitForSelector('.tour-tarjeta');

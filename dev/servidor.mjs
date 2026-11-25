@@ -63,10 +63,10 @@ export function proximoDiaHabil(desde = 2) {
 /** Crea PINs y algunas citas ficticias para ver el panel con datos. */
 export async function datosDemo(base) {
   const erika = cliente(base);
-  await erika.pedir('/api/auth/configurar', { metodo: 'POST', datos: { clave: CLAVE_INICIAL, pin: '1234' } });
+  await erika.pedir('/api/auth/configurar', { metodo: 'POST', datos: { clave: CLAVE_INICIAL, pin: '246813' } });
   const { cuerpo: a } = await erika.pedir('/api/panel/arranque');
   for (const c of a.colaboradoras.filter((x) => x.rol !== 'propietaria')) {
-    await erika.pedir(`/api/panel/colaboradoras/${c.id}/pin`, { metodo: 'POST', datos: { pin: '1111' } });
+    await erika.pedir(`/api/panel/colaboradoras/${c.id}/pin`, { metodo: 'POST', datos: { pin: '135792' } });
   }
   const ficticias = [
     ['Ana Prueba', '3000000001'], ['Bea Demo', '3000000002'], ['Caro Ejemplo', '3000000003'],
@@ -101,12 +101,12 @@ export async function datosDemo(base) {
   }
   const semi = a.servicios.find((s) => s.slug === 'semipermanente');
   await erika.pedir('/api/panel/promociones', { metodo: 'POST', datos: { titulo: 'Martes de semipermanente', descripcion: 'Color que dura 3 semanas a precio especial.', servicio_id: semi.id, precio_promo: 39000, activa: true, foto: semi.foto } });
-  return { pinErika: '1234', pinChicas: '1111' };
+  return { pinErika: '246813', pinChicas: '135792' };
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const s = await levantar({ puerto: 8788 });
   await datosDemo(s.base);
-  console.log(`\nListo: ${s.base}/reservar  ·  ${s.base}/panel  (Erika PIN 1234, chicas PIN 1111; datos ficticios)\nCtrl+C para salir.`);
+  console.log(`\nListo: ${s.base}/reservar  ·  ${s.base}/panel  (Erika PIN 246813, chicas PIN 135792; datos ficticios)\nCtrl+C para salir.`);
   process.on('SIGINT', () => { s.cerrar(); process.exit(0); });
 }
