@@ -1,7 +1,7 @@
 // Arranque del panel: sesión, navegación (dock en celular, barra lateral en computador) y rutas por hash.
-import { api, html, crudo, pintar, $, $$, toast, inicial, ICONOS, cerrarHoja } from '/app-citas/js/util.js?v=9cba0f01ac';
-import { S, recargar, esDuena, puede } from './estado.js?v=9cba0f01ac';
-import { pantallaIngreso } from './login.js?v=9cba0f01ac';
+import { api, html, crudo, pintar, $, $$, toast, inicial, ICONOS, cerrarHoja } from '/app-citas/js/util.js?v=abec1519af';
+import { S, recargar, esDuena, puede } from './estado.js?v=abec1519af';
+import { pantallaIngreso } from './login.js?v=abec1519af';
 
 const raiz = $('#raiz');
 
@@ -41,11 +41,11 @@ function secciones() {
 }
 
 const MODULOS = {
-  inicio: () => import('./inicio.js?v=9cba0f01ac'), agenda: () => import('./agenda.js?v=9cba0f01ac'), clientas: () => import('./clientas.js?v=9cba0f01ac'),
-  servicios: () => import('./servicios.js?v=9cba0f01ac'), equipo: () => import('./equipo.js?v=9cba0f01ac'), spa: () => import('./ajustes.js?v=9cba0f01ac'),
-  ajustes: () => import('./ajustes.js?v=9cba0f01ac'), importar: () => import('./importar.js?v=9cba0f01ac'), cuenta: () => import('./ajustes.js?v=9cba0f01ac'),
-  fidelizacion: () => import('./fidelizacion.js?v=9cba0f01ac'), analitica: () => import('./analitica.js?v=9cba0f01ac'), notas: () => import('./notas.js?v=9cba0f01ac'),
-  promociones: () => import('./promociones.js?v=9cba0f01ac'), mensajes: () => import('./plantillas.js?v=9cba0f01ac'),
+  inicio: () => import('./inicio.js?v=abec1519af'), agenda: () => import('./agenda.js?v=abec1519af'), clientas: () => import('./clientas.js?v=abec1519af'),
+  servicios: () => import('./servicios.js?v=abec1519af'), equipo: () => import('./equipo.js?v=abec1519af'), spa: () => import('./ajustes.js?v=abec1519af'),
+  ajustes: () => import('./ajustes.js?v=abec1519af'), importar: () => import('./importar.js?v=abec1519af'), cuenta: () => import('./ajustes.js?v=abec1519af'),
+  fidelizacion: () => import('./fidelizacion.js?v=abec1519af'), analitica: () => import('./analitica.js?v=abec1519af'), notas: () => import('./notas.js?v=abec1519af'),
+  promociones: () => import('./promociones.js?v=abec1519af'), mensajes: () => import('./plantillas.js?v=abec1519af'),
   mas: null,
 };
 
@@ -82,7 +82,8 @@ function pantallaMas(v) {
 }
 
 let rutaActual = null;
-async function navegar() {
+async function navegar(opciones) {
+  const suave = opciones?.suave === true;
   const [, sec = 'inicio', ...resto] = location.hash.replace(/^#/, '').split('/');
   const valida = sec === 'mas' || secciones().some((s) => s.id === sec);
   const id = valida ? sec : 'inicio';
@@ -91,15 +92,19 @@ async function navegar() {
   rutaActual = id;
   for (const a of $$('[data-sec]')) a.classList.toggle('activo', a.dataset.sec === id || (id !== 'mas' && a.dataset.sec === 'mas' && !secciones().find((s) => s.id === id)?.dock && window.innerWidth < 900));
   const v = $('#vista');
-  v.classList.remove('entra');
-  void v.offsetWidth;
-  v.classList.add('entra');
-  window.scrollTo(0, 0);
+  const y = window.scrollY;
+  if (!suave) {
+    v.classList.remove('entra');
+    void v.offsetWidth;
+    v.classList.add('entra');
+    window.scrollTo(0, 0);
+  }
   if (id === 'mas') return pantallaMas(v);
   try {
     const m = await MODULOS[id]();
     if (rutaActual !== id) return;
     await m.vista(v, { seccion: id, resto });
+    if (suave) window.scrollTo(0, y);
   } catch (e) {
     if (e.status === 401) return entrar();
     console.error(e);
@@ -122,46 +127,58 @@ async function entrar() {
   }
   shell();
   $('#fab')?.addEventListener('click', async () => {
-    const { nuevaCita } = await import('./citas.js?v=9cba0f01ac');
+    const { nuevaCita } = await import('./citas.js?v=abec1519af');
     const m = /^#\/agenda\/(\d{4}-\d{2}-\d{2})/.exec(location.hash);
     nuevaCita({ fecha: m ? m[1] : S.hoy, colaboradoraId: esDuena() ? undefined : S.yo.id }, () => navegar());
   });
   vigilarNovedades();
-  setTimeout(() => import('./tour.js?v=9cba0f01ac').then((t) => t.tourSiEsPrimeraVez()), 700);
+  setTimeout(() => import('./tour.js?v=abec1519af').then((t) => t.tourSiEsPrimeraVez()), 700);
   window.removeEventListener('hashchange', navegar);
   window.addEventListener('hashchange', navegar);
   navegar();
 }
 
-// ---------- novedades al instante con el panel abierto ----------
-// Además de las notificaciones push, cada 30 s (solo con la pantalla visible) pregunta si hubo citas nuevas,
-// movidas o canceladas; las muestra en un aviso y refresca Inicio o Agenda.
-let ultimoRegistro = 0, relojNovedades = null, consultarNovedades = null;
-const TEXTO_NOVEDAD = { creada: ['💜', 'Nueva cita'], movida: ['🔁', 'Cita movida'], cancelada: ['✖️', 'Cita cancelada'] };
+// ---------- sincronización entre dispositivos ----------
+// Además de las notificaciones push, cada 20 s (solo con la pantalla visible) y cada vez que se vuelve a la app
+// pregunta si hubo cambios: citas, cobros, ventas, gastos… hechos desde CUALQUIER dispositivo (también el mismo
+// usuario en otro celular). Si los hay, recarga la vista abierta; las citas de otras personas salen en un aviso.
+let ultimoRegistro = 0, relojNovedades = null, consultarNovedades = null, consultando = false;
+const TEXTO_NOVEDAD = { creada: ['💜', 'Nueva cita'], movida: ['🔁', 'Cita movida'], cancelada: ['✖️', 'Cita cancelada'], cobro: ['💵', 'Cobro registrado'] };
+const VISTAS_VIVAS = ['inicio', 'agenda', 'cuentas', 'clientas', 'fidelizacion', 'analitica'];
 function vigilarNovedades() {
   clearInterval(relojNovedades);
   ultimoRegistro = 0;
   const consultar = async () => {
-    if (document.hidden) return;
+    if (document.hidden || consultando) return;
+    consultando = true;
     try {
       const r = await api(`/api/panel/novedades?desde=${ultimoRegistro}`);
       const habiaBase = ultimoRegistro > 0;
       ultimoRegistro = r.ultimo;
-      if (!habiaBase || !r.novedades.length) return;
+      if (!habiaBase || !r.cambios) return;
       for (const n of r.novedades.slice(-3)) {
         const [ic, t] = TEXTO_NOVEDAD[n.accion] || ['📅', 'Agenda actualizada'];
-        const [y, mes, d] = n.fecha.split('-');
+        const [, mes, d] = n.fecha.split('-');
         const h = Math.floor(n.inicio / 60), m = n.inicio % 60;
         toast(`${ic} ${t}${n.origen === 'web' && n.accion === 'creada' ? ' en línea' : ''}: ${n.clienta} · ${d}/${mes} ${((h + 11) % 12) + 1}:${String(m).padStart(2, '0')} ${h < 12 ? 'a. m.' : 'p. m.'} con ${n.colaboradora}`, 'ok');
       }
-      if (['inicio', 'agenda'].includes(rutaActual) && !document.body.classList.contains('con-hoja')) navegar();
-    } catch { /* sin conexión: se intenta en la próxima vuelta */ }
+      // Recarga la vista abierta (si no hay una hoja encima, para no borrar lo que se está escribiendo).
+      if (VISTAS_VIVAS.includes(rutaActual) && !document.body.classList.contains('con-hoja')) navegar({ suave: true });
+      else pendienteRecargar = true;
+    } catch { /* sin conexión: se intenta en la próxima vuelta */ } finally { consultando = false; }
   };
   consultarNovedades = consultar;
   consultar();
-  relojNovedades = setInterval(consultar, 30000);
+  relojNovedades = setInterval(consultar, 20000);
 }
+// Si llegó un cambio con una hoja abierta, se aplica al cerrarla.
+let pendienteRecargar = false;
+document.addEventListener('hoja-cerrada', () => { if (pendienteRecargar && VISTAS_VIVAS.includes(rutaActual) && !document.body.classList.contains('con-hoja')) { pendienteRecargar = false; navegar({ suave: true }); } });
 document.addEventListener('visibilitychange', () => { if (!document.hidden) consultarNovedades?.(); });
+addEventListener('focus', () => consultarNovedades?.());
+addEventListener('online', () => consultarNovedades?.());
+// Después de guardar algo en este dispositivo, se consulta de una vez (así el número de "último cambio" queda al día).
+export const avisarCambio = () => setTimeout(() => consultarNovedades?.(), 400);
 
 // Si cualquier llamada responde 401, vuelve a la pantalla de ingreso.
 window.addEventListener('unhandledrejection', (e) => {

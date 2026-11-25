@@ -9,12 +9,16 @@ import {
 } from '../reservas.js';
 import { ahoraBogota, difDias, sumarDias, aMinutos } from '../tiempo.js';
 import { avisarEquipo, avisarClienta } from '../notificaciones.js';
+import { fidelidad } from './clientas.js';
 
 const PERMISOS = ['gestionar_citas', 'gestionar_bloqueos', 'editar_horario', 'ver_agenda_equipo', 'ver_clientas'];
 const AJUSTES_EDITABLES = {
   anticipacion_min: [0, 10080], ventana_dias: [1, 365], intervalo_min: [5, 120],
   cancelacion_horas: [0, 168], max_citas_por_celular: [1, 20], dias_inactiva: [15, 730],
+  max_reservas_celular_dia: [1, 50], hormiga_umbral: [1000, 1_000_000], hormiga_alerta: [1000, 100_000_000],
 };
+// Módulos que Erika puede mostrar u ocultar en el panel (Ajustes → Módulos).
+export const MODULOS = ['cuentas', 'fidelizacion', 'promociones', 'notas', 'analitica'];
 const AJUSTES_TEXTO = { whatsapp: 20, nombre_spa: 80, direccion: 200, politica_texto: 600, resena_url: 300, bienvenida_titulo: 60, bienvenida_texto: 200, portada_url: 600 };
 const ACENTOS = ['lavanda', 'ciruela', 'rosa', 'malva'];
 
@@ -56,20 +60,26 @@ export function rutasPanel(r) {
   // ---------- arranque: todo lo que el panel necesita en una sola llamada ----------
   // Novedades para el panel abierto (se consulta cada 30 s): citas nuevas, movidas o canceladas por otras
   // personas (clientas en línea o compañeras). La dueña ve todas; cada colaboradora, las suyas.
+  // Sincronización entre dispositivos (el panel abierto pregunta cada 20 s y al volver a la pantalla).
+  // Cualquier cambio (citas, cobros, estados, ventas, gastos, metas…) sube `ultimo`: el panel recarga la vista
+  // abierta. Antes solo contaban citas creadas/movidas/canceladas y además se ignoraban los cambios hechos por la
+  // misma persona en otro celular: por eso un cobro registrado no aparecía en los demás dispositivos.
   r.get('/api/panel/novedades', 'sesion', async ({ db, sesion, q }) => {
     const desde = Number(q.get('desde') || 0);
     const ultimo = (await db.prepare('SELECT COALESCE(MAX(id), 0) AS id FROM registro').first()).id;
-    if (!desde || desde >= ultimo) return { ultimo, novedades: [] };
-    const filtro = sesion.esPropietaria ? '' : 'AND ci.colaboradora_id = ?';
+    if (!desde || desde >= ultimo) return { ultimo, cambios: false, novedades: [] };
+    const filtro = sesion.esPropietaria ? '' : 'AND (ci.colaboradora_id = ? OR (r.cita_id IS NULL AND r.quien = ?))';
     const { results } = await db.prepare(
-      `SELECT r.id, r.accion, ci.id AS cita_id, ci.fecha, ci.inicio, ci.origen, cl.nombre AS clienta, co.nombre AS colaboradora
-         FROM registro r JOIN citas ci ON ci.id = r.cita_id JOIN clientas cl ON cl.id = ci.clienta_id JOIN colaboradoras co ON co.id = ci.colaboradora_id
-        WHERE r.id > ? AND r.accion IN ('creada', 'movida', 'cancelada') AND r.quien <> ? ${filtro}
-        ORDER BY r.id LIMIT 20`
-    ).bind(desde, quien(sesion), ...(sesion.esPropietaria ? [] : [sesion.id])).all();
+      `SELECT r.id, r.accion, r.quien, ci.id AS cita_id, ci.fecha, ci.inicio, ci.origen, cl.nombre AS clienta, co.nombre AS colaboradora
+         FROM registro r LEFT JOIN citas ci ON ci.id = r.cita_id LEFT JOIN clientas cl ON cl.id = ci.clienta_id LEFT JOIN colaboradoras co ON co.id = ci.colaboradora_id
+        WHERE r.id > ? ${filtro} ORDER BY r.id LIMIT 50`
+    ).bind(desde, ...(sesion.esPropietaria ? [] : [sesion.id, quien(sesion)])).all();
+    const avisos = results.filter((x) => x.cita_id && ['creada', 'movida', 'cancelada', 'cobro'].includes(x.accion) && x.quien !== quien(sesion)).slice(-20);
     return {
       ultimo,
-      novedades: results.map((x) => ({ ...x, clienta: sesion.esPropietaria || x.colaboradora === sesion.nombre ? x.clienta : x.clienta.split(' ')[0] })),
+      // Las colaboradoras recargan solo si el cambio les toca; Erika con cualquier cambio.
+      cambios: results.length > 0,
+      novedades: avisos.map(({ quien: _q, ...x }) => ({ ...x, clienta: sesion.esPropietaria || x.colaboradora === sesion.nombre ? x.clienta : (x.clienta || '').split(' ')[0] })),
     };
   });
 
@@ -103,7 +113,7 @@ export function rutasPanel(r) {
     }
     return {
       yo: yoPublico(sesion), hoy,
-      ajustes: sesion.esPropietaria ? ajustes : { intervalo_min: ajustes.intervalo_min, whatsapp: ajustes.whatsapp, nombre_spa: ajustes.nombre_spa, direccion: ajustes.direccion, resena_url: ajustes.resena_url },
+      ajustes: sesion.esPropietaria ? ajustes : { intervalo_min: ajustes.intervalo_min, whatsapp: ajustes.whatsapp, nombre_spa: ajustes.nombre_spa, direccion: ajustes.direccion, resena_url: ajustes.resena_url, modulos: ajustes.modulos },
       plantillas: plant.results,
       servicios: sesion.esPropietaria ? serv.results : serv.results.filter((s) => s.visible || colaboradoras.some((c) => c.servicios.includes(s.id))),
       colaboradoras, horario_spa: spa.results, festivos: fest.results,
@@ -345,7 +355,7 @@ export function rutasPanel(r) {
 
   r.post('/api/panel/colaboradoras', 'propietaria', async ({ db, body }) => {
     const id = await guardarColaboradora(db, null, body);
-    if (body.pin) await db.prepare('UPDATE colaboradoras SET pin_hash = ? WHERE id = ?').bind(await hashPin(String(body.pin)), id).run();
+    if (body.pin) await db.prepare('UPDATE colaboradoras SET pin_hash = ?, pin_seis = 1 WHERE id = ?').bind(await hashPin(String(body.pin)), id).run();
     return { id };
   });
 
@@ -372,10 +382,19 @@ export function rutasPanel(r) {
     }
     const hash = await hashPin(String(body.pin ?? ''));
     await db.batch([
-      db.prepare('UPDATE colaboradoras SET pin_hash = ? WHERE id = ?').bind(hash, c.id),
+      db.prepare('UPDATE colaboradoras SET pin_hash = ?, pin_seis = 1 WHERE id = ?').bind(hash, c.id),
       db.prepare('DELETE FROM sesiones WHERE colaboradora_id = ?').bind(c.id),
     ]);
     return { ok: true };
+  });
+
+  // Erika cierra todas las sesiones de una persona (celular perdido, salió del equipo…).
+  r.post('/api/panel/colaboradoras/:id/cerrar-sesiones', 'propietaria', async ({ db, sesion, params }) => {
+    const c = await colaboradoraDe(db, params.id);
+    const r2 = c.id === sesion.id
+      ? await db.prepare('DELETE FROM sesiones WHERE colaboradora_id = ? AND token_hash <> ?').bind(c.id, sesion.token_hash).run()
+      : await db.prepare('DELETE FROM sesiones WHERE colaboradora_id = ?').bind(c.id).run();
+    return { ok: true, cerradas: r2.meta.changes || 0 };
   });
 
   r.post('/api/panel/colaboradoras/:id/ics', 'propietaria', async ({ db, params, body }) => {
@@ -407,16 +426,21 @@ export function rutasPanel(r) {
       body.visible === undefined ? 1 : (v.bool(body.visible) ? 1 : 0),
       v.entero(Number(body.orden ?? 0), 'orden', { min: 0, max: 9999 }),
       body.ciclo_dias === '' || body.ciclo_dias == null ? null : v.entero(Number(body.ciclo_dias), 'ciclo de retorno', { min: 1, max: 365 }),
+      body.tipo === 'combo' ? 'combo' : 'servicio',
+      v.texto(body.incluye, 'incluye', { max: 600, opcional: true }),
+      body.precio_antes === '' || body.precio_antes == null ? null : v.entero(Number(body.precio_antes), 'precio antes', { min: 0, max: 100_000_000 }),
+      body.costo === '' || body.costo == null ? 0 : v.entero(Number(body.costo), 'costo de materiales', { min: 0, max: 100_000_000 }),
+      v.bool(body.destacado) ? 1 : 0,
     ];
     if (id == null) {
       let slug = v.slugDe(nombre);
       if (await db.prepare('SELECT 1 FROM servicios WHERE slug = ?').bind(slug).first()) slug = `${slug}-${Date.now().toString(36).slice(-4)}`;
       id = (await db.prepare(
-        'INSERT INTO servicios (nombre, categoria, descripcion, foto, precio, precio_desde, duracion, visible, orden, ciclo_dias, slug) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id'
+        'INSERT INTO servicios (nombre, categoria, descripcion, foto, precio, precio_desde, duracion, visible, orden, ciclo_dias, tipo, incluye, precio_antes, costo, destacado, slug) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id'
       ).bind(...d, slug).first()).id;
     } else {
       await db.prepare(
-        'UPDATE servicios SET nombre = ?, categoria = ?, descripcion = ?, foto = ?, precio = ?, precio_desde = ?, duracion = ?, visible = ?, orden = ?, ciclo_dias = ? WHERE id = ?'
+        'UPDATE servicios SET nombre = ?, categoria = ?, descripcion = ?, foto = ?, precio = ?, precio_desde = ?, duracion = ?, visible = ?, orden = ?, ciclo_dias = ?, tipo = ?, incluye = ?, precio_antes = ?, costo = ?, destacado = ? WHERE id = ?'
       ).bind(...d, id).run();
     }
     if (Array.isArray(body.colaboradoras)) {
@@ -493,6 +517,10 @@ export function rutasPanel(r) {
       if (!ACENTOS.includes(body.color_acento)) falla(400, 'Color de acento inválido.');
       sentencias.push(up('color_acento', body.color_acento));
     }
+    if (body.modulos !== undefined) {
+      const m = body.modulos && typeof body.modulos === 'object' ? body.modulos : falla(400, 'Módulos inválidos.');
+      sentencias.push(up('modulos', JSON.stringify(Object.fromEntries(MODULOS.map((k) => [k, m[k] !== false])))));
+    }
     if (body.portada_url) { const p = String(body.portada_url); if (!/^\/(img|api\/medios)\/[\w./-]+$/.test(p)) v.url(p, 'portada'); }
     if (body.intervalo_min !== undefined && Number(body.intervalo_min) % 5) falla(400, 'El intervalo debe ser múltiplo de 5.');
     if (sentencias.length) await db.batch(sentencias);
@@ -512,15 +540,19 @@ export function rutasPanel(r) {
       if (digitos.length >= 3) bind.push(`%${digitos}%`);
     }
     if (!sesion.esPropietaria) { conds.push('EXISTS (SELECT 1 FROM citas x WHERE x.clienta_id = cl.id AND x.colaboradora_id = ?)'); bind.push(sesion.id); }
+    const etiqueta = q.get('etiqueta') ? v.entero(Number(q.get('etiqueta')), 'etiqueta', { min: 1 }) : null;
+    if (etiqueta) { conds.push('EXISTS (SELECT 1 FROM clienta_etiquetas ce WHERE ce.clienta_id = cl.id AND ce.etiqueta_id = ?)'); bind.push(etiqueta); }
+    conds.push("cl.celular NOT LIKE 'eliminada-%'");
     const { results } = await db.prepare(
-      `SELECT cl.id, cl.nombre, cl.celular, cl.notas,
+      `SELECT cl.id, cl.nombre, cl.celular, cl.notas, cl.cumpleanos,
+              (SELECT GROUP_CONCAT(etiqueta_id) FROM clienta_etiquetas ce WHERE ce.clienta_id = cl.id) AS etiquetas,
               (SELECT COUNT(*) FROM citas c WHERE c.clienta_id = cl.id AND c.estado <> 'cancelada') AS citas,
               (SELECT COUNT(*) FROM citas c WHERE c.clienta_id = cl.id AND c.estado = 'no_asistio') AS faltas,
               (SELECT MAX(fecha) FROM citas c WHERE c.clienta_id = cl.id AND c.estado <> 'cancelada') AS ultima
          FROM clientas cl ${conds.length ? 'WHERE ' + conds.join(' AND ') : ''}
         ORDER BY ultima IS NULL, ultima DESC, cl.nombre LIMIT 51 OFFSET ?`
     ).bind(...bind, pagina * 50).all();
-    return { clientas: results.slice(0, 50), hay_mas: results.length > 50 };
+    return { clientas: results.slice(0, 50).map((c) => ({ ...c, etiquetas: c.etiquetas ? c.etiquetas.split(',').map(Number) : [] })), hay_mas: results.length > 50 };
   });
 
   r.get('/api/panel/clientas/:id', 'sesion', async ({ db, sesion, params }) => {
@@ -536,13 +568,19 @@ export function rutasPanel(r) {
         WHERE ci.clienta_id = ? ${filtro} ORDER BY ci.fecha DESC, ci.inicio DESC LIMIT 200`
     ).bind(id, ...(sesion.esPropietaria ? [] : [sesion.id])).all();
     if (!sesion.esPropietaria && !results.length) falla(403, 'No has atendido a esta clienta.');
-    return { clienta: cl, citas: results };
+    const { results: et } = await db.prepare('SELECT etiqueta_id FROM clienta_etiquetas WHERE clienta_id = ?').bind(id).all();
+    return {
+      clienta: { ...cl, etiquetas: et.map((x) => x.etiqueta_id) }, citas: results,
+      fidelidad: fidelidad(results.filter((x) => x.estado === 'asistio').map((x) => x.fecha), ahoraBogota().fecha),
+    };
   });
 
   r.put('/api/panel/clientas/:id', 'propietaria', async ({ db, params, body }) => {
     const id = v.entero(Number(params.id), 'clienta', { min: 1 });
     try {
-      const cumple = String(body.cumpleanos || '').trim();
+      // El selector de calendario manda AAAA-MM-DD; se guarda solo mes y día (MM-DD).
+      let cumple = String(body.cumpleanos || '').trim();
+      if (/^\d{4}-\d{2}-\d{2}$/.test(cumple)) cumple = cumple.slice(5);
       if (cumple && !/^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(cumple)) falla(400, 'Cumpleaños: usa el formato MM-DD.');
       await db.prepare('UPDATE clientas SET nombre = ?, celular = ?, email = ?, notas = ?, preferencias = ?, cumpleanos = ? WHERE id = ?').bind(
         v.texto(body.nombre, 'nombre', { min: 2, max: 80 }), v.celular(body.celular), v.email(body.email),

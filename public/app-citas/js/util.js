@@ -213,6 +213,8 @@ export function cerrarHoja(inmediato = false, { desdeAtras = false, mantenerCapa
   setTimeout(() => { velo.remove(); hoja.remove(); }, inmediato ? 0 : 300);
   if (conCapa && !desdeAtras && !mantenerCapa) quitarCapa(hojaDesdeAtras);
   alCerrar?.();
+  // Aviso para quien espera a que no haya hojas abiertas (p. ej. la sincronización del panel).
+  setTimeout(() => { if (!hojaActual) document.dispatchEvent(new Event('hoja-cerrada')); }, 350);
 }
 
 export function confirmar(titulo, texto, { si = 'Sí, continuar', peligro = false } = {}) {
