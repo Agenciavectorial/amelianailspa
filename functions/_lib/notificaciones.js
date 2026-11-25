@@ -1,6 +1,6 @@
 // Notificaciones (Web Push):
 // - Equipo: cita nueva, movida o cancelada al instante; resumen del día por la mañana; "en 1 hora" antes de cada cita.
-// - Clienta: confirmación al agendar; recordatorio la víspera (o la mañana del mismo día) y 1 hora antes;
+// - Clienta: confirmación al agendar ("recuerda tu cita el día X a la hora Y"), la mañana del mismo día y 1 hora antes;
 //   aviso si el spa le mueve o cancela la cita; "te toca volver" según el ciclo del servicio.
 // Punto de integración futuro: WhatsApp Business API.
 import { enviarPush, vapidDe } from './push.js';
@@ -79,7 +79,6 @@ async function primeraVez(db, clave) {
   const r = await db.prepare('INSERT OR IGNORE INTO push_enviados (clave) VALUES (?)').bind(clave).run();
   return r.meta.changes > 0;
 }
-const yaEnviado = async (db, clave) => !!(await db.prepare('SELECT 1 FROM push_enviados WHERE clave = ?').bind(clave).first());
 
 const SQL_CITA = `SELECT ci.id, ci.token, ci.fecha, ci.inicio, ci.estado, ci.clienta_id, ci.colaboradora_id, cl.nombre AS clienta, co.nombre AS colaboradora,
         (SELECT GROUP_CONCAT(nombre, ' + ') FROM cita_servicios cs WHERE cs.cita_id = ci.id) AS servicios
@@ -110,7 +109,7 @@ export async function avisarClienta(env, citaId, tipo, { ahoraMs = Date.now() } 
   const nombre = c.clienta.split(' ')[0];
   const cuando = `${diaRelativo(c.fecha, hoy)} a las ${horaTexto(c.inicio)}`;
   const datos = {
-    nueva: { titulo: `¡Listo, ${nombre}! Tu cita quedó agendada ✅`, cuerpo: `${c.servicios} ${cuando} con ${c.colaboradora}. Te recordaremos antes de tu cita.` },
+    nueva: { titulo: `¡Listo, ${nombre}! Tu cita quedó agendada ✅`, cuerpo: `Recuerda tu cita ${c.fecha === hoy ? 'hoy' : `el ${fechaTexto(c.fecha)}`} a las ${horaTexto(c.inicio)}: ${c.servicios} con ${c.colaboradora}. Te avisaremos ese día y 1 hora antes.` },
     movida: { titulo: `${nombre}, tu cita cambió 🔁`, cuerpo: `Ahora es ${cuando} con ${c.colaboradora} (${c.servicios}). Toca para ver los detalles.` },
     cancelada: { titulo: `${nombre}, tu cita fue cancelada`, cuerpo: `${c.servicios} ${cuando}. Si quieres, agenda otra hora en un toque.` },
   }[tipo];
@@ -130,8 +129,8 @@ export async function confirmarProxima(env, clientaId, { ahoraMs = Date.now() } 
 /**
  * Tarea programada (cada 15 min). Horas de Colombia.
  * Clientas con notificaciones:
- * - vispera: la cita es mañana y son entre las 6:00 y las 9:00 p. m.
- * - dia: la cita es hoy, ya son las 7:30 a. m., faltan más de 2 h y no recibió la de la víspera (agendó el mismo día o tarde).
+ * - (al agendar: confirmación con día y hora, en avisarClienta)
+ * - dia: la cita es hoy, ya son las 7:00 a. m. y faltan más de 100 min (si falta menos, sale solo la de 1 hora).
  * - r1: falta 1 hora o menos (75 min de margen por el intervalo del cron).
  * - vuelve: según el ciclo de retorno del último servicio (solo entre 10:00 y 19:00).
  * Equipo (colaboradoras con la app y los avisos activos):
@@ -141,33 +140,31 @@ export async function confirmarProxima(env, clientaId, { ahoraMs = Date.now() } 
 export async function ejecutarRecordatorios(env, { ahoraMs = Date.now(), maxEnvios = 25 } = {}) {
   // Tope por ejecución: el plan gratuito limita las consultas por invocación; lo que falte sale en la siguiente (15 min).
   const db = env.DB;
-  const res = { vispera: 0, dia: 0, r1: 0, eq_dia: 0, eq_r1: 0, vuelve: 0, pendientes: false, sin_vapid: !vapidDe(env) };
+  const res = { dia: 0, r1: 0, eq_dia: 0, eq_r1: 0, vuelve: 0, pendientes: false, sin_vapid: !vapidDe(env) };
   let presupuesto = maxEnvios;
   if (res.sin_vapid) return res;
   const { fecha: hoy, minuto } = ahoraBogota(ahoraMs);
-  const manana = sumarDias(hoy, 1);
 
   // ---------- clientas ----------
   const { results: citas } = await db.prepare(
     `${SQL_CITA}
-      WHERE ci.estado = 'confirmada' AND ci.fecha BETWEEN ? AND ?
+      WHERE ci.estado = 'confirmada' AND ci.fecha = ?
         AND EXISTS (SELECT 1 FROM push_suscripciones s WHERE s.clienta_id = ci.clienta_id)`
-  ).bind(hoy, manana).all();
+  ).bind(hoy).all();
 
   for (const c of citas) {
     const faltanMin = (aUTC(c.fecha, c.inicio).getTime() - ahoraMs) / 60000;
     let tipo = null;
+    // Tres avisos por cita: al agendar (avisarClienta), la mañana del mismo día y 1 hora antes.
     if (faltanMin > 0 && faltanMin <= 75) tipo = 'r1';
-    else if (c.fecha === manana && minuto >= 1080 && minuto < 1260) tipo = 'vispera';
-    else if (c.fecha === hoy && minuto >= 450 && faltanMin > 120 && !(await yaEnviado(db, `vispera:${c.id}`))) tipo = 'dia';
+    else if (c.fecha === hoy && minuto >= 420 && faltanMin > 100) tipo = 'dia';
     if (!tipo) continue;
     if (presupuesto <= 0) { res.pendientes = true; break; }
     if (!(await primeraVez(db, `${tipo}:${c.id}`))) continue;
     presupuesto--;
     const nombre = c.clienta.split(' ')[0];
     const textos = {
-      vispera: [`${nombre}, mañana te esperamos 💅`, `${c.servicios} a las ${horaTexto(c.inicio)} con ${c.colaboradora}. Si necesitas cambiarla, toca aquí.`],
-      dia: [`¡Hoy es tu cita, ${nombre}! 💜`, `${c.servicios} a las ${horaTexto(c.inicio)} con ${c.colaboradora}. Te esperamos.`],
+      dia: [`¡Hoy es tu cita, ${nombre}! 💜`, `Recuerda: hoy a las ${horaTexto(c.inicio)}, ${c.servicios} con ${c.colaboradora}. Si necesitas cambiarla, toca aquí.`],
       r1: [`${nombre}, tu cita es en 1 hora ✨`, `${c.servicios} a las ${horaTexto(c.inicio)} con ${c.colaboradora}. ¡Nos vemos pronto!`],
     }[tipo];
     const r = await enviarA(env, db, await subsClienta(db, c.clienta_id), {
