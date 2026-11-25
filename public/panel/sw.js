@@ -2,13 +2,13 @@
 // La API (/api/*) siempre va a la red: los datos viven en D1 y nunca se sirven viejos.
 // Subir VERSION cuando cambie la lista de la cáscara. La red va primero, así que un cambio de CSS/JS
 // llega sin subirla; la versión solo limpia copias viejas de los celulares.
-const VERSION = 'amelia-panel-v7';
+const VERSION = 'amelia-panel-v8';
 const CASCARA = [
   '/panel/', '/panel/panel.css', '/panel/instalar.js', '/panel/manifest.webmanifest',
   '/panel/js/main.js', '/panel/js/estado.js', '/panel/js/login.js', '/panel/js/inicio.js', '/panel/js/agenda.js',
   '/panel/js/citas.js', '/panel/js/clientas.js', '/panel/js/equipo.js', '/panel/js/servicios.js', '/panel/js/ajustes.js',
   '/panel/js/importar.js', '/panel/js/mensajes.js', '/panel/js/analitica.js', '/panel/js/fidelizacion.js', '/panel/js/notas.js',
-  '/panel/js/promociones.js', '/panel/js/plantillas.js', '/panel/js/galeria.js', '/panel/js/tour.js', '/panel/js/descargar.js', '/app-citas/base.css', '/app-citas/js/util.js', '/app-citas/js/csv.js', '/app-citas/js/push.js',
+  '/panel/js/promociones.js', '/panel/js/plantillas.js', '/panel/js/cuentas.js', '/panel/js/seguridad.js', '/app-citas/instalar-guia.js', '/panel/js/galeria.js', '/panel/js/tour.js', '/panel/js/descargar.js', '/app-citas/base.css', '/app-citas/js/util.js', '/app-citas/js/csv.js', '/app-citas/js/push.js',
   '/app-citas/fonts/dmsans.woff2', '/app-citas/fonts/playfair.woff2', '/app-citas/fonts/playfair-italic.woff2',
   '/app-citas/fonts/greatvibes.woff2', '/app-citas/img/logo.webp', '/app-citas/img/icono-192.png',
 ];

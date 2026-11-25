@@ -101,6 +101,20 @@ export async function datosDemo(base) {
   }
   const semi = a.servicios.find((s) => s.slug === 'semipermanente');
   await erika.pedir('/api/panel/promociones', { metodo: 'POST', datos: { titulo: 'Martes de semipermanente', descripcion: 'Color que dura 3 semanas a precio especial.', servicio_id: semi.id, precio_promo: 39000, activa: true, foto: semi.foto } });
+  // Cuentas: comisiones, un combo, gastos (algunos "hormiga"), una meta, una deuda y una venta sin cita.
+  for (const c of agenda) await erika.pedir(`/api/panel/comisiones/${c.id}`, { metodo: 'PUT', datos: { comision_pct: 40, servicios: { [semi.id]: 50 } } });
+  const pedi = a.servicios.find((s) => s.slug === 'pedi-spa');
+  await erika.pedir('/api/panel/servicios', { metodo: 'POST', datos: {
+    nombre: 'Combo 1: manos y pies semipermanente', categoria: 'Combos', tipo: 'combo', duracion: 150, precio: 85000, precio_antes: 100000, costo: 9000, destacado: true,
+    incluye: 'Manicure semipermanente\nPedicure semipermanente', descripcion: '', foto: semi.foto, visible: true, orden: 0,
+    colaboradoras: agenda.filter((c) => c.servicios.includes(semi.id) && c.servicios.includes(pedi?.id)).map((c) => c.id),
+  } });
+  for (const [concepto, monto, d] of [['Esmaltes y top coat', 180000, 2], ['Arriendo', 1200000, 1], ['Tinto', 3000, 1], ['Tinto', 3000, 2], ['Empanadas', 6000, 3], ['Domicilio', 8000, 4], ['Tinto', 3000, 5]]) {
+    await erika.pedir('/api/panel/gastos', { metodo: 'POST', datos: { concepto, monto, fecha: hace(Math.min(d, Number(hoy.slice(8)) - 1)) } });
+  }
+  await erika.pedir('/api/panel/metas', { metodo: 'POST', datos: { nombre: 'Máquina de pedicure', objetivo: 2500000, fecha_meta: proximoDiaHabil(120) } });
+  await erika.pedir('/api/panel/deudas', { metodo: 'POST', datos: { nombre: 'Préstamo silla de pedicure', persona: 'Proveedor', total: 1800000, cuotas: 6, dia_pago: 15 } });
+  await erika.pedir('/api/panel/ventas', { metodo: 'POST', datos: { concepto: 'Retoque de uña', monto: 10000, metodo: 'efectivo', colaboradora_id: agenda[0].id } });
   return { pinErika: '246813', pinChicas: '135792' };
 }
 

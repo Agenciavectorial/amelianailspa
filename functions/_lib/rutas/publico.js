@@ -103,7 +103,7 @@ export function rutasPublicas(r) {
     await revisarBloqueo(db, 'reserva-ip:' + ip);
     // Trampas para robots: campo oculto que una persona no llena y tiempo mínimo llenando el formulario.
     if (datos.sitio_web) falla(400, 'No pudimos procesar la reserva.');
-    if (datos.ms != null && Number(datos.ms) < 2500) falla(400, 'Revisa tus datos y vuelve a intentar.');
+    if (datos.ms != null && Number(datos.ms) < 1500) falla(400, 'Revisa tus datos y vuelve a intentar.');
     const servicioIds = v.listaIds(datos.servicios);
     const fecha = v.fecha(datos.fecha);
     const inicio = v.entero(datos.inicio, 'hora', { min: 0, max: 1435 });

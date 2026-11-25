@@ -1,6 +1,6 @@
 // Editor de galería (fotos y videos por servicio) y selector de imagen reutilizable
 // (galerías, promociones, portada de la reserva y foto de perfil).
-import { api, html, crudo, pintar, $, $$, toast, ocupado, abrirHoja, cerrarHoja, ICONOS, foto } from '/app-citas/js/util.js?v=9cba0f01ac';
+import { api, html, crudo, pintar, $, $$, toast, ocupado, abrirHoja, cerrarHoja, ICONOS, foto } from '/app-citas/js/util.js?v=0059637289';
 
 let fotosSpa = null;
 async function cargarFotosSpa() {
@@ -16,7 +16,29 @@ async function subidaDisponible() {
   return subida;
 }
 
-export async function subirArchivo(archivo) {
+/**
+ * Comprime la foto en el navegador antes de subirla: lado mayor de 1600 px, formato WebP (~200-400 KB).
+ * Así una foto de 5 MB del iPhone sube rápido y pesa poco en la página. Los videos se suben tal cual.
+ */
+export async function comprimirFoto(archivo, { lado = 1600, calidad = 0.82 } = {}) {
+  if (!archivo.type.startsWith('image/')) return archivo;
+  let bmp;
+  try { bmp = await createImageBitmap(archivo, { imageOrientation: 'from-image' }); } catch {
+    bmp = await new Promise((ok, mal) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => mal(new Error('No se pudo leer la foto. Prueba con otra (JPG o PNG).')); i.src = URL.createObjectURL(archivo); });
+  }
+  const w = bmp.width, h = bmp.height;
+  const k = Math.min(1, lado / Math.max(w, h));
+  const c = document.createElement('canvas');
+  c.width = Math.round(w * k); c.height = Math.round(h * k);
+  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+  let blob = await new Promise((ok) => c.toBlob(ok, 'image/webp', calidad));
+  // Safari viejo no sabe hacer WebP: devuelve PNG; en ese caso, JPG.
+  if (!blob || blob.type !== 'image/webp') blob = await new Promise((ok) => c.toBlob(ok, 'image/jpeg', calidad));
+  return blob && blob.size < archivo.size ? blob : archivo;
+}
+
+export async function subirArchivo(original) {
+  const archivo = await comprimirFoto(original);
   const res = await fetch('/api/panel/subir', { method: 'POST', headers: { 'Content-Type': archivo.type }, body: archivo, credentials: 'same-origin' });
   const d = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(d.error || 'No se pudo subir el archivo.');
@@ -35,16 +57,16 @@ export function elegirMedio({ video = false, titulo = 'Agregar foto' } = {}) {
     const h = abrirHoja(html`
       <div class="cabeza-hoja"><div><span class="script">Galería</span><h2>${titulo}</h2></div><button class="icono-btn" data-cerrar aria-label="Cerrar">${crudo(ICONOS.cerrar)}</button></div>
       <div class="pestanas" role="tablist">
-        <button data-tab="spa" aria-pressed="true">Fotos del spa</button>
-        <button data-tab="subir">${puedeSubir ? 'Subir del celular' : 'Subir'}</button>
+        <button data-tab="subir" aria-pressed="true">Subir foto</button>
+        <button data-tab="spa" aria-pressed="false">Fotos del spa</button>
         <button data-tab="enlace">Pegar enlace</button>
       </div>
-      <section data-panel="spa">
+      <section data-panel="spa" hidden>
         <div class="selector-fotos">${fotos.map((f) => html`<button type="button" class="sf-foto" data-url="${f}">${foto(f, { sizes: '(min-width: 760px) 140px, 30vw', ancho: 140 })}</button>`)}</div>
       </section>
-      <section data-panel="subir" hidden>
+      <section data-panel="subir">
         ${puedeSubir ? html`<label class="zona-subir"><input type="file" id="archivoMedio" accept="image/*${video ? ',video/mp4' : ''}" class="sr">
-          ${crudo(ICONOS.mas)}<strong>Toca para elegir una foto${video ? ' o video' : ''}</strong><span>Puedes tomarla con la cámara o elegirla de tu galería.</span></label>
+          ${crudo(ICONOS.mas)}<strong>Toca para elegir una foto${video ? ' o video' : ''}</strong><span>Desde el celular (cámara o galería) o desde el computador. La app la achica sola para que cargue rápido.</span></label>
           <p class="muted small" id="estadoSubida"></p>`
         : html`<p class="aviso info">La subida directa desde el celular se activa cuando la agencia conecte el almacenamiento de archivos. Mientras tanto, elige una foto del spa o pega un enlace (por ejemplo de Cloudinary).</p>`}
       </section>

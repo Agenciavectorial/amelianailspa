@@ -326,7 +326,7 @@ test('fidelización: a quién le toca volver, inactivas y registro del mensaje',
 test('solo el negocio contacta a las clientas: las colaboradoras ven el celular oculto y agendan a una clienta reciente sin verlo', async () => {
   const karla = cliente(base);
   assert.equal((await karla.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.karla, pin: '135792' } })).status, 200);
-  const nueva = await reservar({ servicios: [ids['lifting-pestanas']], con: 'karla', fecha: DIA, inicio: 1020, nombre: 'Oculta Ficticia', celular: '3005550777' });
+  const nueva = await reservar({ servicios: [ids['lifting-pestanas']], con: 'karla', fecha: DIA, inicio: 660, nombre: 'Oculta Ficticia', celular: '3005550777' });
   assert.equal(nueva.status, 200, JSON.stringify(nueva.cuerpo));
   const ag = await karla.pedir(`/api/panel/agenda?desde=${DIA}&hasta=${DIA}`);
   const mia = ag.cuerpo.citas.find((c) => c.clienta_nombre.startsWith('Oculta'));

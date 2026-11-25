@@ -1,7 +1,7 @@
 // Importador CSV (solo Erika): servicios, clientas y citas (pensado para lo que se exporte de Kumbio).
-import { api, html, crudo, pintar, $, $$, toast, ICONOS } from '/app-citas/js/util.js?v=9cba0f01ac';
-import { leerCSV, aObjetos, aCSV } from '/app-citas/js/csv.js?v=9cba0f01ac';
-import { recargar } from './estado.js?v=9cba0f01ac';
+import { api, html, crudo, pintar, $, $$, toast, ICONOS } from '/app-citas/js/util.js?v=0059637289';
+import { leerCSV, aObjetos, aCSV } from '/app-citas/js/csv.js?v=0059637289';
+import { recargar } from './estado.js?v=0059637289';
 
 // Formato de la exportación de Kumbio (docs/migracion-kumbio/FORMATO-IMPORTACION.md). También acepta sinónimos.
 const TIPOS = {
