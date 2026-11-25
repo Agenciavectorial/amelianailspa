@@ -246,6 +246,8 @@ export function rutasCuentas(r) {
   }
   r.post('/api/panel/gastos', 'propietaria', async ({ db, sesion, body }) => {
     const d = datosGasto(body);
+    // Sin categoría elegida va a "Otros" (así nada queda suelto en el resumen).
+    if (d[1] == null) d[1] = (await db.prepare("SELECT id FROM gasto_categorias WHERE nombre = 'Otros'").first())?.id ?? null;
     const [ins] = await db.batch([
       db.prepare('INSERT INTO gastos (fecha, categoria_id, concepto, monto, metodo, nota, registrado_por) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id').bind(...d, sesion.id),
       marcar(db, sesion, 'gasto', `${d[3]}`),

@@ -14,6 +14,9 @@ hechas por Agencia Vectorial. Todo se publica en **Cloudflare Pages** (proyecto 
 | `scripts/optimizar-fotos.py` | Convierte fotos nuevas a WebP en 480/720/960. |
 | `scripts/cambiar-agenda.py` | Cambia el enlace de "Agendar" de toda la página (Kumbio → `/reservar`). |
 | `docs/migracion-kumbio/` | Formato de importación desde Kumbio y reporte de la migración. |
+| `docs/plataforma/SEGURIDAD.md` | Decisiones de seguridad, anti-spam, copias de seguridad y **cómo restaurar**. |
+| `docs/plataforma/CUENTAS.md` | Cuentas: comisiones, utilidad, gastos hormiga, metas y deudas. |
+| `dev/revisar-pantallas.mjs` | Revisión de todas las pantallas en iPhone 390 px y computador 1366 px (también con zoom 125 % y 150 %). |
 
 ## Velocidad (Lighthouse, con compresión como en Cloudflare)
 | | Antes (Netlify, celular) | Ahora celular | Ahora computador |

@@ -1,6 +1,6 @@
 // Analítica (Erika): ingresos, métodos de pago, rendimiento por colaboradora y servicio, asistencia y clientas.
-import { api, html, pintar, $, $$, dinero, sumarDias, DIAS_CORTOS } from '/app-citas/js/util.js?v=0059637289';
-import { S, aplicarEstilos } from './estado.js?v=0059637289';
+import { api, html, pintar, $, $$, dinero, sumarDias, DIAS_CORTOS } from '/app-citas/js/util.js?v=c0f7d95cf2';
+import { S, aplicarEstilos } from './estado.js?v=c0f7d95cf2';
 
 const METODO = { efectivo: 'Efectivo', nequi: 'Nequi', daviplata: 'Daviplata', tarjeta: 'Tarjeta', transferencia: 'Transferencia', otro: 'Otro' };
 

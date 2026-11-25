@@ -1,11 +1,11 @@
 // Secciones "Horario y festivos", "Reglas de reserva" y "Mi cuenta".
-import { api, html, crudo, pintar, $, $$, toast, ocupado, abrirHoja, cerrarHoja, hhmm, aMin, fechaLarga, DIAS, ICONOS } from '/app-citas/js/util.js?v=0059637289';
-import { S, recargar, esDuena, puede, colab, moduloActivo } from './estado.js?v=0059637289';
-import { editorHorario, urlFeed } from './equipo.js?v=0059637289';
-import { salir } from './main.js?v=0059637289';
-import { estadoPush, activarPush, desactivarPush } from '/app-citas/js/push.js?v=0059637289';
-import { ACENTOS, aplicarAcento } from '/app-citas/js/util.js?v=0059637289';
-import { elegirMedio } from './galeria.js?v=0059637289';
+import { api, html, crudo, pintar, $, $$, toast, ocupado, abrirHoja, cerrarHoja, hhmm, aMin, fechaLarga, DIAS, ICONOS } from '/app-citas/js/util.js?v=c0f7d95cf2';
+import { S, recargar, esDuena, puede, colab, moduloActivo } from './estado.js?v=c0f7d95cf2';
+import { editorHorario, urlFeed } from './equipo.js?v=c0f7d95cf2';
+import { salir } from './main.js?v=c0f7d95cf2';
+import { estadoPush, activarPush, desactivarPush } from '/app-citas/js/push.js?v=c0f7d95cf2';
+import { ACENTOS, aplicarAcento } from '/app-citas/js/util.js?v=c0f7d95cf2';
+import { elegirMedio } from './galeria.js?v=c0f7d95cf2';
 
 const COLORES = ['#C2185B', '#00897B', '#F57C00', '#3949AB', '#7A6494', '#8E5579', '#2E7D5B', '#0277BD', '#6D4C41', '#AD1457'];
 
@@ -188,7 +188,7 @@ async function vistaReglas(v) {
     p.style.setProperty('--portada', portada ? `url("${portada}")` : 'none');
     p.style.setProperty('--fondo', ACENTOS[acento].deep);
   };
-  const { aplicarEstilos } = await import('./estado.js?v=0059637289');
+  const { aplicarEstilos } = await import('./estado.js?v=c0f7d95cf2');
   aplicarEstilos(v);
   previa();
   $('#apTitulo').oninput = previa;
@@ -326,15 +326,15 @@ async function vistaCuenta(v) {
       try { await api('/api/auth/cambiar-pin', { metodo: 'POST', datos: Object.fromEntries(new FormData(e.target)) }); e.target.reset(); toast('PIN cambiado', 'ok'); } catch (x) { toast(x.message, 'error'); }
     });
   };
-  import('./descargar.js?v=0059637289').then((d) => d.activarDescarga(v));
+  import('./descargar.js?v=c0f7d95cf2').then((d) => d.activarDescarga(v));
   api('/api/auth/sesiones').then(({ sesiones }) => pintar($('#misSesiones'), html`<div class="lista-respaldos">${sesiones.map((x) => html`
     <div class="fila-respaldo"><span><strong>${x.dispositivo}${x.esta ? ' (este)' : ''}</strong><small>Entró ${x.creado.slice(0, 10)} · último uso ${new Date(x.ultimo_uso).toLocaleDateString('es-CO')}</small></span></div>`)}</div>`)).catch(() => {});
   $('#cerrarOtras').onclick = (e) => ocupado(e.currentTarget, async () => {
     try { const r = await api('/api/auth/cerrar-otras', { metodo: 'POST', datos: {} }); toast(r.cerradas ? `Se cerraron ${r.cerradas} sesiones` : 'No había otras sesiones abiertas', 'ok'); vistaCuenta(v); } catch (x) { toast(x.message, 'error'); }
   });
   $('#salir').onclick = salir;
-  $('#verTour').onclick = () => import('./tour.js?v=0059637289').then((t) => t.mostrarTour());
-  const { aplicarEstilos } = await import('./estado.js?v=0059637289');
+  $('#verTour').onclick = () => import('./tour.js?v=c0f7d95cf2').then((t) => t.mostrarTour());
+  const { aplicarEstilos } = await import('./estado.js?v=c0f7d95cf2');
   aplicarEstilos(v);
   $('#cambiarFoto').onclick = async () => {
     const m = await elegirMedio({ titulo: 'Mi foto' });

@@ -67,7 +67,7 @@ Cargados de Kumbio como punto de partida (`migrations/0006_datos_kumbio.sql`, ap
   la página principal.
 - **Sesión de 30 días** en el dispositivo (cómodo en el celular personal). En un dispositivo compartido
   hay que usar "Cerrar sesión". Cambiar el PIN cierra las demás sesiones.
-- **PIN de 4 a 8 números**, por eso el teclado no entra solo al cuarto dígito: hay que tocar "Entrar".
+- **PIN de 6 números** (los viejos de 4 se aceptan una vez y piden cambiarlo). Se entra con el botón "Entrar". Ver `SEGURIDAD.md`.
 - **La lista de personas en la pantalla de ingreso es pública** (nombre y foto, lo mismo que ya
   muestra la página). El PIN es lo que protege.
 - **Feeds .ics con nombre y celular de la clienta** para que las chicas los vean en su calendario.
@@ -122,3 +122,18 @@ Cargados de Kumbio como punto de partida (`migrations/0006_datos_kumbio.sql`, ap
 - Horario real aplicado (migración 0012): lunes a viernes 9:00 a. m.–7:00 p. m., sábados 10:00 a. m.–7:00 p. m., domingos 11:00 a. m.–5:00 p. m.
 - Festivos de Colombia cargados hasta diciembre de 2027: esos días no se trabaja.
 - Todo el equipo sigue activo (Leidy, Karla, Julieth y Daily).
+
+## Ajustes del cliente (nov 2026) — para publicar
+
+- ⚠️ **Aplicar las migraciones nuevas** en la base real antes de publicar el código:
+  `npx wrangler d1 migrations apply amelia-citas --remote` (0013 cuentas/combos/seguridad y 0014 mensajes con párrafos).
+- ⚠️ **Volver a publicar el Worker de recordatorios** (ahora también hace el respaldo diario):
+  `npx wrangler deploy --config workers/recordatorios/wrangler.toml`.
+- Recomendado: bucket R2 `amelia-respaldos` para guardar los respaldos fuera de la base (`SEGURIDAD.md` §5).
+- Opcional: secretos de Cloudinary si se quieren las fotos subidas allá en vez de en la base (`SEGURIDAD.md` §7).
+- Las comisiones arrancan en 0 %: Erika debe poner el % de cada chica en Cuentas → Comisiones antes de cobrar.
+  Los cobros anteriores se pueden recalcular con "Recalcular este mes".
+- Al primer ingreso, cada chica con PIN de 4 números tendrá que crear uno de 6.
+- **Tienda:** Amelia no tiene tienda en línea; el interruptor de módulos queda listo para cuando exista.
+- **Fidelización:** la estructura (última visita, frecuencia promedio, próxima visita estimada, etiquetas) está lista y se llena
+  sola a medida que se marquen citas como "asistió". Sin historial todavía no muestra frecuencias.

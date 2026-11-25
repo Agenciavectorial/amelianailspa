@@ -93,7 +93,7 @@ Comprueba en `https://amelianailspa.pages.dev` (o el dominio):
 ## 6. Primer ingreso de Erika
 
 1. Erika abre `https://amelianailspa.com/panel` en su celular.
-2. Escribe la **clave inicial** y elige su PIN (4 a 8 números).
+2. Escribe la **clave inicial** y elige su PIN (6 números).
 3. En **Equipo** asigna un PIN a cada chica (pestaña *Acceso*) y revisa servicios, horario y permisos.
 4. Opcional: instala el panel como app (Mi cuenta → *Instalar app*).
 
@@ -204,7 +204,7 @@ Qué se envía (horas de Colombia):
 | La colaboradora y Erika | Cita nueva (en línea o desde el panel), movida o cancelada, al instante. No le llega a quien hizo el cambio. |
 | La colaboradora | **1 hora antes** de cada cita suya. |
 | Cada colaboradora (Erika: el total del spa) | **Resumen del día** entre 7:00 y 10:00 a. m., si tiene citas. |
-| La clienta (si tocó "Avísame antes de mi cita") | **Confirmación** apenas agenda; **la víspera** entre 6:00 y 9:00 p. m.; **la mañana del mismo día** (desde 7:30 a. m.) solo si no recibió la de la víspera; y **1 hora antes**. |
+| La clienta (si tocó "Avísame antes de mi cita") | **Confirmación** apenas agenda ("recuerda tu cita el día X a la hora Y"); **la mañana del mismo día** (desde las 7:00 a. m.); y **1 hora antes**. En iPhone solo con la app agregada al inicio (iOS 16.4+). |
 | La clienta | Si el spa le **mueve o cancela** la cita desde el panel. |
 | La clienta | "Te toca volver" cuando se cumple el ciclo de retorno de su último servicio, entre 10:00 y 19:00. |
 

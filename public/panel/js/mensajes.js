@@ -1,7 +1,7 @@
 // Mensajes a clientas con las plantillas que edita Erika. Hoy se envían por WhatsApp prellenado
 // (un toque, sin cupos). Punto de integración para envío automático: ver docs/plataforma/PENDIENTES.md.
-import { api, html, crudo, hora, fechaLarga, ICONOS, toast, SITIO } from '/app-citas/js/util.js?v=0059637289';
-import { S } from './estado.js?v=0059637289';
+import { api, html, crudo, hora, fechaLarga, ICONOS, toast, SITIO } from '/app-citas/js/util.js?v=c0f7d95cf2';
+import { S } from './estado.js?v=c0f7d95cf2';
 
 export const VARIABLES = ['nombre', 'servicio', 'fecha', 'hora', 'colaboradora', 'codigo', 'enlace', 'resena', 'spa', 'direccion'];
 

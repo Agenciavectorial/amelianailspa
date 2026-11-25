@@ -16,3 +16,7 @@ dev/.estado*/
 # Respaldos descargados de la base
 respaldos/
 *.backup.json
+respaldo-amelia-*.json
+respaldo-amelia-*.sql
+antes-de-restaurar-*.sql
+dev/test-results/

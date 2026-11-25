@@ -557,3 +557,9 @@ a.stat { text-decoration: none; color: inherit; }
 .inicio-marca { display: flex; gap: 12px; align-items: center; min-width: 0; }
 .inicio-logo { width: 40px; height: 40px; border-radius: 50%; box-shadow: var(--sombra-s); flex: none; }
 @media (min-width: 900px) { .inicio-logo { display: none; } .cabeza-vista > .boton-tema { display: none; } }
+/* Números largos ($1.250.000) sin desbordar con zoom del navegador */
+.stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 900px) { .stats { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); } }
+.stat { min-width: 0; }
+.stat strong { overflow-wrap: anywhere; font-size: clamp(1.25rem, 2.4vw, 1.7rem); }
+@media (max-width: 420px) { .fila-mov > .icono-btn { grid-column: 2; grid-row: 1; justify-self: end; width: 30px; height: 30px; } }

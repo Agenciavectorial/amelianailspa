@@ -2,9 +2,9 @@
 import {
   api, html, crudo, pintar, $, $$, toast, ocupado, hora, duracion, dinero, fechaLarga, ICONOS, inicial, celularBonito, abrirHoja, cerrarHoja,
   SITIO, aplicarAcento, foto, fotoAncho, videoLiviano, verFotos, trasHistorial, avatarAmpliable, activarAmpliar,
-} from '/app-citas/js/util.js?v=0059637289';
-import { crearSelector } from './selector.js?v=0059637289';
-import { estadoPush, activarPush } from '/app-citas/js/push.js?v=0059637289';
+} from '/app-citas/js/util.js?v=c0f7d95cf2';
+import { crearSelector } from './selector.js?v=c0f7d95cf2';
+import { estadoPush, activarPush } from '/app-citas/js/push.js?v=c0f7d95cf2';
 
 const PUSH = { sw: '/reservar/sw.js', scope: '/reservar/' };
 
@@ -467,6 +467,9 @@ async function reservar(e) {
   if ((datos.celular || '').replace(/\D/g, '').length < 10) return fallo('Escribe tu número de celular completo.');
   if (!f.politica.checked) return fallo('Acepta la política y la autorización de datos para continuar.');
   await ocupado($('#btnReservar'), async () => {
+    // El servidor rechaza envíos hechos en menos de 1,5 s (robots); una persona nunca llega a esperar esto.
+    const falta = 1700 - (Date.now() - ABIERTA);
+    if (falta > 0) await new Promise((ok) => setTimeout(ok, falta));
     try {
       const r = await api('/api/public/reservar', {
         metodo: 'POST',
@@ -613,6 +616,7 @@ iniciar();
 $('#btnInstalar').onclick = async () => {
   const r = window.ameliaInstalar ? await window.ameliaInstalar() : 'manual';
   if (r === 'instalada') toast('¡Listo! Ya tienes la app de Amelia 💜', 'ok');
+  else if ((r === 'ios' || r === 'manual') && window.ameliaGuiaInstalar) window.ameliaGuiaInstalar();
   else if (r === 'ios' || r === 'manual') {
     abrirHoja(html`<div class="cabeza-hoja"><div><span class="script">Amelia</span><h2>en tu celular</h2></div><button class="icono-btn" data-cerrar aria-label="Cerrar">${crudo(ICONOS.cerrar)}</button></div>
       <ol class="pasos-ios">

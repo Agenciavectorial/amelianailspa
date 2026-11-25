@@ -1,6 +1,6 @@
 // Seguridad y respaldos (Erika): botón de emergencia para pausar las reservas en línea, revisión y borrado en
 // bloque de reservas sospechosas, y copias de seguridad (automáticas cada día + manual + descarga).
-import { api, html, crudo, pintar, $, $$, toast, ocupado, confirmar, fechaCorta, hora, ICONOS } from '/app-citas/js/util.js?v=0059637289';
+import { api, html, crudo, pintar, $, $$, toast, ocupado, confirmar, fechaCorta, hora, ICONOS } from '/app-citas/js/util.js?v=c0f7d95cf2';
 
 let horas = 48;
 
@@ -14,7 +14,7 @@ export async function vista(v) {
       <h2>${d.pausadas ? '⏸️ Reservas en línea PAUSADAS' : 'Reservas en línea activas'}</h2>
       <p class="muted">${d.pausadas ? 'Nadie puede agendar desde la página ni la app. Tú y el equipo sí pueden agendar desde el panel.' : 'Si ves reservas raras (muchas de golpe, nombres falsos), pausa todo con un toque mientras revisas.'}</p>
       <label class="campo"><span>Mensaje para las clientas mientras está pausado</span><input id="msgPausa" maxlength="200" value="${d.mensaje}"></label>
-      <button class="btn bloque ${d.pausadas ? '' : 'peligro'}" id="btnPausa">${d.pausadas ? '▶️ Reanudar reservas en línea' : '⏸️ Pausar reservas en línea (emergencia)'}</button>
+      <button class="btn bloque ${d.pausadas ? '' : 'peligro'}" id="btnPausa">${d.pausadas ? '▶️ Reanudar reservas en línea' : '⏸️ Pausar reservas (emergencia)'}</button>
     </section>
 
     <section class="tarjeta bloque-ajustes espacio-arriba">

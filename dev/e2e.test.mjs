@@ -326,7 +326,8 @@ test('fidelización: a quién le toca volver, inactivas y registro del mensaje',
 test('solo el negocio contacta a las clientas: las colaboradoras ven el celular oculto y agendan a una clienta reciente sin verlo', async () => {
   const karla = cliente(base);
   assert.equal((await karla.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.karla, pin: '135792' } })).status, 200);
-  const nueva = await reservar({ servicios: [ids['lifting-pestanas']], con: 'karla', fecha: DIA, inicio: 660, nombre: 'Oculta Ficticia', celular: '3005550777' });
+  const libres = (await cliente(base).pedir(`/api/public/disponibilidad?fecha=${DIA}&servicios=${ids['lifting-pestanas']}&con=karla`)).cuerpo.turnos;
+  const nueva = await reservar({ servicios: [ids['lifting-pestanas']], con: 'karla', fecha: DIA, inicio: libres[0].inicio, nombre: 'Oculta Ficticia', celular: '3005550777' });
   assert.equal(nueva.status, 200, JSON.stringify(nueva.cuerpo));
   const ag = await karla.pedir(`/api/panel/agenda?desde=${DIA}&hasta=${DIA}`);
   const mia = ag.cuerpo.citas.find((c) => c.clienta_nombre.startsWith('Oculta'));
@@ -403,6 +404,206 @@ test('mis citas (app de la clienta) con los enlaces guardados en el celular', as
   assert.equal(m.cuerpo.citas.length, 1);
   assert.equal(m.cuerpo.citas[0].codigo, r.cuerpo.codigo);
   assert.ok(!('clienta_celular' in m.cuerpo.citas[0]), 'no expone el celular');
+});
+
+test('cuentas: comisión congelada al cobrar, cada chica ve solo lo suyo y Erika todo (gastos hormiga, metas y deudas)', async () => {
+  const D = proximoDiaHabil(9);
+  const karla = cliente(base);
+  assert.equal((await karla.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.karla, pin: '135792' } })).status, 200);
+  // Comisiones: 40 % general y 50 % en semipermanente
+  assert.equal((await karla.pedir(`/api/panel/comisiones/${ids.karla}`, { metodo: 'PUT', datos: { comision_pct: 40 } })).status, 403, 'solo Erika define comisiones');
+  assert.equal((await erika.pedir(`/api/panel/comisiones/${ids.karla}`, { metodo: 'PUT', datos: { comision_pct: 40, servicios: { [ids.semipermanente]: 50 } } })).status, 200);
+  const cita = await erika.pedir('/api/panel/citas', { metodo: 'POST', datos: { servicios: [ids.semipermanente], colaboradora_id: ids.karla, fecha: D, inicio: 600, nombre: 'Cuentas Ficticia', celular: '3005551100', forzar: true } });
+  assert.equal(cita.status, 200, JSON.stringify(cita.cuerpo));
+  const cobro = await karla.pedir(`/api/panel/citas/${cita.cuerpo.id}/pagos`, { metodo: 'POST', datos: { monto: 60000, propina: 5000, metodo: 'nequi' } });
+  assert.equal(cobro.status, 200, JSON.stringify(cobro.cuerpo));
+  assert.equal(cobro.cuerpo.comision, 30000, '50 % de 60.000');
+  // Cambiar el % después no reescribe lo ya cobrado
+  await erika.pedir(`/api/panel/comisiones/${ids.karla}`, { metodo: 'PUT', datos: { comision_pct: 10 } });
+  const ventaK = await karla.pedir('/api/panel/ventas', { metodo: 'POST', datos: { concepto: 'Esmalte', monto: 5000, metodo: 'efectivo' } });
+  assert.equal(ventaK.cuerpo.comision, 500, 'la chica registra su venta de hoy: 10 % (el nuevo general)');
+  assert.equal((await karla.pedir('/api/panel/ventas', { metodo: 'POST', datos: { concepto: 'Viejo', monto: 5000, metodo: 'efectivo', fecha: '2026-01-02' } })).status, 400, 'la chica no registra ventas viejas');
+  const venta = await erika.pedir('/api/panel/ventas', { metodo: 'POST', datos: { concepto: 'Retoque', monto: 10000, metodo: 'efectivo', colaboradora_id: ids.karla, fecha: D } });
+  assert.equal(venta.status, 200, JSON.stringify(venta.cuerpo));
+  assert.equal(venta.cuerpo.comision, 1000, '10 % (el nuevo general)');
+  const suya = await karla.pedir(`/api/panel/cuentas?desde=${D}&hasta=${D}`);
+  assert.equal(suya.status, 200);
+  assert.equal(suya.cuerpo.propia, true);
+  assert.equal(suya.cuerpo.rango.comision, 31000, 'su cobro (30.000) + la venta que Erika le registró (1.000)');
+  assert.equal(suya.cuerpo.rango.propinas, 5000);
+  assert.ok(!('gastos' in suya.cuerpo) && !('chicas' in suya.cuerpo), 'la chica no ve gastos ni a las demás');
+  for (const ruta of ['/api/panel/gastos', '/api/panel/metas', '/api/panel/deudas', '/api/panel/comisiones']) {
+    assert.equal((await karla.pedir(ruta, ruta === '/api/panel/gastos' ? { metodo: 'POST', datos: { concepto: 'x', monto: 1 } } : {})).status, 403, ruta);
+  }
+  // Gastos (con gastos hormiga), metas y deudas de Erika
+  for (let i = 0; i < 6; i++) assert.equal((await erika.pedir('/api/panel/gastos', { metodo: 'POST', datos: { concepto: 'Tinto', monto: 3000, fecha: D } })).status, 200);
+  await erika.pedir('/api/panel/ajustes', { metodo: 'PUT', datos: { hormiga_alerta: 15000 } });
+  const r = await erika.pedir(`/api/panel/cuentas?desde=${D}&hasta=${D}`);
+  assert.equal(r.cuerpo.ingresos, 70000);
+  assert.equal(r.cuerpo.comisiones, 31000);
+  assert.equal(r.cuerpo.gastos, 18000);
+  assert.equal(r.cuerpo.utilidad, 70000 - 31000 - 18000);
+  assert.ok(r.cuerpo.hormiga.alerta, 'avisa los gastos hormiga');
+  assert.equal(r.cuerpo.gastos_categorias[0].categoria, 'Otros', 'sin categoría va a Otros');
+  assert.ok(r.cuerpo.chicas.some((c) => c.nombre === 'Karla' && c.comision === 31000));
+  const meta = await erika.pedir('/api/panel/metas', { metodo: 'POST', datos: { nombre: 'Máquina', objetivo: 1000000 } });
+  await erika.pedir(`/api/panel/metas/${meta.cuerpo.id}/aportes`, { metodo: 'POST', datos: { monto: 250000 } });
+  assert.equal((await erika.pedir('/api/panel/metas')).cuerpo.metas.find((m) => m.id === meta.cuerpo.id).ahorrado, 250000);
+  const deuda = await erika.pedir('/api/panel/deudas', { metodo: 'POST', datos: { nombre: 'Silla', total: 600000, cuotas: 3, dia_pago: 10 } });
+  await erika.pedir(`/api/panel/deudas/${deuda.cuerpo.id}/pagos`, { metodo: 'POST', datos: { monto: 200000 } });
+  const dd = (await erika.pedir('/api/panel/deudas')).cuerpo.deudas.find((x) => x.id === deuda.cuerpo.id);
+  assert.equal(dd.saldo, 400000);
+  assert.equal(dd.cuotas_pagadas, 1);
+  assert.ok(dd.proxima);
+});
+
+test('sincronización: un cobro o una venta se ven en los demás dispositivos (también de la misma persona)', async () => {
+  const celularErika = cliente(base);
+  await celularErika.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.erika, pin: '246813' } });
+  const { ultimo } = (await erika.pedir('/api/panel/novedades?desde=0')).cuerpo;
+  // Erika registra un gasto en su celular → su computador se entera
+  await celularErika.pedir('/api/panel/gastos', { metodo: 'POST', datos: { concepto: 'Algodón', monto: 8000 } });
+  const n1 = (await erika.pedir(`/api/panel/novedades?desde=${ultimo}`)).cuerpo;
+  assert.equal(n1.cambios, true, 'la misma persona en otro dispositivo ve el cambio');
+  // Leidy cobra una cita suya → Erika lo ve; Karla (no es suya) no recarga por eso
+  const leidy = cliente(base), karla = cliente(base);
+  await leidy.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.leidy, pin: '135792' } });
+  await karla.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.karla, pin: '135792' } });
+  const c = await erika.pedir('/api/panel/citas', { metodo: 'POST', datos: { servicios: [ids.forrado], colaboradora_id: ids.leidy, fecha: proximoDiaHabil(9), inicio: 900, nombre: 'Sync Ficticia', celular: '3005551200', forzar: true } });
+  const antes = (await erika.pedir('/api/panel/novedades?desde=0')).cuerpo.ultimo;
+  await leidy.pedir(`/api/panel/citas/${c.cuerpo.id}/pagos`, { metodo: 'POST', datos: { monto: 50000, metodo: 'efectivo' } });
+  const ne = (await erika.pedir(`/api/panel/novedades?desde=${antes}`)).cuerpo;
+  assert.equal(ne.cambios, true);
+  assert.ok(ne.novedades.some((x) => x.accion === 'cobro'), 'aviso del cobro');
+  const nk = (await karla.pedir(`/api/panel/novedades?desde=${antes}`)).cuerpo;
+  assert.equal(nk.cambios, false, 'a Karla no le toca');
+});
+
+const difDias = (f) => Math.round((Date.parse(f) - Date.parse(new Date(Date.now() - 5 * 3600000).toISOString().slice(0, 10))) / 864e5);
+
+test('seguridad: pausa de emergencia, borrado en bloque, respaldo descargable y sesiones por dispositivo', async () => {
+  const D = proximoDiaHabil(10);
+  const karla = cliente(base);
+  await karla.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.karla, pin: '135792' } });
+  assert.equal((await karla.pedir('/api/panel/seguridad/pausa', { metodo: 'PUT', datos: { pausadas: true } })).status, 403);
+  assert.equal((await erika.pedir('/api/panel/seguridad/pausa', { metodo: 'PUT', datos: { pausadas: true, mensaje: 'Volvemos pronto' } })).status, 200);
+  const cat = (await cliente(base).pedir('/api/public/catalogo')).cuerpo;
+  assert.equal(cat.ajustes.reservas_pausadas, '1');
+  const bloqueada = await reservar({ servicios: [ids.forrado], fecha: D, inicio: 600, nombre: 'Pausa Ficticia', celular: '3005551300' });
+  assert.equal(bloqueada.status, 503);
+  assert.equal(bloqueada.cuerpo.codigo, 'pausada');
+  await erika.pedir('/api/panel/seguridad/pausa', { metodo: 'PUT', datos: { pausadas: false } });
+  // Robot: muy rápido (menos de 1,5 s en el formulario)
+  assert.equal((await reservar({ servicios: [ids.forrado], fecha: D, inicio: 600, nombre: 'Robot Ficticio', celular: '3005551301', ms: 200 })).status, 400);
+  // "Ataque": varias reservas en línea; Erika las borra en bloque y los turnos quedan libres
+  const ids_ = [];
+  const libre = async (fecha) => (await cliente(base).pedir(`/api/public/disponibilidad?fecha=${fecha}&servicios=${ids.forrado}`)).cuerpo.turnos;
+  const turnosD = await libre(D);
+  for (let i = 0; i < 3; i++) {
+    const r = await reservar({ servicios: [ids.forrado], fecha: D, inicio: turnosD[i * 8].inicio, nombre: `Ataque ${i}`, celular: `30055514${10 + i}` });
+    assert.equal(r.status, 200, JSON.stringify(r.cuerpo));
+  }
+  const seg = (await erika.pedir('/api/panel/seguridad?horas=1')).cuerpo;
+  for (const x of seg.reservas.filter((x) => x.clienta.startsWith('Ataque'))) ids_.push(x.id);
+  assert.equal(ids_.length, 3);
+  assert.ok(seg.reservas.find((x) => x.clienta.startsWith('Ataque')).ip_hash, 'guarda la huella de la conexión (no la IP)');
+  const b = await erika.pedir('/api/panel/seguridad/borrar-citas', { metodo: 'POST', datos: { ids: ids_ } });
+  assert.equal(b.cuerpo.borradas, 3);
+  const ag = (await erika.pedir(`/api/panel/agenda?desde=${D}&hasta=${D}`)).cuerpo;
+  assert.ok(!ag.citas.some((x) => x.clienta_nombre.startsWith('Ataque')));
+  // Límite diario por celular (3 reservas nuevas en línea por número)
+  await erika.pedir('/api/panel/ajustes', { metodo: 'PUT', datos: { max_citas_por_celular: 10 } });
+  for (let i = 0; i < 3; i++) {
+    let f = proximoDiaHabil(20 + i * 3), t = await libre(f);
+    while (!t.length) { f = proximoDiaHabil(difDias(f) + 1); t = await libre(f); }
+    const x = await reservar({ servicios: [ids.forrado], fecha: f, inicio: t[0].inicio, nombre: 'Repite Ficticia', celular: '3005551500' });
+    assert.equal(x.status, 200, JSON.stringify(x.cuerpo));
+  }
+  let f4 = proximoDiaHabil(30), t4 = await libre(f4);
+  while (!t4.length) { f4 = proximoDiaHabil(difDias(f4) + 1); t4 = await libre(f4); }
+  const cuarta = await reservar({ servicios: [ids.forrado], fecha: f4, inicio: t4[0].inicio, nombre: 'Repite Ficticia', celular: '3005551500' });
+  assert.equal(cuarta.status, 409, JSON.stringify(cuarta.cuerpo));
+  assert.match(cuarta.cuerpo.error, /varias reservas hoy/);
+  await erika.pedir('/api/panel/ajustes', { metodo: 'PUT', datos: { max_citas_por_celular: 3 } });
+  // Respaldo: se hace, se lista y se descarga con todas las tablas (sin sesiones)
+  const resp = await erika.pedir('/api/panel/respaldos', { metodo: 'POST', datos: {} });
+  assert.equal(resp.status, 200);
+  assert.ok(resp.cuerpo.filas > 50);
+  assert.equal((await karla.pedir(`/api/panel/respaldos/${resp.cuerpo.id}`)).status, 403);
+  const desc = await erika.pedir(`/api/panel/respaldos/${resp.cuerpo.id}`);
+  assert.equal(desc.status, 200);
+  assert.match(desc.headers.get('content-disposition'), /attachment/);
+  assert.ok(desc.cuerpo.tablas.citas.length && desc.cuerpo.tablas.clientas.length);
+  assert.ok(!('sesiones' in desc.cuerpo.tablas), 'las sesiones no se respaldan');
+  // Sesiones: Karla abre otra en otro "celular" y cierra las demás
+  const otra = cliente(base);
+  await otra.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.karla, pin: '135792' } });
+  assert.ok((await karla.pedir('/api/auth/sesiones')).cuerpo.sesiones.length >= 2);
+  assert.equal((await karla.pedir('/api/auth/cerrar-otras', { metodo: 'POST', datos: {} })).status, 200);
+  assert.equal((await otra.pedir('/api/auth/yo')).status, 401, 'la otra sesión quedó cerrada');
+  assert.equal((await karla.pedir('/api/auth/yo')).status, 200, 'la propia sigue');
+  // Erika cierra las sesiones de Karla
+  await erika.pedir(`/api/panel/colaboradoras/${ids.karla}/cerrar-sesiones`, { metodo: 'POST', datos: {} });
+  assert.equal((await karla.pedir('/api/auth/yo')).status, 401);
+});
+
+test('PIN viejo de 4 números: entra una vez y debe cambiarlo a 6', async () => {
+  const { execFileSync } = await import('node:child_process');
+  // Simula un PIN de antes (4 dígitos) guardado en la base
+  const enc = new TextEncoder();
+  const sal = crypto.getRandomValues(new Uint8Array(16));
+  const k = await crypto.subtle.importKey('raw', enc.encode('2468'), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: sal, iterations: 100000 }, k, 256);
+  const b64 = (u) => btoa(String.fromCharCode(...new Uint8Array(u)));
+  const hash = `pbkdf2$100000$${b64(sal)}$${b64(bits)}`;
+  execFileSync('node_modules/.bin/wrangler', ['d1', 'execute', 'amelia-citas', '--local', '--persist-to', 'dev/.estado-e2e', '--command', `UPDATE colaboradoras SET pin_hash = '${hash}', pin_seis = 0 WHERE slug = 'julieth'`], { env: { ...process.env, CI: '1' }, stdio: 'pipe' });
+  const daily = cliente(base);
+  const r = await daily.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.julieth, pin: '2468' } });
+  assert.equal(r.status, 200);
+  assert.equal(r.cuerpo.cambiar_pin, true);
+  assert.equal((await daily.pedir('/api/auth/cambiar-pin', { metodo: 'POST', datos: { actual: '2468', nuevo: '123456' } })).status, 400, 'no acepta PIN fáciles');
+  assert.equal((await daily.pedir('/api/auth/cambiar-pin', { metodo: 'POST', datos: { actual: '2468', nuevo: '135792' } })).status, 200);
+  assert.equal((await daily.pedir('/api/auth/yo')).cuerpo.cambiar_pin, false);
+  const de6 = await cliente(base).pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.julieth, pin: '135792' } });
+  assert.equal(de6.cuerpo.cambiar_pin, false);
+});
+
+test('clientas: etiquetas, cumpleaños con calendario y eliminar; promociones siempre agendables con su precio', async () => {
+  const cl = (await erika.pedir('/api/panel/clientas?q=Cuentas')).cuerpo.clientas[0];
+  const et = (await erika.pedir('/api/panel/etiquetas')).cuerpo.etiquetas;
+  const mala = et.find((e) => e.nombre === 'Mala paga');
+  assert.ok(mala);
+  assert.equal((await erika.pedir(`/api/panel/clientas/${cl.id}/etiquetas`, { metodo: 'PUT', datos: { ids: [mala.id] } })).status, 200);
+  const filtradas = (await erika.pedir(`/api/panel/clientas?etiqueta=${mala.id}`)).cuerpo.clientas;
+  assert.deepEqual(filtradas.map((c) => c.id), [cl.id]);
+  const nueva = await erika.pedir('/api/panel/etiquetas', { metodo: 'POST', datos: { nombre: 'Grosera con el equipo', color: '#8E2C48' } });
+  assert.equal(nueva.status, 200);
+  assert.equal((await erika.pedir(`/api/panel/clientas/${cl.id}`, { metodo: 'PUT', datos: { nombre: 'Cuentas Editada', celular: '3005551100', email: '', notas: '', preferencias: '', cumpleanos: '1990-03-15' } })).status, 200);
+  const det = (await erika.pedir(`/api/panel/clientas/${cl.id}`)).cuerpo;
+  assert.equal(det.clienta.cumpleanos, '03-15', 'del calendario se guarda día y mes');
+  assert.equal(det.clienta.nombre, 'Cuentas Editada');
+  assert.deepEqual(det.clienta.etiquetas, [mala.id]);
+  assert.ok('fidelidad' in det);
+  // Eliminar: con historial se anonimiza y no aparece más en la lista
+  assert.equal((await erika.pedir(`/api/panel/clientas/${cl.id}`, { metodo: 'DELETE' })).cuerpo.anonimizada, true);
+  assert.ok(!(await erika.pedir('/api/panel/clientas?q=Cuentas')).cuerpo.clientas.length);
+  // Promociones: sin servicio no se puede crear; con servicio, la cita queda con el precio de la promo
+  assert.equal((await erika.pedir('/api/panel/promociones', { metodo: 'POST', datos: { titulo: 'Consúltala', activa: true } })).status, 400);
+  const pr = await erika.pedir('/api/panel/promociones', { metodo: 'POST', datos: { titulo: 'Forrado especial', servicio_id: ids.forrado, precio_promo: 30000, activa: true } });
+  assert.equal(pr.status, 200);
+  const cat = (await cliente(base).pedir('/api/public/catalogo')).cuerpo;
+  assert.ok(cat.promociones.every((p) => p.servicio_id && p.precio_promo != null), 'toda promoción visible es agendable');
+  const r = await reservar({ servicios: [ids.forrado], fecha: proximoDiaHabil(16), inicio: 660, nombre: 'Promo Ficticia', celular: '3005551600', promo: pr.cuerpo.id });
+  assert.equal(r.status, 200, JSON.stringify(r.cuerpo));
+  assert.equal(r.cuerpo.precio_total, 30000);
+  // Combo: servicio agendable con enlace directo
+  const combo = await erika.pedir('/api/panel/servicios', { metodo: 'POST', datos: { nombre: 'Combo prueba', tipo: 'combo', categoria: 'Combos', duracion: 120, precio: 80000, precio_antes: 95000, incluye: 'Manos\nPies', colaboradoras: [ids.leidy], visible: true } });
+  assert.equal(combo.status, 200, JSON.stringify(combo.cuerpo));
+  const c2 = (await cliente(base).pedir('/api/public/catalogo')).cuerpo.servicios.find((s) => s.id === combo.cuerpo.id);
+  assert.equal(c2.tipo, 'combo');
+  assert.equal(c2.precio_antes, 95000);
+  assert.equal(c2.incluye, 'Manos\nPies');
+  await erika.pedir(`/api/panel/servicios/${combo.cuerpo.id}`, { metodo: 'DELETE' });
 });
 
 test('notificaciones push: equipo avisado de citas nuevas, recordatorios al agendar, el mismo día y 1 h antes a la clienta, sin duplicados', async () => {
@@ -691,9 +892,10 @@ for (const ancho of [360, 390]) {
       // Botón "Descargar la app" apenas se abre el panel (sin instalador del sistema → muestra los pasos)
       await p.goto(`${base}/panel/`, { waitUntil: 'networkidle' });
       await p.click('.ingreso [data-descargar]');
-      await p.waitForSelector('.pasos-descarga li');
+      await p.waitForSelector('.instalar-guia .ig-pasos li');
       if (ancho === 390) await p.screenshot({ path: CAPTURAS + 'movil-panel-9-descargar.png' });
-      await p.click('.hoja-descarga .btn.bloque');
+      await p.click('.instalar-guia .ig-luego');
+      await p.waitForSelector('.instalar-guia', { state: 'detached' });
       await entrar('Erika', '246813');
       await p.waitForSelector('#tarjetaDescarga [data-descargar]');
       await p.click('#tdOcultar');

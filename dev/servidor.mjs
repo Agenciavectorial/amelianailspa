@@ -92,6 +92,9 @@ export async function datosDemo(base) {
   await erika.pedir('/api/panel/importar', { metodo: 'POST', datos: { tipo: 'citas', filas: pasadas.map(([d, col, serv, estado], k) => ({
     fecha: hace(d), hora: '10:00', colaboradora: col, servicio: serv, nombre: ficticias[k % ficticias.length][0], celular: ficticias[k % ficticias.length][1], estado,
   })) } });
+  // Comisiones antes de cobrar (la comisión se congela al cobrar)
+  const semi = a.servicios.find((s) => s.slug === 'semipermanente');
+  for (const c of agenda) await erika.pedir(`/api/panel/comisiones/${c.id}`, { metodo: 'PUT', datos: { comision_pct: 40, servicios: { [semi.id]: 50 } } });
   const metodos = ['nequi', 'efectivo', 'tarjeta'];
   const ag = await erika.pedir(`/api/panel/agenda?desde=${hace(30)}&hasta=${hoy}`);
   let m = 0;
@@ -99,10 +102,8 @@ export async function datosDemo(base) {
     await erika.pedir(`/api/panel/citas/${c.id}/pagos`, { metodo: 'POST', datos: { monto: [45000, 85000, 70000][m % 3], metodo: metodos[m % 3] } });
     m++;
   }
-  const semi = a.servicios.find((s) => s.slug === 'semipermanente');
   await erika.pedir('/api/panel/promociones', { metodo: 'POST', datos: { titulo: 'Martes de semipermanente', descripcion: 'Color que dura 3 semanas a precio especial.', servicio_id: semi.id, precio_promo: 39000, activa: true, foto: semi.foto } });
   // Cuentas: comisiones, un combo, gastos (algunos "hormiga"), una meta, una deuda y una venta sin cita.
-  for (const c of agenda) await erika.pedir(`/api/panel/comisiones/${c.id}`, { metodo: 'PUT', datos: { comision_pct: 40, servicios: { [semi.id]: 50 } } });
   const pedi = a.servicios.find((s) => s.slug === 'pedi-spa');
   await erika.pedir('/api/panel/servicios', { metodo: 'POST', datos: {
     nombre: 'Combo 1: manos y pies semipermanente', categoria: 'Combos', tipo: 'combo', duracion: 150, precio: 85000, precio_antes: 100000, costo: 9000, destacado: true,

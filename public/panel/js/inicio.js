@@ -1,10 +1,10 @@
 // Inicio: resumen del negocio, citas por gestionar (¿asistió?), próxima cita, hoy/mañana y clientas a contactar.
-import { botonTema } from '/app-citas/js/util.js?v=0059637289';
-import { api, html, crudo, pintar, $, toast, hora, dinero, fechaLarga, fechaCorta, sumarDias, inicial, ICONOS, SITIO } from '/app-citas/js/util.js?v=0059637289';
-import { tarjetaDescarga, activarDescarga, tarjetaAvisos } from './descargar.js?v=0059637289';
-import { S, esDuena, puede, colab, aplicarEstilos, moduloActivo } from './estado.js?v=0059637289';
-import { verCita, nuevaCita, nuevoBloqueo, pastillaEstado, cobrar } from './citas.js?v=0059637289';
-import { enviar, textoPlantilla } from './mensajes.js?v=0059637289';
+import { botonTema } from '/app-citas/js/util.js?v=c0f7d95cf2';
+import { api, html, crudo, pintar, $, toast, hora, dinero, fechaLarga, fechaCorta, sumarDias, inicial, ICONOS, SITIO } from '/app-citas/js/util.js?v=c0f7d95cf2';
+import { tarjetaDescarga, activarDescarga, tarjetaAvisos } from './descargar.js?v=c0f7d95cf2';
+import { S, esDuena, puede, colab, aplicarEstilos, moduloActivo } from './estado.js?v=c0f7d95cf2';
+import { verCita, nuevaCita, nuevoBloqueo, pastillaEstado, cobrar } from './citas.js?v=c0f7d95cf2';
+import { enviar, textoPlantilla } from './mensajes.js?v=c0f7d95cf2';
 
 function saludo() {
   const h = new Date(Date.now() - 5 * 3600000).getUTCHours();
@@ -39,7 +39,7 @@ export async function vista(v) {
   tarjetaAvisos($('#tarjetaAvisos', v));
   $('#irNueva')?.addEventListener('click', () => nuevaCita({}, recargar));
   $('#irBloq')?.addEventListener('click', () => nuevoBloqueo({}, recargar));
-  $('#irVenta')?.addEventListener('click', async () => (await import('./cuentas.js?v=0059637289')).nuevaVenta(recargar));
+  $('#irVenta')?.addEventListener('click', async () => (await import('./cuentas.js?v=c0f7d95cf2')).nuevaVenta(recargar));
 
   const manana = sumarDias(S.hoy, 1);
   const filtro = puede('ver_agenda_equipo') ? '' : `&colaboradora=${S.yo.id}`;
