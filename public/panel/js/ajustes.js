@@ -1,11 +1,11 @@
 // Secciones "Horario y festivos", "Reglas de reserva" y "Mi cuenta".
-import { api, html, crudo, pintar, $, $$, toast, ocupado, abrirHoja, cerrarHoja, hhmm, aMin, fechaLarga, DIAS, ICONOS } from '/app-citas/js/util.js?v=9cba0f01ac';
-import { S, recargar, esDuena, puede, colab } from './estado.js?v=9cba0f01ac';
-import { editorHorario, urlFeed } from './equipo.js?v=9cba0f01ac';
-import { salir } from './main.js?v=9cba0f01ac';
-import { estadoPush, activarPush, desactivarPush } from '/app-citas/js/push.js?v=9cba0f01ac';
-import { ACENTOS, aplicarAcento } from '/app-citas/js/util.js?v=9cba0f01ac';
-import { elegirMedio } from './galeria.js?v=9cba0f01ac';
+import { api, html, crudo, pintar, $, $$, toast, ocupado, abrirHoja, cerrarHoja, hhmm, aMin, fechaLarga, DIAS, ICONOS } from '/app-citas/js/util.js?v=0059637289';
+import { S, recargar, esDuena, puede, colab, moduloActivo } from './estado.js?v=0059637289';
+import { editorHorario, urlFeed } from './equipo.js?v=0059637289';
+import { salir } from './main.js?v=0059637289';
+import { estadoPush, activarPush, desactivarPush } from '/app-citas/js/push.js?v=0059637289';
+import { ACENTOS, aplicarAcento } from '/app-citas/js/util.js?v=0059637289';
+import { elegirMedio } from './galeria.js?v=0059637289';
 
 const COLORES = ['#C2185B', '#00897B', '#F57C00', '#3949AB', '#7A6494', '#8E5579', '#2E7D5B', '#0277BD', '#6D4C41', '#AD1457'];
 
@@ -110,7 +110,14 @@ async function vistaReglas(v) {
   const a = S.ajustes;
   const general = a.ics_token_general;
   pintar(v, html`
-    <header class="cabeza-vista"><div><span class="script">Ajustes</span><h1>Reglas de <em>reserva</em></h1></div></header>
+    <header class="cabeza-vista"><div><span class="script">Ajustes</span><h1>Reglas y <em>módulos</em></h1></div></header>
+    <section class="tarjeta bloque-ajustes" id="modulos">
+      <h2>Módulos del panel</h2>
+      <p class="muted small">Muestra u oculta secciones para todo el equipo. Lo que se oculta no se borra.</p>
+      <div class="lista-modulos">${[['cuentas', 'Cuentas', 'ventas, comisiones, gastos, metas y deudas'], ['fidelizacion', 'Fidelización', 'a quién le toca volver, cumpleaños'], ['promociones', 'Promociones', 'promos en la reserva'], ['analitica', 'Analítica', 'asistencia y clientas'], ['notas', 'Notas', 'recados del equipo']].map(([k, t, d]) => html`
+        <label class="interruptor modulo"><input type="checkbox" data-modulo="${k}" ${moduloActivo(k) ? crudo('checked') : ''}><span><strong>${t}</strong><small class="muted"> · ${d}</small></span></label>`)}</div>
+      <p class="muted small">La tienda en línea no existe todavía en Amelia; cuando se cree, aparecerá aquí para activarla.</p>
+    </section>
     <section class="tarjeta bloque-ajustes" id="apariencia">
       <h2>Apariencia de la reserva</h2>
       <p class="muted small">Así ven las clientas la página de reservas.</p>
@@ -139,6 +146,12 @@ async function vistaReglas(v) {
         <label class="campo"><span>Máx. citas próximas por celular</span><input name="max_citas_por_celular" type="number" min="1" max="20" value="${a.max_citas_por_celular}"></label>
         <label class="campo"><span>WhatsApp del spa</span><input name="whatsapp" type="tel" value="${a.whatsapp}"></label>
       </div>
+      <div class="dos-col">
+        <label class="campo"><span>Reservas en línea por celular al día</span><input name="max_reservas_celular_dia" type="number" min="1" max="50" value="${a.max_reservas_celular_dia || 3}">
+          <span class="ayuda">Freno contra reservas falsas. El panel no tiene límite.</span></label>
+        <label class="campo"><span>Gasto hormiga: gastos de hasta (COP)</span><input name="hormiga_umbral" type="number" min="1000" step="1000" value="${a.hormiga_umbral || 20000}"></label>
+      </div>
+      <label class="campo"><span>Avisar de gastos hormiga cuando sumen (COP)</span><input name="hormiga_alerta" type="number" min="1000" step="1000" value="${a.hormiga_alerta || 150000}"></label>
       <label class="campo"><span>Dirección</span><input name="direccion" maxlength="200" value="${a.direccion}"></label>
       <div class="dos-col">
         <label class="campo"><span>Enlace para reseñas en Google</span><input name="resena_url" type="url" maxlength="300" value="${a.resena_url || ''}">
@@ -158,9 +171,13 @@ async function vistaReglas(v) {
     e.preventDefault();
     ocupado($('#guardarReglas'), async () => {
       const d = Object.fromEntries(new FormData(e.target));
-      for (const k of ['anticipacion_min', 'ventana_dias', 'intervalo_min', 'cancelacion_horas', 'max_citas_por_celular', 'dias_inactiva']) d[k] = Number(d[k]);
+      for (const k of ['anticipacion_min', 'ventana_dias', 'intervalo_min', 'cancelacion_horas', 'max_citas_por_celular', 'dias_inactiva', 'max_reservas_celular_dia', 'hormiga_umbral', 'hormiga_alerta']) d[k] = Number(d[k]);
       try { await api('/api/panel/ajustes', { metodo: 'PUT', datos: d }); await recargar(); toast('Reglas guardadas', 'ok'); } catch (x) { toast(x.message, 'error'); }
     });
+  };
+  $('#modulos').onchange = async () => {
+    const modulos = Object.fromEntries($$('[data-modulo]', v).map((i) => [i.dataset.modulo, i.checked]));
+    try { await api('/api/panel/ajustes', { metodo: 'PUT', datos: { modulos } }); await recargar(); toast('Módulos guardados', 'ok'); setTimeout(() => location.reload(), 700); } catch (x) { toast(x.message, 'error'); }
   };
   let portada = a.portada_url || '';
   let acento = a.color_acento || 'lavanda';
@@ -171,7 +188,7 @@ async function vistaReglas(v) {
     p.style.setProperty('--portada', portada ? `url("${portada}")` : 'none');
     p.style.setProperty('--fondo', ACENTOS[acento].deep);
   };
-  const { aplicarEstilos } = await import('./estado.js?v=9cba0f01ac');
+  const { aplicarEstilos } = await import('./estado.js?v=0059637289');
   aplicarEstilos(v);
   previa();
   $('#apTitulo').oninput = previa;
@@ -285,10 +302,16 @@ async function vistaCuenta(v) {
       <form id="formPin">
         <div class="dos-col">
           <label class="campo"><span>PIN actual</span><input name="actual" type="password" inputmode="numeric" autocomplete="current-password" required></label>
-          <label class="campo"><span>PIN nuevo (4 a 8 números)</span><input name="nuevo" type="password" inputmode="numeric" autocomplete="new-password" required></label>
+          <label class="campo"><span>PIN nuevo (6 números)</span><input name="nuevo" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="new-password" required></label>
         </div>
         <button class="btn sec" id="guardarPin">Cambiar PIN</button>
       </form>
+    </section>
+    <section class="tarjeta bloque-ajustes">
+      <h2>Dónde tienes la sesión abierta</h2>
+      <p class="muted small">La sesión se cierra sola a los 14 días sin usar el panel (o a los 30 días). Si no reconoces un dispositivo, ciérralos todos y cambia tu PIN.</p>
+      <div id="misSesiones"><span class="girando oscuro"></span></div>
+      <button class="btn sec bloque espacio-arriba" id="cerrarOtras">Cerrar las demás sesiones</button>
     </section>
     <button class="btn sec bloque" id="verTour">Ver el tour de bienvenida otra vez</button>
     <button class="btn ghost bloque" id="salir">Cerrar sesión</button>`);
@@ -303,10 +326,15 @@ async function vistaCuenta(v) {
       try { await api('/api/auth/cambiar-pin', { metodo: 'POST', datos: Object.fromEntries(new FormData(e.target)) }); e.target.reset(); toast('PIN cambiado', 'ok'); } catch (x) { toast(x.message, 'error'); }
     });
   };
-  import('./descargar.js?v=9cba0f01ac').then((d) => d.activarDescarga(v));
+  import('./descargar.js?v=0059637289').then((d) => d.activarDescarga(v));
+  api('/api/auth/sesiones').then(({ sesiones }) => pintar($('#misSesiones'), html`<div class="lista-respaldos">${sesiones.map((x) => html`
+    <div class="fila-respaldo"><span><strong>${x.dispositivo}${x.esta ? ' (este)' : ''}</strong><small>Entró ${x.creado.slice(0, 10)} · último uso ${new Date(x.ultimo_uso).toLocaleDateString('es-CO')}</small></span></div>`)}</div>`)).catch(() => {});
+  $('#cerrarOtras').onclick = (e) => ocupado(e.currentTarget, async () => {
+    try { const r = await api('/api/auth/cerrar-otras', { metodo: 'POST', datos: {} }); toast(r.cerradas ? `Se cerraron ${r.cerradas} sesiones` : 'No había otras sesiones abiertas', 'ok'); vistaCuenta(v); } catch (x) { toast(x.message, 'error'); }
+  });
   $('#salir').onclick = salir;
-  $('#verTour').onclick = () => import('./tour.js?v=9cba0f01ac').then((t) => t.mostrarTour());
-  const { aplicarEstilos } = await import('./estado.js?v=9cba0f01ac');
+  $('#verTour').onclick = () => import('./tour.js?v=0059637289').then((t) => t.mostrarTour());
+  const { aplicarEstilos } = await import('./estado.js?v=0059637289');
   aplicarEstilos(v);
   $('#cambiarFoto').onclick = async () => {
     const m = await elegirMedio({ titulo: 'Mi foto' });

@@ -1,6 +1,6 @@
 // Equipo (solo Erika): colaboradoras, servicios que hacen, horario, permisos, PIN y calendario.
-import { api, html, crudo, pintar, $, $$, toast, ocupado, abrirHoja, cerrarHoja, hhmm, inicial, DIAS, ICONOS, SITIO } from '/app-citas/js/util.js?v=9cba0f01ac';
-import { S, recargar, horarioSpa, categorias } from './estado.js?v=9cba0f01ac';
+import { api, html, crudo, pintar, $, $$, toast, ocupado, abrirHoja, cerrarHoja, hhmm, inicial, DIAS, ICONOS, SITIO } from '/app-citas/js/util.js?v=0059637289';
+import { S, recargar, horarioSpa, categorias } from './estado.js?v=0059637289';
 
 export const PERMISOS = [
   ['gestionar_citas', 'Gestionar sus citas', 'Crear, mover, cancelar y marcar asistencia de sus propias citas.'],
@@ -65,7 +65,7 @@ export async function vista(v) {
           <span class="flecha-mas">›</span>
         </button>`)}
     </div>`);
-  const { aplicarEstilos } = await import('./estado.js?v=9cba0f01ac');
+  const { aplicarEstilos } = await import('./estado.js?v=0059637289');
   aplicarEstilos(v);
   $('#nuevaColab').onclick = () => editar(null, v);
   v.onclick = (e) => { const b = e.target.closest('.tarjeta-equipo'); if (b) editar(S.colaboradoras.find((c) => c.id === Number(b.dataset.id)), v); };
@@ -108,9 +108,10 @@ function editar(c, v) {
       </section>`}
       <section data-panel="acceso" hidden>
         <h3>PIN de ingreso</h3>
-        <p class="muted small">${nueva ? 'Asigna un PIN de 4 a 8 números. Entrégaselo en persona.' : (c.tiene_pin ? 'Tiene PIN. Escribe uno nuevo solo si lo olvidó (cierra sus sesiones abiertas).' : 'Aún no tiene PIN: no puede entrar al panel.')}</p>
-        <div class="fila-forzar"><input class="input" name="pin" type="password" inputmode="numeric" maxlength="8" autocomplete="new-password" placeholder="Nuevo PIN">${nueva ? '' : html`<button type="button" class="btn sec chico" id="guardarPin">${c.tiene_pin ? 'Cambiar PIN' : 'Guardar PIN'}</button>`}</div>
+        <p class="muted small">${nueva ? 'Asigna un PIN de 6 números. Entrégaselo en persona.' : (c.tiene_pin ? 'Tiene PIN. Escribe uno nuevo solo si lo olvidó (cierra sus sesiones abiertas).' : 'Aún no tiene PIN: no puede entrar al panel.')}</p>
+        <div class="fila-forzar"><input class="input" name="pin" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="new-password" placeholder="Nuevo PIN (6 números)">${nueva ? '' : html`<button type="button" class="btn sec chico" id="guardarPin">${c.tiene_pin ? 'Cambiar PIN' : 'Guardar PIN'}</button>`}</div>
         ${!nueva && c.tiene_pin && !duena ? html`<button type="button" class="btn ghost chico" id="quitarPin">Quitar acceso</button>` : ''}
+        ${!nueva && c.tiene_pin ? html`<button type="button" class="btn ghost chico" id="cerrarSesiones">Cerrar sus sesiones abiertas</button>` : ''}
         ${nueva ? '' : html`
         <h3 class="espacio-arriba">Calendario en su celular</h3>
         <p class="muted small">Enlace secreto para suscribir su agenda en Google Calendar o iPhone. Si se comparte por error, genera uno nuevo y el anterior deja de funcionar.</p>
@@ -154,6 +155,9 @@ function editar(c, v) {
   $('#quitarPin', h)?.addEventListener('click', (e) => ocupado(e.currentTarget, async () => {
     try { await api(`/api/panel/colaboradoras/${c.id}/pin`, { metodo: 'POST', datos: { quitar: true } }); toast('Acceso quitado', 'ok'); cerrarHoja(); vista(v); } catch (x) { toast(x.message, 'error'); }
   }));
+  $('#cerrarSesiones', h)?.addEventListener('click', async () => {
+    try { const r = await api(`/api/panel/colaboradoras/${c.id}/cerrar-sesiones`, { metodo: 'POST', datos: {} }); toast(r.cerradas ? `Se cerraron ${r.cerradas} sesiones de ${c.nombre}` : 'No tenía sesiones abiertas', 'ok'); } catch (x) { toast(x.message, 'error'); }
+  });
   f.onsubmit = (e) => {
     e.preventDefault();
     ocupado($('#guardarColab', h), async () => {

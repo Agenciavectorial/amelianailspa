@@ -1,6 +1,6 @@
 // Ingreso por persona con PIN (patrón MaxCool) y configuración del primer PIN de Erika.
-import { api, html, crudo, pintar, $, $$, toast, inicial, ICONOS, foto } from '/app-citas/js/util.js?v=9cba0f01ac';
-import { botonDescarga, activarDescarga } from './descargar.js?v=9cba0f01ac';
+import { api, html, crudo, pintar, $, $$, toast, inicial, ICONOS, foto } from '/app-citas/js/util.js?v=0059637289';
+import { botonDescarga, activarDescarga } from './descargar.js?v=0059637289';
 
 export async function pantallaIngreso(raiz, alEntrar) {
   let datos;
@@ -57,12 +57,12 @@ function pedirPin(raiz, persona, alEntrar) {
   $('#volver').onclick = () => pantallaIngreso(raiz, alEntrar);
   const puntos = $('.puntos', raiz);
   const pintarPuntos = () => {
-    const n = Math.max(4, pin.length);
+    const n = Math.max(6, pin.length);
     puntos.innerHTML = Array.from({ length: n }, (_, i) => `<span class="${i < pin.length ? 'lleno' : ''}"></span>`).join('');
     $('#entrar').disabled = pin.length < 4;
   };
   const tecla = (n) => { if (pin.length < 8) { pin += n; pintarPuntos(); if (pin.length === 4 && autoEnviar) enviar(); } };
-  let autoEnviar = false; // los PIN pueden ser de 4 a 8 dígitos: se entra con el botón
+  let autoEnviar = false; // se entra con el botón (quedan PIN viejos de 4 dígitos que se migran a 6)
   const borrar = () => { pin = pin.slice(0, -1); pintarPuntos(); };
   raiz.querySelector('.teclado').onclick = (e) => {
     const b = e.target.closest('.tecla');
@@ -79,8 +79,10 @@ function pedirPin(raiz, persona, alEntrar) {
     err.hidden = true;
     $('#entrar').disabled = true;
     try {
-      await api('/api/auth/login', { metodo: 'POST', datos: { id: persona.id, pin } });
+      const r = await api('/api/auth/login', { metodo: 'POST', datos: { id: persona.id, pin } });
       document.onkeydown = null;
+      // PIN viejo de 4 números: antes de seguir se cambia por uno de 6.
+      if (r.cambiar_pin) return pantallaNuevoPin(raiz, pin, alEntrar);
       alEntrar();
     } catch (e) {
       pin = '';
@@ -104,7 +106,7 @@ function pantallaConfigurar(raiz, alEntrar) {
       <p class="muted">Es la primera vez que entras. Escribe la clave inicial que te dio la agencia y elige tu PIN personal.</p>
       <form id="formConfig" class="tarjeta form-config">
         <label class="campo"><span>Clave inicial</span><input name="clave" type="password" autocomplete="off" required></label>
-        <label class="campo"><span>Tu PIN (4 a 8 números)</span><input name="pin" type="password" inputmode="numeric" pattern="[0-9]{4,8}" autocomplete="new-password" required></label>
+        <label class="campo"><span>Tu PIN (6 números)</span><input name="pin" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="new-password" required></label>
         <label class="campo"><span>Repite el PIN</span><input name="pin2" type="password" inputmode="numeric" autocomplete="new-password" required></label>
         <p class="aviso error" id="errConfig" hidden></p>
         <button class="btn bloque" type="submit">Guardar y entrar</button>
@@ -115,11 +117,41 @@ function pantallaConfigurar(raiz, alEntrar) {
     const d = Object.fromEntries(new FormData(e.target));
     const err = $('#errConfig');
     err.hidden = true;
-    if (!/^\d{4,8}$/.test(d.pin)) { err.textContent = 'El PIN debe tener de 4 a 8 números.'; err.hidden = false; return; }
+    if (!/^\d{6}$/.test(d.pin)) { err.textContent = 'El PIN debe tener 6 números.'; err.hidden = false; return; }
     if (d.pin !== d.pin2) { err.textContent = 'Los PIN no coinciden.'; err.hidden = false; return; }
     try {
       await api('/api/auth/configurar', { metodo: 'POST', datos: { clave: d.clave, pin: d.pin } });
       toast('¡PIN guardado!', 'ok');
+      alEntrar();
+    } catch (x) { err.textContent = x.message; err.hidden = false; }
+  };
+}
+
+/** Cambio obligatorio de un PIN viejo (4 números) a uno de 6, justo después de entrar. */
+export function pantallaNuevoPin(raiz, actual, alEntrar) {
+  pintar(raiz, html`
+    <div class="ingreso">
+      <img class="ingreso-logo" src="/app-citas/img/logo.webp" alt="Amelia Nail Spa" width="84" height="84">
+      <span class="script">Más seguridad</span>
+      <h1>Tu PIN ahora es de <em>6 números</em></h1>
+      <p class="muted">Elige un PIN nuevo de 6 números que solo tú sepas. Evita 123456, 000000 o tu fecha de cumpleaños.</p>
+      <form id="formNuevoPin" class="tarjeta form-config">
+        <label class="campo"><span>PIN nuevo</span><input name="nuevo" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="new-password" required autofocus></label>
+        <label class="campo"><span>Repite el PIN</span><input name="nuevo2" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password" required></label>
+        <p class="aviso error" id="errNuevo" hidden></p>
+        <button class="btn bloque" type="submit">Guardar y entrar</button>
+      </form>
+    </div>`);
+  $('#formNuevoPin').onsubmit = async (e) => {
+    e.preventDefault();
+    const d = Object.fromEntries(new FormData(e.target));
+    const err = $('#errNuevo');
+    err.hidden = true;
+    if (!/^\d{6}$/.test(d.nuevo)) { err.textContent = 'El PIN debe tener 6 números.'; err.hidden = false; return; }
+    if (d.nuevo !== d.nuevo2) { err.textContent = 'Los PIN no coinciden.'; err.hidden = false; return; }
+    try {
+      await api('/api/auth/cambiar-pin', { metodo: 'POST', datos: { actual, nuevo: d.nuevo } });
+      toast('¡PIN actualizado!', 'ok');
       alEntrar();
     } catch (x) { err.textContent = x.message; err.hidden = false; }
   };
