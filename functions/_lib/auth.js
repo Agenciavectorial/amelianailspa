@@ -4,7 +4,9 @@ import { falla } from './http.js';
 const ITER = 100_000; // máximo permitido por WebCrypto en Workers
 const enc = new TextEncoder();
 export const COOKIE = 'amelia_sesion';
-const DURACION_SESION = 30 * 24 * 3600 * 1000;
+const DURACION_SESION = 30 * 24 * 3600 * 1000;      // vence a los 30 días pase lo que pase
+const INACTIVIDAD_MAX = 14 * 24 * 3600 * 1000;      // o a los 14 días sin usarse
+const MARCAR_USO_CADA = 10 * 60 * 1000;
 
 const b64 = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)));
 const deB64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
@@ -28,12 +30,25 @@ async function derivar(pin, sal, iter) {
   return crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: sal, iterations: iter }, clave, 256);
 }
 
+/** PIN nuevo: exactamente 6 números. */
 export function pinValido(pin) {
+  return typeof pin === 'string' && /^\d{6}$/.test(pin);
+}
+/** Al ingresar se aceptan también los PIN viejos (4 a 8) para poder migrarlos a 6. */
+export function pinAceptable(pin) {
   return typeof pin === 'string' && /^\d{4,8}$/.test(pin);
+}
+/** Rechaza PIN fáciles de adivinar (123456, 000000, 111222…). */
+export function pinDebil(pin) {
+  if (/^(\d)\1{5}$/.test(pin)) return true;
+  if ('0123456789012345'.includes(pin) || '9876543210987654'.includes(pin)) return true;
+  if (/^(\d\d)\1\1$/.test(pin) || /^(\d\d\d)\1$/.test(pin)) return true;
+  return false;
 }
 
 export async function hashPin(pin) {
-  if (!pinValido(pin)) falla(400, 'El PIN debe tener de 4 a 8 números.');
+  if (!pinValido(pin)) falla(400, 'El PIN debe tener 6 números.');
+  if (pinDebil(pin)) falla(400, 'Ese PIN es muy fácil de adivinar. Elige otro (evita 123456, 000000, 121212…).');
   const sal = aleatorio(16);
   const bits = await derivar(pin, sal, ITER);
   return `pbkdf2$${ITER}$${b64(sal)}$${b64(bits)}`;
@@ -47,7 +62,7 @@ function igualesTiempoConstante(a, b) {
 }
 
 export async function verificarPin(pin, guardado) {
-  if (!guardado || !pinValido(pin)) return false;
+  if (!guardado || !pinAceptable(pin)) return false;
   const [alg, iter, sal, hash] = guardado.split('$');
   if (alg !== 'pbkdf2') return false;
   const bits = new Uint8Array(await derivar(pin, deB64(sal), Number(iter)));
@@ -69,13 +84,20 @@ export function cookieSesion(token, maxAgeSeg = DURACION_SESION / 1000) {
   return `${COOKIE}=${token}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${maxAgeSeg}`;
 }
 
-export async function crearSesion(db, colaboradoraId) {
+/** Nombre legible del dispositivo a partir del navegador ("iPhone · Safari"). No se guarda la IP. */
+export function nombreDispositivo(ua = '') {
+  const so = /iPhone/.test(ua) ? 'iPhone' : /iPad/.test(ua) ? 'iPad' : /Android/.test(ua) ? 'Android' : /Windows/.test(ua) ? 'Windows' : /Mac OS X|Macintosh/.test(ua) ? 'Mac' : /Linux/.test(ua) ? 'Linux' : 'Otro';
+  const nav = /Edg\//.test(ua) ? 'Edge' : /CriOS|Chrome\//.test(ua) ? 'Chrome' : /FxiOS|Firefox\//.test(ua) ? 'Firefox' : /Safari\//.test(ua) ? 'Safari' : 'Navegador';
+  return `${so} · ${nav}`;
+}
+
+export async function crearSesion(db, colaboradoraId, dispositivo = '') {
   const token = tokenAleatorio(32);
   const ahora = Date.now();
   await db.batch([
-    db.prepare('DELETE FROM sesiones WHERE expira < ?').bind(ahora),
-    db.prepare('INSERT INTO sesiones (token_hash, colaboradora_id, expira) VALUES (?, ?, ?)')
-      .bind(await sha256(token), colaboradoraId, ahora + DURACION_SESION),
+    db.prepare('DELETE FROM sesiones WHERE expira < ? OR ultimo_uso < ?').bind(ahora, ahora - INACTIVIDAD_MAX),
+    db.prepare('INSERT INTO sesiones (token_hash, colaboradora_id, expira, dispositivo, ultimo_uso) VALUES (?, ?, ?, ?, ?)')
+      .bind(await sha256(token), colaboradoraId, ahora + DURACION_SESION, String(dispositivo).slice(0, 60), ahora),
   ]);
   return token;
 }
@@ -86,11 +108,15 @@ export async function leerSesion(request, db) {
   if (!token || token.length > 100) return null;
   const hash = await sha256(token);
   const fila = await db.prepare(
-    `SELECT c.id, c.slug, c.nombre, c.rol, c.foto, c.color, c.permisos, c.agenda, s.token_hash
+    `SELECT c.id, c.slug, c.nombre, c.rol, c.foto, c.color, c.permisos, c.agenda, c.pin_seis, s.token_hash, s.ultimo_uso
        FROM sesiones s JOIN colaboradoras c ON c.id = s.colaboradora_id
-      WHERE s.token_hash = ? AND s.expira > ? AND c.activa = 1 AND c.pin_hash IS NOT NULL`
-  ).bind(hash, Date.now()).first();
+      WHERE s.token_hash = ? AND s.expira > ? AND s.ultimo_uso > ? AND c.activa = 1 AND c.pin_hash IS NOT NULL`
+  ).bind(hash, Date.now(), Date.now() - INACTIVIDAD_MAX).first();
   if (!fila) return null;
+  // Marca el uso cada 10 min (la sesión vence tras 14 días sin abrir el panel).
+  if (Date.now() - fila.ultimo_uso > MARCAR_USO_CADA) {
+    await db.prepare('UPDATE sesiones SET ultimo_uso = ? WHERE token_hash = ?').bind(Date.now(), hash).run();
+  }
   let permisos = {};
   try { permisos = JSON.parse(fila.permisos || '{}'); } catch { /* vacío */ }
   return { ...fila, permisos, esPropietaria: fila.rol === 'propietaria' };

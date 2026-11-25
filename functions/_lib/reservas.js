@@ -134,7 +134,7 @@ function esChoque(e) {
  * Inserta una cita de forma atómica. Lanza 409 si el turno ya está tomado o bloqueado.
  * @returns {{id:number,codigo:string,token:string}}
  */
-export async function insertarCita(db, { clientaId, colaboradoraId, fecha, inicio, servicios, origen = 'web', notas = '', quien = 'web', forzar = false, estado = 'confirmada', conSlots = true }) {
+export async function insertarCita(db, { clientaId, colaboradoraId, fecha, inicio, servicios, origen = 'web', notas = '', quien = 'web', forzar = false, estado = 'confirmada', conSlots = true, ipHash = '' }) {
   const duracion = servicios.reduce((s, x) => s + x.duracion, 0);
   const fin = inicio + duracion;
   if (inicio % 5 || fin > 1440) falla(400, 'Hora inválida.');
@@ -146,9 +146,9 @@ export async function insertarCita(db, { clientaId, colaboradoraId, fecha, inici
     `WHERE NOT EXISTS (SELECT 1 FROM bloqueos WHERE fecha = ?6 AND (colaboradora_id IS NULL OR colaboradora_id = ?5) AND inicio < ?8 AND fin > ?7)`;
   const sentencias = [
     db.prepare(
-      `INSERT INTO citas (codigo, token, clienta_id, colaboradora_id, fecha, inicio, fin, estado, origen, notas, precio_total)
-       SELECT ?1, ?2, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12 ${condBloqueo}`
-    ).bind(codigo, token, null, clientaId, colaboradoraId, fecha, inicio, fin, estado, origen, notas, precioTotal),
+      `INSERT INTO citas (codigo, token, clienta_id, colaboradora_id, fecha, inicio, fin, estado, origen, notas, precio_total, ip_hash)
+       SELECT ?1, ?2, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13 ${condBloqueo}`
+    ).bind(codigo, token, null, clientaId, colaboradoraId, fecha, inicio, fin, estado, origen, notas, precioTotal, ipHash),
     ...servicios.map((s, i) => db.prepare(
       `INSERT INTO cita_servicios (cita_id, servicio_id, nombre, precio, duracion, orden)
        SELECT id, ?, ?, ?, ?, ? FROM citas WHERE codigo = ?`

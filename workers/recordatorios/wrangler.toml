@@ -15,3 +15,10 @@ database_id = "426435a8-c159-4f56-9b7d-a7ea37f9df1d"
 
 # Secretos (no van aquí): VAPID_PUBLICA, VAPID_PRIVADA, VAPID_SUJETO
 #   npx wrangler secret put VAPID_PRIVADA --config workers/recordatorios/wrangler.toml
+
+# Opcional: bucket R2 para guardar las copias de seguridad diarias fuera de la base (recomendado).
+#   npx wrangler r2 bucket create amelia-respaldos
+# y quitar el comentario:
+# [[r2_buckets]]
+# binding = "RESPALDOS"
+# bucket_name = "amelia-respaldos"

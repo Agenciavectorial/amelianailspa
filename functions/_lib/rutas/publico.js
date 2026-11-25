@@ -1,7 +1,7 @@
 // Endpoints públicos: catálogo, disponibilidad, reservar y gestionar la cita con el enlace privado.
 import { falla, ipDe } from '../http.js';
 import * as v from '../validar.js';
-import { revisarBloqueo, sumarIntento } from '../auth.js';
+import { revisarBloqueo, sumarIntento, sha256 } from '../auth.js';
 import {
   leerAjustes, disponibilidad, rangoFechas, clientaPorCelular, insertarCita, detalleCita,
   cancelarCita, moverCita, ESTADOS_ACTIVOS,
@@ -10,7 +10,7 @@ import { ahoraBogota, aUTC, fechaTexto, horaTexto, sumarDias } from '../tiempo.j
 import { generarICS, respuestaICS } from '../ics.js';
 import { avisarEquipo, avisarClienta } from '../notificaciones.js';
 
-const AJUSTES_PUBLICOS = ['anticipacion_min', 'ventana_dias', 'cancelacion_horas', 'whatsapp', 'nombre_spa', 'direccion', 'politica_texto', 'intervalo_min',
+const AJUSTES_PUBLICOS = ['reservas_pausadas', 'pausa_mensaje', 'anticipacion_min', 'ventana_dias', 'cancelacion_horas', 'whatsapp', 'nombre_spa', 'direccion', 'politica_texto', 'intervalo_min',
   'bienvenida_titulo', 'bienvenida_texto', 'color_acento', 'portada_url'];
 
 function tokenValido(t) {
@@ -51,12 +51,13 @@ export function rutasPublicas(r) {
     const ajustes = await leerAjustes(db);
     const hoy = ahoraBogota().fecha;
     const [serv, colab, cs, spa, promo, pop, med, fest] = await db.batch([
-      db.prepare('SELECT id, slug, nombre, categoria, descripcion, foto, precio, precio_desde, duracion FROM servicios WHERE visible = 1 ORDER BY orden, nombre'),
+      db.prepare('SELECT id, slug, nombre, categoria, descripcion, foto, precio, precio_desde, duracion, tipo, incluye, precio_antes, destacado FROM servicios WHERE visible = 1 ORDER BY orden, nombre'),
       db.prepare('SELECT id, slug, nombre, cargo, foto FROM colaboradoras WHERE activa = 1 AND agenda = 1 ORDER BY orden, nombre'),
       db.prepare('SELECT cs.colaboradora_id, cs.servicio_id FROM colaboradora_servicios cs JOIN servicios s ON s.id = cs.servicio_id WHERE s.visible = 1'),
       db.prepare('SELECT dia, abierto, abre, cierra FROM horario_spa ORDER BY dia'),
-      db.prepare(`SELECT p.id, p.titulo, p.descripcion, p.foto, p.precio_promo, p.hasta, p.servicio_id, s.slug AS servicio_slug
-                    FROM promociones p LEFT JOIN servicios s ON s.id = p.servicio_id AND s.visible = 1
+      // Solo promociones con un servicio agendable (toda promo se reserva con un botón, sin "consúltala por WhatsApp").
+      db.prepare(`SELECT p.id, p.titulo, p.descripcion, p.foto, p.precio_promo, p.hasta, p.servicio_id, s.slug AS servicio_slug, s.precio AS precio_normal, s.duracion
+                    FROM promociones p JOIN servicios s ON s.id = p.servicio_id AND s.visible = 1
                    WHERE p.activa = 1 AND (p.desde = '' OR p.desde <= ?1) AND (p.hasta = '' OR p.hasta >= ?1) ORDER BY p.orden, p.id DESC LIMIT 8`).bind(hoy),
       db.prepare(`SELECT cs.servicio_id AS id, COUNT(*) AS n FROM cita_servicios cs JOIN citas c ON c.id = cs.cita_id JOIN servicios s ON s.id = cs.servicio_id
                    WHERE c.fecha >= ? AND c.estado <> 'cancelada' AND s.visible = 1 GROUP BY cs.servicio_id ORDER BY n DESC LIMIT 4`).bind(sumarDias(hoy, -90)),
@@ -96,8 +97,13 @@ export function rutasPublicas(r) {
 
   r.post('/api/public/reservar', 'publico', async ({ db, env, request, body: datos, enSegundoPlano }) => {
     const ip = ipDe(request);
+    // Botón de emergencia: Erika pausa las reservas en línea desde el panel (Seguridad).
+    const pausa = await db.prepare("SELECT valor FROM ajustes WHERE clave = 'reservas_pausadas'").first();
+    if (pausa?.valor === '1') falla(503, 'Las reservas en línea están pausadas por un momento. Escríbenos por WhatsApp y te agendamos.', { codigo: 'pausada' });
     await revisarBloqueo(db, 'reserva-ip:' + ip);
+    // Trampas para robots: campo oculto que una persona no llena y tiempo mínimo llenando el formulario.
     if (datos.sitio_web) falla(400, 'No pudimos procesar la reserva.');
+    if (datos.ms != null && Number(datos.ms) < 2500) falla(400, 'Revisa tus datos y vuelve a intentar.');
     const servicioIds = v.listaIds(datos.servicios);
     const fecha = v.fecha(datos.fecha);
     const inicio = v.entero(datos.inicio, 'hora', { min: 0, max: 1435 });
@@ -110,17 +116,38 @@ export function rutasPublicas(r) {
     const max = Number(env.LIMITE_RESERVAS_HORA) || 8;
     await sumarIntento(db, 'reserva-ip:' + ip, { max, ventanaMs: 3600000, bloqueoMs: 3600000 });
 
+    // Límite por celular: 3 intentos de reserva por hora (aunque cambie de IP) y tope diario de reservas nuevas.
+    await revisarBloqueo(db, 'reserva-cel:' + celular);
+    await sumarIntento(db, 'reserva-cel:' + celular, { max: Number(env.LIMITE_RESERVAS_CELULAR_HORA) || 4, ventanaMs: 3600000, bloqueoMs: 3600000 });
+    // Freno general: si llegan demasiadas reservas en una hora (ataque con muchos números), se frena todo 1 hora.
+    await revisarBloqueo(db, 'reserva-global');
+    await sumarIntento(db, 'reserva-global', { max: Number(env.LIMITE_RESERVAS_GLOBAL_HORA) || 40, ventanaMs: 3600000, bloqueoMs: 3600000 });
+
     const d = await disponibilidad(db, { servicioIds, con, fechas: [fecha] });
     const turno = d.porFecha[fecha].find((t) => t.inicio === inicio);
     if (!turno) falla(409, 'Ese horario ya no está disponible. Elige otro, por favor.', { codigo: 'ocupado' });
 
     const hoy = d.ahora.fecha;
+    // Reserva desde una promoción vigente: la cita queda con el precio de la promo.
+    if (datos.promo) {
+      const pr = await db.prepare(
+        `SELECT servicio_id, precio_promo FROM promociones WHERE id = ?1 AND activa = 1 AND (desde = '' OR desde <= ?2) AND (hasta = '' OR hasta >= ?2)`
+      ).bind(v.entero(Number(datos.promo), 'promoción', { min: 1 }), hoy).first();
+      if (pr && pr.precio_promo != null) d.servicios = d.servicios.map((s) => (s.id === pr.servicio_id ? { ...s, precio: pr.precio_promo } : s));
+    }
     const activas = await db.prepare(
       `SELECT COUNT(*) AS n FROM citas ci JOIN clientas cl ON cl.id = ci.clienta_id
         WHERE cl.celular = ? AND ci.estado = 'confirmada' AND ci.fecha >= ?`
     ).bind(celular, hoy).first();
     if (activas.n >= d.ajustes.max_citas_por_celular) {
       falla(409, `Ya tienes ${activas.n} citas próximas con este número. Escríbenos por WhatsApp si necesitas otra.`, { codigo: 'limite' });
+    }
+    const delDia = await db.prepare(
+      `SELECT COUNT(*) AS n FROM citas ci JOIN clientas cl ON cl.id = ci.clienta_id
+        WHERE cl.celular = ? AND ci.origen = 'web' AND ci.creado >= datetime('now', '-1 day')`
+    ).bind(celular).first();
+    if (delDia.n >= (Number(d.ajustes.max_reservas_celular_dia) || 3)) {
+      falla(409, 'Ya hiciste varias reservas hoy con este número. Escríbenos por WhatsApp y te ayudamos.', { codigo: 'limite' });
     }
 
     // Reparte: primero la colaboradora con menos citas ese día.
@@ -138,7 +165,7 @@ export function rutasPublicas(r) {
     let creada = null, ultimoError;
     for (const colaboradoraId of orden) {
       try {
-        creada = await insertarCita(db, { clientaId, colaboradoraId, fecha, inicio, servicios: d.servicios, notas, quien: 'web' });
+        creada = await insertarCita(db, { clientaId, colaboradoraId, fecha, inicio, servicios: d.servicios, notas, quien: 'web', ipHash: (await sha256('ip:' + ip)).slice(0, 16) });
         break;
       } catch (e) {
         if (e.status === 409) { ultimoError = e; continue; }

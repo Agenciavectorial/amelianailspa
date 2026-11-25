@@ -3,30 +3,31 @@ import { falla, json, ipDe } from '../http.js';
 import * as v from '../validar.js';
 import {
   hashPin, verificarPin, crearSesion, cookieSesion, leerCookie, sha256, COOKIE,
-  revisarBloqueo, sumarIntento, limpiarIntentos, pinValido,
+  revisarBloqueo, sumarIntento, limpiarIntentos, pinValido, nombreDispositivo,
 } from '../auth.js';
 
 const LIM_PERSONA = { max: 5, ventanaMs: 15 * 60000, bloqueoMs: 15 * 60000 };
 const LIM_IP = { max: 20, ventanaMs: 15 * 60000, bloqueoMs: 15 * 60000 };
 
 export function yoPublico(s) {
-  return { id: s.id, slug: s.slug, nombre: s.nombre, rol: s.rol, foto: s.foto, color: s.color, agenda: !!s.agenda, permisos: s.permisos, esPropietaria: s.esPropietaria };
+  return { id: s.id, slug: s.slug, nombre: s.nombre, rol: s.rol, foto: s.foto, color: s.color, agenda: !!s.agenda, permisos: s.permisos, esPropietaria: s.esPropietaria, cambiar_pin: !s.pin_seis };
 }
 
-async function iniciar(db, persona) {
-  const token = await crearSesion(db, persona.id);
-  return json({ ok: true }, 200, { 'Set-Cookie': cookieSesion(token) });
+async function iniciar(db, persona, request, extra = {}) {
+  const token = await crearSesion(db, persona.id, nombreDispositivo(request.headers.get('User-Agent') || ''));
+  return json({ ok: true, ...extra }, 200, { 'Set-Cookie': cookieSesion(token) });
 }
 
 export function rutasAuth(r) {
   r.get('/api/auth/personas', 'publico', async ({ db }) => {
     const { results } = await db.prepare(
-      'SELECT id, nombre, foto, rol, color, pin_hash IS NOT NULL AS tiene_pin FROM colaboradoras WHERE activa = 1 ORDER BY rol DESC, orden, nombre'
+      'SELECT id, nombre, foto, rol, color, pin_hash IS NOT NULL AS tiene_pin, pin_seis FROM colaboradoras WHERE activa = 1 ORDER BY rol DESC, orden, nombre'
     ).all();
     const duena = results.find((p) => p.rol === 'propietaria');
     return {
       // Se muestran todas las activas; las que aún no tienen PIN aparecen marcadas para que Erika se lo asigne.
-      personas: results.map((p) => ({ ...p, tiene_pin: !!p.tiene_pin })),
+      // pin_seis: el teclado entra solo al sexto número (si aún tiene PIN viejo, se usa el botón Entrar).
+      personas: results.map((p) => ({ ...p, tiene_pin: !!p.tiene_pin, pin_seis: !!p.pin_seis })),
       necesita_configurar: !!duena && !duena.tiene_pin,
     };
   });
@@ -38,7 +39,7 @@ export function rutasAuth(r) {
     const clavePersona = 'pin:' + id;
     await revisarBloqueo(db, claveIp);
     await revisarBloqueo(db, clavePersona);
-    const p = await db.prepare('SELECT id, pin_hash FROM colaboradoras WHERE id = ? AND activa = 1').bind(id).first();
+    const p = await db.prepare('SELECT id, pin_hash, pin_seis FROM colaboradoras WHERE id = ? AND activa = 1').bind(id).first();
     if (!p || !(await verificarPin(pin, p.pin_hash))) {
       const n = await sumarIntento(db, clavePersona, LIM_PERSONA);
       await sumarIntento(db, claveIp, LIM_IP);
@@ -46,7 +47,9 @@ export function rutasAuth(r) {
       falla(401, quedan > 0 ? `PIN incorrecto. Te quedan ${quedan} intento${quedan === 1 ? '' : 's'}.` : 'PIN incorrecto. Bloqueado por 15 minutos.');
     }
     await limpiarIntentos(db, clavePersona);
-    return iniciar(db, p);
+    // PIN viejo (4 dígitos): entra, pero el panel le pide cambiarlo a 6 antes de seguir.
+    if (pin.length === 6 && !p.pin_seis) await db.prepare('UPDATE colaboradoras SET pin_seis = 1 WHERE id = ?').bind(p.id).run();
+    return iniciar(db, p, request, { cambiar_pin: pin.length !== 6 });
   });
 
   r.post('/api/auth/logout', 'publico', async ({ db, request }) => {
@@ -72,9 +75,9 @@ export function rutasAuth(r) {
       await sumarIntento(db, claveIp, { max: 5, ventanaMs: 3600000, bloqueoMs: 3600000 });
       falla(401, 'La clave inicial no es correcta.');
     }
-    if (!pinValido(body.pin)) falla(400, 'El PIN debe tener de 4 a 8 números.');
-    await db.prepare('UPDATE colaboradoras SET pin_hash = ? WHERE id = ? AND pin_hash IS NULL').bind(await hashPin(body.pin), duena.id).run();
-    return iniciar(db, duena);
+    if (!pinValido(body.pin)) falla(400, 'El PIN debe tener 6 números.');
+    await db.prepare('UPDATE colaboradoras SET pin_hash = ?, pin_seis = 1 WHERE id = ? AND pin_hash IS NULL').bind(await hashPin(body.pin), duena.id).run();
+    return iniciar(db, duena, request);
   });
 
   r.post('/api/auth/cambiar-pin', 'sesion', async ({ db, sesion, body, request }) => {
@@ -88,9 +91,21 @@ export function rutasAuth(r) {
     }
     const nuevo = await hashPin(String(body.nuevo ?? ''));
     await db.batch([
-      db.prepare('UPDATE colaboradoras SET pin_hash = ? WHERE id = ?').bind(nuevo, sesion.id),
+      db.prepare('UPDATE colaboradoras SET pin_hash = ?, pin_seis = 1 WHERE id = ?').bind(nuevo, sesion.id),
       db.prepare('DELETE FROM sesiones WHERE colaboradora_id = ? AND token_hash <> ?').bind(sesion.id, sesion.token_hash),
     ]);
     return { ok: true };
+  });
+
+  // Dispositivos con la sesión abierta (para cerrar los que no reconozca).
+  r.get('/api/auth/sesiones', 'sesion', async ({ db, sesion }) => {
+    const { results } = await db.prepare('SELECT token_hash, dispositivo, creado, ultimo_uso FROM sesiones WHERE colaboradora_id = ? AND expira > ? ORDER BY ultimo_uso DESC')
+      .bind(sesion.id, Date.now()).all();
+    return { sesiones: results.map((x) => ({ dispositivo: x.dispositivo || 'Dispositivo', creado: x.creado, ultimo_uso: x.ultimo_uso, esta: x.token_hash === sesion.token_hash })) };
+  });
+
+  r.post('/api/auth/cerrar-otras', 'sesion', async ({ db, sesion }) => {
+    const r2 = await db.prepare('DELETE FROM sesiones WHERE colaboradora_id = ? AND token_hash <> ?').bind(sesion.id, sesion.token_hash).run();
+    return { ok: true, cerradas: r2.meta.changes || 0 };
   });
 }

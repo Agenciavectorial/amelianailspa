@@ -8,6 +8,9 @@ import { rutasFeed } from '../_lib/rutas/feed.js';
 import { rutasNegocio } from '../_lib/rutas/negocio.js';
 import { rutasPush } from '../_lib/rutas/push.js';
 import { rutasMedios } from '../_lib/rutas/medios.js';
+import { rutasCuentas } from '../_lib/rutas/cuentas.js';
+import { rutasSeguridad } from '../_lib/rutas/seguridad.js';
+import { rutasClientas } from '../_lib/rutas/clientas.js';
 
 const router = crearRouter();
 rutasPublicas(router);
@@ -18,6 +21,9 @@ rutasFeed(router);
 rutasNegocio(router);
 rutasPush(router);
 rutasMedios(router);
+rutasCuentas(router);
+rutasSeguridad(router);
+rutasClientas(router);
 
 export async function onRequest(context) {
   const res = await router.manejar(context);

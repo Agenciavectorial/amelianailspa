@@ -54,7 +54,7 @@ export function email(v, { opcional = true } = {}) {
 export function url(v, campo = 'foto') {
   const s = texto(v, campo, { max: 600, opcional: true });
   if (!s) return '';
-  if (s.startsWith('/')) return s;
+  if (s.startsWith('/') && !s.startsWith('//') && !s.includes('\\')) return s;
   try {
     const u = new URL(s);
     if (u.protocol !== 'https:') throw new Error();
