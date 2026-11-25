@@ -5,6 +5,8 @@ import * as v from '../validar.js';
 import { puede } from '../auth.js';
 import { leerAjustes, ESTADOS_ACTIVOS } from '../reservas.js';
 import { ahoraBogota, sumarDias, difDias } from '../tiempo.js';
+import { calcularComision } from '../cuentas.js';
+import { cargarTablaComisiones } from './cuentas.js';
 
 export const METODOS = ['efectivo', 'nequi', 'daviplata', 'tarjeta', 'transferencia', 'otro'];
 const quien = (s) => `${s.nombre} (#${s.id})`;
@@ -36,9 +38,12 @@ export function rutasNegocio(r) {
     const monto = v.entero(Number(body.monto), 'monto', { min: 0, max: 50_000_000 });
     const propina = v.entero(Number(body.propina || 0), 'propina', { min: 0, max: 10_000_000 });
     if (!METODOS.includes(body.metodo)) falla(400, 'Elige el método de pago.');
+    // Comisión congelada al cobrar (en pesos), según el % de la chica para cada servicio de la cita.
+    const { results: lineas } = await db.prepare('SELECT servicio_id, nombre, precio FROM cita_servicios WHERE cita_id = ? ORDER BY orden').bind(cita.id).all();
+    const comision = calcularComision(await cargarTablaComisiones(db), cita.colaboradora_id, monto, lineas);
     const sent = [
-      db.prepare('INSERT INTO pagos (cita_id, fecha, monto, propina, metodo, nota, registrado_por) VALUES (?, ?, ?, ?, ?, ?, ?)')
-        .bind(cita.id, cita.fecha, monto, propina, body.metodo, v.texto(body.nota, 'nota', { max: 200, opcional: true }), sesion.id),
+      db.prepare('INSERT INTO pagos (cita_id, fecha, monto, propina, metodo, nota, registrado_por, comision, colaboradora_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+        .bind(cita.id, cita.fecha, monto, propina, body.metodo, v.texto(body.nota, 'nota', { max: 200, opcional: true }), sesion.id, comision, cita.colaboradora_id),
       db.prepare(`INSERT INTO registro (quien, accion, cita_id, detalle) VALUES (?, 'cobro', ?, ?)`).bind(quien(sesion), cita.id, `${monto} ${body.metodo}`),
     ];
     // Cobrar implica que asistió
@@ -46,11 +51,14 @@ export function rutasNegocio(r) {
       sent.push(db.prepare(`UPDATE citas SET estado = 'asistio', actualizado = datetime('now') WHERE id = ?`).bind(cita.id));
     }
     await db.batch(sent);
-    return { ok: true };
+    return { ok: true, comision };
   });
 
-  r.delete('/api/panel/pagos/:id', 'propietaria', async ({ db, params }) => {
-    await db.prepare('DELETE FROM pagos WHERE id = ?').bind(v.entero(Number(params.id), 'pago', { min: 1 })).run();
+  r.delete('/api/panel/pagos/:id', 'propietaria', async ({ db, sesion, params }) => {
+    await db.batch([
+      db.prepare('DELETE FROM pagos WHERE id = ?').bind(v.entero(Number(params.id), 'pago', { min: 1 })),
+      db.prepare(`INSERT INTO registro (quien, accion, detalle) VALUES (?, 'cobro_borrado', ?)`).bind(quien(sesion), String(params.id)),
+    ]);
     return { ok: true };
   });
 
@@ -257,8 +265,9 @@ export function rutasNegocio(r) {
       v.texto(body.titulo, 'título', { min: 2, max: 80 }),
       v.texto(body.descripcion, 'descripción', { max: 300, opcional: true }),
       v.url(body.foto),
-      body.servicio_id ? v.entero(Number(body.servicio_id), 'servicio', { min: 1 }) : null,
-      body.precio_promo === '' || body.precio_promo == null ? null : v.entero(Number(body.precio_promo), 'precio', { min: 0, max: 50_000_000 }),
+      // Toda promoción es agendable: debe llevar el servicio o combo que se reserva, y su precio.
+      body.servicio_id ? v.entero(Number(body.servicio_id), 'servicio', { min: 1 }) : falla(400, 'Elige el servicio o combo que se agenda con esta promoción.'),
+      body.precio_promo === '' || body.precio_promo == null ? falla(400, 'Escribe el precio de la promoción.') : v.entero(Number(body.precio_promo), 'precio', { min: 0, max: 50_000_000 }),
       body.desde ? v.fecha(body.desde, 'desde') : '',
       body.hasta ? v.fecha(body.hasta, 'hasta') : '',
       v.bool(body.activa) ? 1 : 0,
