@@ -8,3 +8,11 @@ dev/.estado-e2e/
 dev/video/audio/*/bloques/
 dev/video/salida/
 dev/.estado-video*/
+# Estados locales de wrangler/miniflare (bases de prueba): nunca al repositorio
+dev/.estado*/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+# Respaldos descargados de la base
+respaldos/
+*.backup.json
