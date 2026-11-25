@@ -1,5 +1,5 @@
 // Estado compartido del panel. La fuente de verdad es la API (D1); esto es solo lo cargado en pantalla.
-import { api } from '/app-citas/js/util.js?v=9cba0f01ac';
+import { api } from '/app-citas/js/util.js?v=0059637289';
 
 export const S = {
   yo: null, hoy: null, ajustes: {}, servicios: [], colaboradoras: [], horario_spa: [], festivos: [],
@@ -12,6 +12,10 @@ export async function recargar() {
 }
 
 export const esDuena = () => !!S.yo?.esPropietaria;
+/** Módulos que Erika muestra u oculta en Reglas y módulos (por defecto, todos visibles). */
+export function moduloActivo(k) {
+  try { return (JSON.parse(S.ajustes?.modulos || '{}')[k]) !== false; } catch { return true; }
+}
 export const puede = (p) => esDuena() || S.yo?.permisos?.[p] === true;
 export const colab = (id) => S.colaboradoras.find((c) => c.id === Number(id));
 export const servicio = (id) => S.servicios.find((s) => s.id === Number(id));

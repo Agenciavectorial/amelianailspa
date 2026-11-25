@@ -2,9 +2,9 @@
 import {
   api, html, crudo, pintar, $, $$, toast, ocupado, confirmar, abrirHoja, cerrarHoja, hora, hhmm, aMin, duracion, dinero,
   fechaLarga, celularBonito, inicial, ICONOS, sumarDias,
-} from '/app-citas/js/util.js?v=9cba0f01ac';
-import { S, esDuena, puede, colab, conAgenda, categorias, aplicarEstilos } from './estado.js?v=9cba0f01ac';
-import { botonesCita, datosCita, textoPlantilla, enviar } from './mensajes.js?v=9cba0f01ac';
+} from '/app-citas/js/util.js?v=0059637289';
+import { S, esDuena, puede, colab, conAgenda, categorias, aplicarEstilos } from './estado.js?v=0059637289';
+import { botonesCita, datosCita, textoPlantilla, enviar } from './mensajes.js?v=0059637289';
 
 export const METODOS = [['efectivo', 'Efectivo'], ['nequi', 'Nequi'], ['daviplata', 'Daviplata'], ['tarjeta', 'Tarjeta'], ['transferencia', 'Transferencia'], ['otro', 'Otro']];
 
@@ -27,7 +27,7 @@ export async function verCita(id, alCambiar) {
   const pagado = pagos.reduce((a, p) => a + p.monto, 0);
   const co = colab(c.colaboradora_id);
   const editable = puede('gestionar_citas') && (esDuena() || c.colaboradora_id === S.yo.id);
-  const wa = `https://wa.me/${c.clienta_celular}?text=${encodeURIComponent(`¡Hola ${c.clienta_nombre.split(' ')[0]}! Te escribimos de Amelia Nail Spa sobre tu cita del ${fechaLarga(c.fecha)} a las ${hora(c.inicio)}.`)}`;
+  const wa = `https://wa.me/${c.clienta_celular}?text=${encodeURIComponent(`¡Hola ${c.clienta_nombre.split(' ')[0]}! 💜\n\nTe escribimos de Amelia Nail Spa sobre tu cita del ${fechaLarga(c.fecha)} a las ${hora(c.inicio)}.\n\n`)}`;
   const h = abrirHoja(html`
     <div class="cabeza-hoja">
       <div><p class="muted small">${fechaLarga(c.fecha)}</p><h2>${hora(c.inicio)} – ${hora(c.fin)}</h2></div>
@@ -127,8 +127,8 @@ export function cobrar(c, pagado = 0, alCambiar) {
     e.preventDefault();
     ocupado($('#guardarCobro', h), async () => {
       try {
-        await api(`/api/panel/citas/${c.id}/pagos`, { metodo: 'POST', datos: { monto: Number(f.monto.value), propina: Number(f.propina.value || 0), metodo, nota: f.nota.value } });
-        toast('Cobro registrado', 'ok');
+        const r = await api(`/api/panel/citas/${c.id}/pagos`, { metodo: 'POST', datos: { monto: Number(f.monto.value), propina: Number(f.propina.value || 0), metodo, nota: f.nota.value } });
+        toast(r.comision ? `Cobro registrado · comisión ${dinero(r.comision)}` : 'Cobro registrado', 'ok');
         cerrarHoja();
         alCambiar?.();
       } catch (x) { $('#errCobro', h).textContent = x.message; $('#errCobro', h).hidden = false; }

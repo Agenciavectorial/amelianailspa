@@ -1,7 +1,10 @@
 // Arranque del panel: sesión, navegación (dock en celular, barra lateral en computador) y rutas por hash.
-import { api, html, crudo, pintar, $, $$, toast, inicial, ICONOS, cerrarHoja } from '/app-citas/js/util.js?v=abec1519af';
-import { S, recargar, esDuena, puede } from './estado.js?v=abec1519af';
-import { pantallaIngreso } from './login.js?v=abec1519af';
+import { api, html, crudo, pintar, $, $$, toast, inicial, ICONOS, cerrarHoja, botonTema, aplicarTema, temaGuardado } from '/app-citas/js/util.js?v=0059637289';
+
+// Tema elegido en este dispositivo (botón junto al logo)
+aplicarTema(temaGuardado());
+import { S, recargar, esDuena, puede, moduloActivo } from './estado.js?v=0059637289';
+import { pantallaIngreso } from './login.js?v=0059637289';
 
 const raiz = $('#raiz');
 
@@ -17,6 +20,8 @@ const IC = {
   cuenta: ICONOS.usuaria,
   mas: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>',
   fidelizacion: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 10-7.8 7.8L12 21.2l8.8-8.8a5.5 5.5 0 000-7.8z"/></svg>',
+  cuentas: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="13" rx="2.5"/><path d="M2.5 10h19M7 15h3"/></svg>',
+  seguridad: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg>',
   analitica: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
   notas: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>',
   promociones: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4l-7.2 7.2a2 2 0 01-2.8 0L3 13V3h10l7.6 7.6a2 2 0 010 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>',
@@ -28,24 +33,31 @@ function secciones() {
     { id: 'inicio', nombre: 'Inicio', dock: true },
     { id: 'agenda', nombre: 'Agenda', dock: true },
   ];
-  if (puede('ver_clientas')) l.push({ id: 'clientas', nombre: 'Clientas', dock: true }, { id: 'fidelizacion', nombre: 'Fidelización' });
-  if (esDuena()) l.push({ id: 'analitica', nombre: 'Analítica' });
-  l.push({ id: 'notas', nombre: 'Notas' });
+  if (moduloActivo('cuentas')) l.push({ id: 'cuentas', nombre: 'Cuentas', dock: true });
+  if (puede('ver_clientas')) {
+    l.push({ id: 'clientas', nombre: 'Clientas', dock: true });
+    if (moduloActivo('fidelizacion')) l.push({ id: 'fidelizacion', nombre: 'Fidelización' });
+  }
+  if (esDuena() && moduloActivo('analitica')) l.push({ id: 'analitica', nombre: 'Analítica' });
+  if (moduloActivo('notas')) l.push({ id: 'notas', nombre: 'Notas' });
   if (esDuena()) {
-    l.push({ id: 'servicios', nombre: 'Servicios' }, { id: 'promociones', nombre: 'Promociones' }, { id: 'equipo', nombre: 'Equipo' },
+    l.push({ id: 'servicios', nombre: 'Servicios y combos' });
+    if (moduloActivo('promociones')) l.push({ id: 'promociones', nombre: 'Promociones' });
+    l.push({ id: 'equipo', nombre: 'Equipo' },
       { id: 'mensajes', nombre: 'Mensajes' }, { id: 'spa', nombre: 'Horario y festivos' },
-      { id: 'ajustes', nombre: 'Reglas de reserva' }, { id: 'importar', nombre: 'Importar CSV' });
+      { id: 'ajustes', nombre: 'Reglas y módulos' }, { id: 'seguridad', nombre: 'Seguridad y respaldos' }, { id: 'importar', nombre: 'Importar CSV' });
   }
   l.push({ id: 'cuenta', nombre: esDuena() ? 'Mi cuenta' : 'Mi cuenta y horario' });
   return l;
 }
 
 const MODULOS = {
-  inicio: () => import('./inicio.js?v=abec1519af'), agenda: () => import('./agenda.js?v=abec1519af'), clientas: () => import('./clientas.js?v=abec1519af'),
-  servicios: () => import('./servicios.js?v=abec1519af'), equipo: () => import('./equipo.js?v=abec1519af'), spa: () => import('./ajustes.js?v=abec1519af'),
-  ajustes: () => import('./ajustes.js?v=abec1519af'), importar: () => import('./importar.js?v=abec1519af'), cuenta: () => import('./ajustes.js?v=abec1519af'),
-  fidelizacion: () => import('./fidelizacion.js?v=abec1519af'), analitica: () => import('./analitica.js?v=abec1519af'), notas: () => import('./notas.js?v=abec1519af'),
-  promociones: () => import('./promociones.js?v=abec1519af'), mensajes: () => import('./plantillas.js?v=abec1519af'),
+  inicio: () => import('./inicio.js?v=0059637289'), agenda: () => import('./agenda.js?v=0059637289'), clientas: () => import('./clientas.js?v=0059637289'),
+  servicios: () => import('./servicios.js?v=0059637289'), equipo: () => import('./equipo.js?v=0059637289'), spa: () => import('./ajustes.js?v=0059637289'),
+  ajustes: () => import('./ajustes.js?v=0059637289'), importar: () => import('./importar.js?v=0059637289'), cuenta: () => import('./ajustes.js?v=0059637289'),
+  fidelizacion: () => import('./fidelizacion.js?v=0059637289'), analitica: () => import('./analitica.js?v=0059637289'), notas: () => import('./notas.js?v=0059637289'),
+  promociones: () => import('./promociones.js?v=0059637289'), mensajes: () => import('./plantillas.js?v=0059637289'),
+  cuentas: () => import('./cuentas.js?v=0059637289'), seguridad: () => import('./seguridad.js?v=0059637289'),
   mas: null,
 };
 
@@ -55,7 +67,7 @@ function shell() {
   pintar(raiz, html`
     <div class="app">
       <nav class="lateral-panel" aria-label="Secciones">
-        <div class="lp-marca"><img src="/app-citas/img/logo.webp" alt="" width="42" height="42"><span><strong>Amelia</strong><em>Panel</em></span></div>
+        <div class="lp-marca"><img src="/app-citas/img/logo.webp" alt="" width="42" height="42"><span><strong>Amelia</strong><em>Panel</em></span>${botonTema()}</div>
         ${secs.map((s) => html`<a href="#/${s.id}" data-sec="${s.id}">${crudo(IC[s.id])}<span>${s.nombre}</span></a>`)}
         <div class="lp-pie">
           <a class="ver-reservas" href="/reservar/" target="_blank" rel="noopener">Ver página de reservas ↗</a>
@@ -74,7 +86,7 @@ function shell() {
 function pantallaMas(v) {
   const secs = secciones().filter((s) => !s.dock);
   pintar(v, html`
-    <header class="cabeza-vista"><div><span class="script">Amelia</span><h1>Más <em>opciones</em></h1></div></header>
+    <header class="cabeza-vista"><div><span class="script">Amelia</span><h1>Más <em>opciones</em></h1></div>${botonTema()}</header>
     <div class="lista-mas">
       ${secs.map((s) => html`<a class="fila-mas tarjeta" href="#/${s.id}">${crudo(IC[s.id])}<span>${s.nombre}</span><span class="flecha-mas">›</span></a>`)}
       <a class="fila-mas tarjeta" href="/reservar/" target="_blank" rel="noopener">${crudo(ICONOS.calendario)}<span>Ver página de reservas</span><span class="flecha-mas">↗</span></a>
@@ -127,12 +139,12 @@ async function entrar() {
   }
   shell();
   $('#fab')?.addEventListener('click', async () => {
-    const { nuevaCita } = await import('./citas.js?v=abec1519af');
+    const { nuevaCita } = await import('./citas.js?v=0059637289');
     const m = /^#\/agenda\/(\d{4}-\d{2}-\d{2})/.exec(location.hash);
     nuevaCita({ fecha: m ? m[1] : S.hoy, colaboradoraId: esDuena() ? undefined : S.yo.id }, () => navegar());
   });
   vigilarNovedades();
-  setTimeout(() => import('./tour.js?v=abec1519af').then((t) => t.tourSiEsPrimeraVez()), 700);
+  setTimeout(() => import('./tour.js?v=0059637289').then((t) => t.tourSiEsPrimeraVez()), 700);
   window.removeEventListener('hashchange', navegar);
   window.addEventListener('hashchange', navegar);
   navegar();
