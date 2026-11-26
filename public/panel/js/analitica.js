@@ -1,6 +1,6 @@
 // Analítica (Erika): ingresos, métodos de pago, rendimiento por colaboradora y servicio, asistencia y clientas.
-import { api, html, pintar, $, $$, dinero, sumarDias, DIAS_CORTOS } from '/app-citas/js/util.js?v=c0f7d95cf2';
-import { S, aplicarEstilos } from './estado.js?v=c0f7d95cf2';
+import { api, html, pintar, $, $$, dinero, sumarDias, DIAS_CORTOS } from '/app-citas/js/util.js?v=3aee244dd8';
+import { S, aplicarEstilos } from './estado.js?v=3aee244dd8';
 
 const METODO = { efectivo: 'Efectivo', nequi: 'Nequi', daviplata: 'Daviplata', tarjeta: 'Tarjeta', transferencia: 'Transferencia', otro: 'Otro' };
 
@@ -14,8 +14,12 @@ function rangos() {
     ['anterior', 'Mes pasado', iniAnt, sumarDias(ini, -1)],
     ['30', 'Últimos 30 días', sumarDias(hoy, -29), hoy],
     ['90', 'Últimos 90 días', sumarDias(hoy, -89), hoy],
+    ...(otroMes ? [['otro', 'Otro mes', otroMes, finMes(otroMes)]] : []),
   ];
 }
+// Cualquier mes hacia atrás (no solo el actual y el pasado).
+let otroMes = null;
+function finMes(ini) { const d = new Date(ini + 'T12:00:00Z'); d.setUTCMonth(d.getUTCMonth() + 1); d.setUTCDate(0); return d.toISOString().slice(0, 10); }
 
 let actual = 'mes';
 
@@ -23,8 +27,10 @@ export async function vista(v) {
   pintar(v, html`
     <header class="cabeza-vista"><div><span class="script">Números</span><h1>Analítica</h1></div></header>
     <div class="segmentado ancho rango-analitica">${rangos().map(([k, t]) => html`<button data-rango="${k}" aria-pressed="${k === actual}">${t}</button>`)}</div>
+    <label class="campo otro-mes"><span>Ver otro mes</span><input type="month" id="otroMes" value="${(otroMes || S.hoy).slice(0, 7)}" max="${S.hoy.slice(0, 7)}"></label>
     <div id="analitica"><div class="turnos-cargando"><span class="girando oscuro"></span></div></div>`);
   for (const b of $$('[data-rango]', v)) b.onclick = () => { actual = b.dataset.rango; vista(v); };
+  $('#otroMes', v).onchange = (e) => { if (!e.target.value) return; otroMes = `${e.target.value}-01`; actual = 'otro'; vista(v); };
   const [, , desde, hasta] = rangos().find((r) => r[0] === actual);
   const a = await api(`/api/panel/analitica?desde=${desde}&hasta=${hasta}`);
   const maxCol = Math.max(1, ...a.colaboradoras.map((c) => c.ingresos || c.atendidas));

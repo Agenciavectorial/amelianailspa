@@ -1,7 +1,7 @@
 // Botón "Descargar la app" del panel, visible apenas se abre (ingreso e Inicio) mientras no esté instalada.
 // Android/Chrome: abre el instalador del sistema. iPhone y otros navegadores: muestra los pasos.
-import { html, crudo, $, toast, abrirHoja, ICONOS } from '/app-citas/js/util.js?v=c0f7d95cf2';
-import { esDuena } from './estado.js?v=c0f7d95cf2';
+import { html, crudo, $, toast, abrirHoja, ICONOS } from '/app-citas/js/util.js?v=3aee244dd8';
+import { esDuena } from './estado.js?v=3aee244dd8';
 
 const ICONO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>';
 const CLAVE_OCULTO = 'amelia_descarga_oculta';
@@ -74,7 +74,7 @@ const PUSH = { sw: '/panel/sw.js', scope: '/panel/' };
 
 export async function tarjetaAvisos(caja) {
   if (!caja) return;
-  const { estadoPush, activarPush } = await import('/app-citas/js/push.js?v=c0f7d95cf2');
+  const { estadoPush, activarPush } = await import('/app-citas/js/push.js?v=3aee244dd8');
   const estado = await estadoPush(PUSH).catch(() => 'no-soportado');
   const ruta = '/api/panel/push/suscribir';
   // Ya activos: se vuelve a registrar en silencio por si el servidor la perdió (cambio de celular, vencida…)

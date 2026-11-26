@@ -2,28 +2,72 @@
 // - Erika: ingresos por día/semana/mes, por servicio y por chica, ticket promedio, servicio más rentable, gastos con
 //   categorías y alerta de gastos hormiga, comisiones, metas de ahorro/inversión y deudas con cuotas.
 // - Cada chica: SOLO lo suyo (servicios de hoy, de la semana y del mes, y cuánto gana).
-import { api, html, crudo, pintar, $, $$, toast, ocupado, confirmar, abrirHoja, cerrarHoja, dinero, fechaCorta, sumarDias, ICONOS } from '/app-citas/js/util.js?v=c0f7d95cf2';
-import { S, esDuena, puede } from './estado.js?v=c0f7d95cf2';
+import { api, html, crudo, pintar, $, $$, toast, ocupado, confirmar, abrirHoja, cerrarHoja, dinero, fechaCorta, sumarDias, ICONOS } from '/app-citas/js/util.js?v=3aee244dd8';
+import { S, esDuena, puede } from './estado.js?v=3aee244dd8';
 
 export const METODOS = { efectivo: 'Efectivo', nequi: 'Nequi', daviplata: 'Daviplata', tarjeta: 'Tarjeta', transferencia: 'Transferencia', otro: 'Otro' };
 const PESTANAS = [['resumen', 'Resumen'], ['movimientos', 'Ventas'], ['gastos', 'Gastos'], ['comisiones', 'Comisiones'], ['metas', 'Metas'], ['deudas', 'Deudas']];
 
 let pestana = 'resumen';
-let rango = 'mes';
+// Periodo que se está viendo: tipo (día, semana, mes, año o fechas libres) + una fecha "ancla".
+// Con las flechas ‹ › se va hacia atrás o adelante sin límite (el mes pasado, el anterior, el año pasado…).
+let modo = 'mes';
+let ancla = null;
+let libre = null;
+const MESES_L = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+const MODOS = [['dia', 'Día'], ['semana', 'Semana'], ['mes', 'Mes'], ['anio', 'Año'], ['rango', 'Fechas']];
 
-function rangos() {
+function fechaD(f) { return new Date(f + 'T12:00:00Z'); }
+function iso(d) { return d.toISOString().slice(0, 10); }
+function lunesDe(f) { return sumarDias(f, -((fechaD(f).getUTCDay() + 6) % 7)); }
+function finDeMes(f) { const d = fechaD(f.slice(0, 8) + '01'); d.setUTCMonth(d.getUTCMonth() + 1); d.setUTCDate(0); return iso(d); }
+function sumarMeses(f, n) { const d = fechaD(f.slice(0, 8) + '01'); d.setUTCMonth(d.getUTCMonth() + n); return iso(d); }
+
+/** [clave, etiqueta, desde, hasta, agrupar] del periodo actual. */
+function periodo() {
   const hoy = S.hoy;
-  const ini = hoy.slice(0, 8) + '01';
-  const d = new Date(ini + 'T12:00:00Z'); d.setUTCMonth(d.getUTCMonth() - 1);
-  const lunes = sumarDias(hoy, -((new Date(hoy + 'T12:00:00Z').getUTCDay() + 6) % 7));
-  return [
-    ['hoy', 'Hoy', hoy, hoy, 'dia'],
-    ['semana', 'Semana', lunes, hoy, 'dia'],
-    ['mes', 'Mes', ini, hoy, 'dia'],
-    ['anterior', 'Mes pasado', d.toISOString().slice(0, 10), sumarDias(ini, -1), 'dia'],
-    ['90', '3 meses', sumarDias(hoy, -89), hoy, 'semana'],
-    ['anio', 'Año', hoy.slice(0, 4) + '-01-01', hoy, 'mes'],
-  ];
+  const a = ancla || hoy;
+  if (modo === 'dia') return ['dia', a === hoy ? 'Hoy' : fechaCorta(a), a, a, 'dia'];
+  if (modo === 'semana') { const l = lunesDe(a); return ['semana', `Semana del ${fechaCorta(l).replace(/^\S+ /, '')}`, l, sumarDias(l, 6), 'dia']; }
+  if (modo === 'anio') return ['anio', a.slice(0, 4), a.slice(0, 4) + '-01-01', a.slice(0, 4) + '-12-31', 'mes'];
+  if (modo === 'rango') {
+    const r = libre || { desde: hoy.slice(0, 8) + '01', hasta: hoy };
+    const dias = Math.round((fechaD(r.hasta) - fechaD(r.desde)) / 864e5);
+    return ['rango', `${fechaCorta(r.desde)} – ${fechaCorta(r.hasta)}`, r.desde, r.hasta, dias > 62 ? 'mes' : dias > 21 ? 'semana' : 'dia'];
+  }
+  const ini = a.slice(0, 8) + '01';
+  return ['mes', `${MESES_L[Number(a.slice(5, 7)) - 1]} ${a.slice(0, 4)}`, ini, finDeMes(ini), 'dia'];
+}
+
+function mover(n) {
+  const a = ancla || S.hoy;
+  if (modo === 'dia') ancla = sumarDias(a, n);
+  else if (modo === 'semana') ancla = sumarDias(a, 7 * n);
+  else if (modo === 'mes') ancla = sumarMeses(a, n);
+  else if (modo === 'anio') ancla = `${Number(a.slice(0, 4)) + n}-01-01`;
+  if (ancla > S.hoy) ancla = S.hoy;
+}
+
+/** Barra para moverse en el tiempo: tipo de periodo, flechas y selector directo. */
+function barraPeriodo() {
+  const [, etiqueta, desde, hasta] = periodo();
+  const a = ancla || S.hoy;
+  const hayDespues = modo !== 'rango' && hasta < S.hoy;
+  const selector = modo === 'dia' || modo === 'semana' ? html`<input type="date" class="input-periodo" id="saltoPeriodo" value="${a}" max="${S.hoy}" aria-label="Elegir fecha">`
+    : modo === 'mes' ? html`<input type="month" class="input-periodo" id="saltoPeriodo" value="${a.slice(0, 7)}" max="${S.hoy.slice(0, 7)}" aria-label="Elegir mes">`
+      : modo === 'anio' ? html`<select class="input-periodo" id="saltoPeriodo" aria-label="Elegir año">${Array.from({ length: 6 }, (_, k) => Number(S.hoy.slice(0, 4)) - k).map((y) => html`<option value="${y}" ${String(y) === a.slice(0, 4) ? crudo('selected') : ''}>${y}</option>`)}</select>`
+        : '';
+  return html`<div class="periodo">
+    <div class="segmentado ancho rango-analitica">${MODOS.map(([k, t]) => html`<button data-modo="${k}" aria-pressed="${k === modo}">${t}</button>`)}</div>
+    ${modo === 'rango' ? html`<div class="dos-col fila-fechas"><label class="campo"><span>Desde</span><input type="date" id="libreDesde" value="${desde}" max="${S.hoy}"></label>
+        <label class="campo"><span>Hasta</span><input type="date" id="libreHasta" value="${hasta}" max="${S.hoy}"></label></div>`
+    : html`<div class="nav-periodo">
+        <button class="icono-btn" data-mover="-1" aria-label="Periodo anterior">${crudo(ICONOS.atras)}</button>
+        <div class="nav-periodo-centro"><strong>${etiqueta}</strong>${selector}</div>
+        <button class="icono-btn voltear" data-mover="1" aria-label="Periodo siguiente" ${hayDespues ? '' : crudo('disabled')}>${crudo(ICONOS.atras)}</button>
+      </div>`}
+    ${(ancla && ancla.slice(0, 7) !== S.hoy.slice(0, 7)) || (ancla && modo === 'dia' && ancla !== S.hoy) || modo === 'rango' ? html`<button class="btn ghost chico volver-hoy" data-hoy>Volver a hoy</button>` : ''}
+  </div>`;
 }
 
 /** Anchos y altos de las barras (la CSP no deja usar style en el HTML). */
@@ -64,17 +108,47 @@ function barras(lista, { valor, nombre, detalle, color }) {
 }
 
 export async function vista(v) {
-  const r = rangos().find((x) => x[0] === rango) || rangos()[2];
+  const r = periodo();
   pintar(v, html`
     <header class="cabeza-vista">
       <div><span class="script">${esDuena() ? 'Tu negocio' : 'Lo tuyo'}</span><h1>Cuentas</h1></div>
       ${puede('gestionar_citas') ? html`<button class="btn chico" id="nuevaVenta">${crudo(ICONOS.mas)} Venta</button>` : ''}
     </header>
     ${esDuena() ? html`<div class="pestanas" role="tablist">${PESTANAS.map(([k, t]) => html`<button data-pest="${k}" aria-pressed="${k === pestana}">${t}</button>`)}</div>` : ''}
-    ${!esDuena() || ['resumen', 'movimientos', 'gastos'].includes(pestana) ? html`<div class="segmentado ancho rango-analitica">${rangos().map(([k, t]) => html`<button data-rango="${k}" aria-pressed="${k === rango}">${t}</button>`)}</div>` : ''}
+    ${!esDuena() || ['resumen', 'movimientos', 'gastos'].includes(pestana) ? barraPeriodo() : ''}
     <div id="cuentas"><div class="turnos-cargando"><span class="girando oscuro"></span></div></div>`);
   for (const b of $$('[data-pest]', v)) b.onclick = () => { pestana = b.dataset.pest; vista(v); };
-  for (const b of $$('[data-rango]', v)) b.onclick = () => { rango = b.dataset.rango; vista(v); };
+  for (const b of $$('[data-modo]', v)) {
+    b.onclick = () => {
+      // Al pasar a "Fechas" arranca con el periodo que se estaba viendo (sin pasar de hoy ni de un año).
+      if (b.dataset.modo === 'rango' && modo !== 'rango') {
+        const [, , d0, h0] = periodo();
+        const hasta = h0 > S.hoy ? S.hoy : h0;
+        libre = { desde: d0 < sumarDias(hasta, -365) ? sumarDias(hasta, -365) : d0, hasta };
+      }
+      modo = b.dataset.modo;
+      vista(v);
+    };
+  }
+  for (const b of $$('[data-mover]', v)) b.onclick = () => { mover(Number(b.dataset.mover)); vista(v); };
+  $('[data-hoy]', v)?.addEventListener('click', () => { ancla = null; if (modo === 'rango') modo = 'mes'; vista(v); });
+  $('#saltoPeriodo', v)?.addEventListener('change', (e) => {
+    const x = e.target.value;
+    if (!x) return;
+    ancla = modo === 'mes' ? `${x}-01` : modo === 'anio' ? `${x}-01-01` : x;
+    if (ancla > S.hoy) ancla = S.hoy;
+    vista(v);
+  });
+  for (const id of ['#libreDesde', '#libreHasta']) {
+    $(id, v)?.addEventListener('change', () => {
+      let desde = $('#libreDesde', v).value, hasta = $('#libreHasta', v).value;
+      if (!desde || !hasta) return;
+      if (desde > hasta) [desde, hasta] = [hasta, desde];
+      if ((fechaD(hasta) - fechaD(desde)) / 864e5 > 400) { toast('Máximo un año y un mes por consulta.'); return; }
+      libre = { desde, hasta };
+      vista(v);
+    });
+  }
   $('#nuevaVenta', v)?.addEventListener('click', () => nuevaVenta(() => vista(v)));
   const caja = $('#cuentas', v);
   caja.addEventListener('click', (e) => { const b = e.target.closest('[data-valor]'); if (b) toast(b.dataset.valor); });

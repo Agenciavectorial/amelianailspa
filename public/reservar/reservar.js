@@ -2,9 +2,9 @@
 import {
   api, html, crudo, pintar, $, $$, toast, ocupado, hora, duracion, dinero, fechaLarga, ICONOS, inicial, celularBonito, abrirHoja, cerrarHoja,
   SITIO, aplicarAcento, foto, fotoAncho, videoLiviano, verFotos, trasHistorial, avatarAmpliable, activarAmpliar,
-} from '/app-citas/js/util.js?v=c0f7d95cf2';
-import { crearSelector } from './selector.js?v=c0f7d95cf2';
-import { estadoPush, activarPush } from '/app-citas/js/push.js?v=c0f7d95cf2';
+} from '/app-citas/js/util.js?v=3aee244dd8';
+import { crearSelector } from './selector.js?v=3aee244dd8';
+import { estadoPush, activarPush } from '/app-citas/js/push.js?v=3aee244dd8';
 
 const PUSH = { sw: '/reservar/sw.js', scope: '/reservar/' };
 

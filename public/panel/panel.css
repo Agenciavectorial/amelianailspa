@@ -563,3 +563,17 @@ a.stat { text-decoration: none; color: inherit; }
 .stat { min-width: 0; }
 .stat strong { overflow-wrap: anywhere; font-size: clamp(1.25rem, 2.4vw, 1.7rem); }
 @media (max-width: 420px) { .fila-mov > .icono-btn { grid-column: 2; grid-row: 1; justify-self: end; width: 30px; height: 30px; } }
+
+/* ---------- Periodo de Cuentas: ir a cualquier día, semana, mes o año ---------- */
+.periodo { display: grid; gap: 8px; margin-bottom: 14px; }
+.periodo .segmentado { margin: 0; }
+.nav-periodo { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; gap: 8px; align-items: center; background: var(--blanco); border-radius: var(--radio); padding: 8px; box-shadow: var(--sombra-s); }
+.nav-periodo .icono-btn { width: 44px; height: 44px; }
+.nav-periodo .icono-btn:disabled { opacity: .3; }
+.nav-periodo .voltear svg { transform: scaleX(-1); }
+.nav-periodo-centro { display: grid; justify-items: center; gap: 4px; min-width: 0; text-align: center; }
+.nav-periodo-centro strong { font-family: var(--serif); font-size: 1.15rem; text-transform: capitalize; }
+.input-periodo { font-size: 16px; min-height: 38px; border: 1.5px solid var(--linea); border-radius: 10px; padding: 0 10px; background: var(--blanco); color: var(--negro); max-width: 100%; }
+.volver-hoy { justify-self: center; }
+.fila-fechas { margin: 0; }
+.otro-mes { max-width: 260px; }

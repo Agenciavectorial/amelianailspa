@@ -1,6 +1,6 @@
 // Notas rápidas del negocio (insumos por pedir, recados), compartidas por todo el equipo.
-import { api, html, pintar, $, toast, ocupado } from '/app-citas/js/util.js?v=c0f7d95cf2';
-import { S, esDuena } from './estado.js?v=c0f7d95cf2';
+import { api, html, pintar, $, toast, ocupado } from '/app-citas/js/util.js?v=3aee244dd8';
+import { S, esDuena } from './estado.js?v=3aee244dd8';
 
 export async function vista(v) {
   const { notas } = await api('/api/panel/notas');

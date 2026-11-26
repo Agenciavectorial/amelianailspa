@@ -1,10 +1,10 @@
 // Arranque del panel: sesión, navegación (dock en celular, barra lateral en computador) y rutas por hash.
-import { api, html, crudo, pintar, $, $$, toast, inicial, ICONOS, cerrarHoja, botonTema, aplicarTema, temaGuardado } from '/app-citas/js/util.js?v=c0f7d95cf2';
+import { api, html, crudo, pintar, $, $$, toast, inicial, ICONOS, cerrarHoja, botonTema, aplicarTema, temaGuardado } from '/app-citas/js/util.js?v=3aee244dd8';
 
 // Tema elegido en este dispositivo (botón junto al logo)
 aplicarTema(temaGuardado());
-import { S, recargar, esDuena, puede, moduloActivo } from './estado.js?v=c0f7d95cf2';
-import { pantallaIngreso } from './login.js?v=c0f7d95cf2';
+import { S, recargar, esDuena, puede, moduloActivo } from './estado.js?v=3aee244dd8';
+import { pantallaIngreso } from './login.js?v=3aee244dd8';
 
 const raiz = $('#raiz');
 
@@ -52,12 +52,12 @@ function secciones() {
 }
 
 const MODULOS = {
-  inicio: () => import('./inicio.js?v=c0f7d95cf2'), agenda: () => import('./agenda.js?v=c0f7d95cf2'), clientas: () => import('./clientas.js?v=c0f7d95cf2'),
-  servicios: () => import('./servicios.js?v=c0f7d95cf2'), equipo: () => import('./equipo.js?v=c0f7d95cf2'), spa: () => import('./ajustes.js?v=c0f7d95cf2'),
-  ajustes: () => import('./ajustes.js?v=c0f7d95cf2'), importar: () => import('./importar.js?v=c0f7d95cf2'), cuenta: () => import('./ajustes.js?v=c0f7d95cf2'),
-  fidelizacion: () => import('./fidelizacion.js?v=c0f7d95cf2'), analitica: () => import('./analitica.js?v=c0f7d95cf2'), notas: () => import('./notas.js?v=c0f7d95cf2'),
-  promociones: () => import('./promociones.js?v=c0f7d95cf2'), mensajes: () => import('./plantillas.js?v=c0f7d95cf2'),
-  cuentas: () => import('./cuentas.js?v=c0f7d95cf2'), seguridad: () => import('./seguridad.js?v=c0f7d95cf2'),
+  inicio: () => import('./inicio.js?v=3aee244dd8'), agenda: () => import('./agenda.js?v=3aee244dd8'), clientas: () => import('./clientas.js?v=3aee244dd8'),
+  servicios: () => import('./servicios.js?v=3aee244dd8'), equipo: () => import('./equipo.js?v=3aee244dd8'), spa: () => import('./ajustes.js?v=3aee244dd8'),
+  ajustes: () => import('./ajustes.js?v=3aee244dd8'), importar: () => import('./importar.js?v=3aee244dd8'), cuenta: () => import('./ajustes.js?v=3aee244dd8'),
+  fidelizacion: () => import('./fidelizacion.js?v=3aee244dd8'), analitica: () => import('./analitica.js?v=3aee244dd8'), notas: () => import('./notas.js?v=3aee244dd8'),
+  promociones: () => import('./promociones.js?v=3aee244dd8'), mensajes: () => import('./plantillas.js?v=3aee244dd8'),
+  cuentas: () => import('./cuentas.js?v=3aee244dd8'), seguridad: () => import('./seguridad.js?v=3aee244dd8'),
   mas: null,
 };
 
@@ -139,12 +139,12 @@ async function entrar() {
   }
   shell();
   $('#fab')?.addEventListener('click', async () => {
-    const { nuevaCita } = await import('./citas.js?v=c0f7d95cf2');
+    const { nuevaCita } = await import('./citas.js?v=3aee244dd8');
     const m = /^#\/agenda\/(\d{4}-\d{2}-\d{2})/.exec(location.hash);
     nuevaCita({ fecha: m ? m[1] : S.hoy, colaboradoraId: esDuena() ? undefined : S.yo.id }, () => navegar());
   });
   vigilarNovedades();
-  setTimeout(() => import('./tour.js?v=c0f7d95cf2').then((t) => t.tourSiEsPrimeraVez()), 700);
+  setTimeout(() => import('./tour.js?v=3aee244dd8').then((t) => t.tourSiEsPrimeraVez()), 700);
   window.removeEventListener('hashchange', navegar);
   window.addEventListener('hashchange', navegar);
   navegar();
