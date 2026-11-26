@@ -516,6 +516,44 @@ export const pagina = {
   },
 };
 
+// =====================================================================================
+// Reel para redes: la app de las clientas
+// =====================================================================================
+// Se graba sobre la página REAL (solo se navega: no se crea ninguna reserva), para mostrar servicios, fotos y
+// horarios verdaderos y no datos de prueba.
+const REAL = 'https://amelianailspa.com';
+export const reel = {
+  async hola({ page, hasta }) {
+    await page.goto(REAL + '/reservar/', { waitUntil: 'networkidle' });
+    await hasta(0.35);
+    await bajar(page, 380, 1800);
+  },
+  async agendar({ page, hasta }) {
+    await tocar(page, page.locator('.servicio:has-text("Semipermanente") .servicio-marca').first(), { espera: 600 });
+    await tocar(page, '#btnSeguir', { centrar: false, espera: 900 });
+    await hasta(0.3);
+    const cual = page.locator('.pro.cualquiera');
+    if (await cual.count()) await tocar(page, cual, { espera: 900 });
+    await tocar(page, page.locator('.dia').nth(1), { centrar: false, espera: 700 });
+    await hasta(0.65);
+    await tocar(page, page.locator('.turno').nth(2), { espera: 600 });
+  },
+  async combos({ page, hasta }) {
+    await page.goto(REAL + '/reservar/', { waitUntil: 'networkidle' });
+    await bajar(page, 500, 1600);
+    await hasta(0.4);
+    await bajar(page, 700, 2400);
+    await hasta(0.8);
+    await bajar(page, -400, 1000);
+  },
+  async instalar({ page, hasta }) {
+    await arriba(page, 400);
+    await page.evaluate(() => window.ameliaGuiaInstalar?.());
+    await page.waitForSelector('.instalar-guia.abierta', { timeout: 4000 }).catch(() => {});
+    await hasta(1);
+  },
+};
+
 const tarjeta = (titulo, cuerpo) => `<div style="width:330px;font-family:'DM Sans',system-ui,sans-serif;color:#2b2233;text-align:center">
   <div style="font-family:'Great Vibes',cursive;font-size:34px;color:#7A6494">${titulo[0]}</div>
   <div style="font-family:'Playfair Display',serif;font-size:30px;font-weight:600;margin:-4px 0 18px">${titulo[1]}</div>${cuerpo}</div>`;

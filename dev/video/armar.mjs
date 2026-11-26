@@ -181,7 +181,7 @@ export async function armar(video, { chica, horizontal = false, borrador = false
   const marca = 'Amelia Nail Spa';
   const titulo = guion.titulo;
   const subtitulo = chica ? 'Tu panel de colaboradora, paso a paso' : guion.subtitulo;
-  const para = chica ? `Para ${chica}` : (video === 'pagina' ? 'Para Erika' : 'Para Erika');
+  const para = chica ? `Para ${chica}` : (guion.para || 'Para Erika');
   const foto = chica ? PUB(`img/${chica.toLowerCase()}-600.webp`) : null;
 
   // 1) Imágenes: fondo, capas por subtítulo y cortinillas
