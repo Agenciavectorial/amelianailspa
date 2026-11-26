@@ -46,7 +46,7 @@ export async function cabeceraVapid(endpoint, { publica, privada, sujeto }, ahor
     { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign'],
   );
   const cab = b64u(JSON.stringify({ typ: 'JWT', alg: 'ES256' }));
-  const carga = b64u(JSON.stringify({ aud: new URL(endpoint).origin, exp: Math.floor(ahoraMs / 1000) + 12 * 3600, sub: sujeto || 'mailto:hola@amelianailspa.com' }));
+  const carga = b64u(JSON.stringify({ aud: new URL(endpoint).origin, exp: Math.floor(ahoraMs / 1000) + 12 * 3600, sub: sujeto || 'mailto:amelianailspa@gmail.com' }));
   const firma = await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, llave, enc.encode(`${cab}.${carga}`));
   return `vapid t=${cab}.${carga}.${b64u(firma)}, k=${publica}`;
 }
@@ -90,7 +90,7 @@ export function endpointValido(endpoint, { permitirLocal = false } = {}) {
 
 export function vapidDe(env) {
   if (!env.VAPID_PUBLICA || !env.VAPID_PRIVADA) return null;
-  return { publica: env.VAPID_PUBLICA, privada: env.VAPID_PRIVADA, sujeto: env.VAPID_SUJETO || 'mailto:hola@amelianailspa.com' };
+  return { publica: env.VAPID_PUBLICA, privada: env.VAPID_PRIVADA, sujeto: env.VAPID_SUJETO || 'mailto:amelianailspa@gmail.com' };
 }
 
 /**
