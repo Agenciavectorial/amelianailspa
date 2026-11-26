@@ -127,6 +127,7 @@ Cargados de Kumbio como punto de partida (`migrations/0006_datos_kumbio.sql`, ap
 
 - ⚠️ **Aplicar las migraciones nuevas** en la base real antes de publicar el código:
   `npx wrangler d1 migrations apply amelia-citas --remote` (0015 cuentas/combos/seguridad y 0016 mensajes con párrafos; la base real ya tenía 0013_archivos y 0014_contabilidad de otra sesión, con `ventas` y `gastos` vacías: 0015 las conserva y las completa).
+- ⚠️ **Migración 0017 (horario del mes por fecha)**: `npx wrangler d1 migrations apply amelia-citas --remote` antes de publicar el código que la usa.
 - ⚠️ **Volver a publicar el Worker de recordatorios** (ahora también hace el respaldo diario):
   `npx wrangler deploy --config workers/recordatorios/wrangler.toml`.
 - Recomendado: bucket R2 `amelia-respaldos` para guardar los respaldos fuera de la base (`SEGURIDAD.md` §5).

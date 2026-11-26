@@ -72,7 +72,7 @@ for (const [nombre, ctxOpc] of PERFILES) {
   for (const d of pinErika) await p.click(`.tecla[data-n="${d}"]`);
   await p.click('#entrar');
   await p.waitForSelector('.stats .stat:not(.esqueleto)');
-  for (const sec of ['inicio', 'cuentas', 'clientas', 'servicios', 'promociones', 'seguridad', 'ajustes', 'cuenta', 'equipo', 'agenda']) {
+  for (const sec of ['inicio', 'cuentas', 'clientas', 'servicios', 'promociones', 'seguridad', 'ajustes', 'cuenta', 'equipo', 'horarios', 'agenda']) {
     await p.goto(`${srv.base}/panel/#/${sec}`);
     await p.waitForTimeout(700);
     await revisar(p, `${nombre} erika #/${sec}`, movil);
@@ -87,6 +87,15 @@ for (const [nombre, ctxOpc] of PERFILES) {
     await p.screenshot({ path: `${SALIDA}${nombre}-cuentas-${t}.png`, fullPage: movil });
   }
   await p.click('[data-pest="resumen"]');
+  // Horarios del mes: elegir los lunes, ponerlos de 2 a 6 y aplicar
+  await p.goto(`${srv.base}/panel/#/horarios`); await p.waitForSelector('.cal-horario');
+  await p.click('[data-columna="1"]'); await p.waitForSelector('#aplicar');
+  await p.fill('#hAbre', '14:00'); await p.fill('#hCierra', '18:00');
+  await p.click('#aplicar'); await p.waitForTimeout(900);
+  if (!(await p.$('.ch-dia .punto-propio'))) problemas.push(`${nombre}: horario del mes no se guardó`);
+  await p.click('[data-columna="3"]'); await p.waitForTimeout(500);
+  await revisar(p, `${nombre} horarios con días elegidos`, movil);
+  await p.screenshot({ path: `${SALIDA}${nombre}-horarios-mes.png`, fullPage: movil });
   if (movil) {
     // Hojas: venta, gasto, cliente
     await p.goto(`${srv.base}/panel/#/cuentas`); await p.waitForTimeout(600);

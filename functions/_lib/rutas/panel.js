@@ -86,7 +86,7 @@ export function rutasPanel(r) {
   r.get('/api/panel/arranque', 'sesion', async ({ db, sesion }) => {
     const ajustes = await leerAjustes(db);
     const hoy = ahoraBogota().fecha;
-    const [serv, colab, cs, hc, spa, fest, plant] = await db.batch([
+    const [serv, colab, cs, hc, spa, fest, plant, hf] = await db.batch([
       db.prepare('SELECT * FROM servicios ORDER BY orden, nombre'),
       db.prepare('SELECT id, slug, nombre, rol, cargo, bio, foto, color, activa, agenda, permisos, ics_token, orden, pin_hash IS NOT NULL AS tiene_pin FROM colaboradoras ORDER BY activa DESC, orden, nombre'),
       db.prepare('SELECT colaboradora_id, servicio_id FROM colaboradora_servicios'),
@@ -94,6 +94,7 @@ export function rutasPanel(r) {
       db.prepare('SELECT dia, abierto, abre, cierra FROM horario_spa ORDER BY dia'),
       db.prepare('SELECT fecha, motivo FROM festivos WHERE fecha >= ? ORDER BY fecha').bind(sumarDias(hoy, -1)),
       db.prepare('SELECT clave, titulo, texto FROM plantillas ORDER BY orden'),
+      db.prepare('SELECT colaboradora_id, fecha, trabaja, abre, cierra FROM horario_fecha WHERE fecha BETWEEN ? AND ?').bind(sumarDias(hoy, -45), sumarDias(hoy, 120)),
     ]);
     const verEquipo = puede(sesion, 'ver_agenda_equipo');
     let colaboradoras = colab.results.map((c) => ({
@@ -101,13 +102,14 @@ export function rutasPanel(r) {
       permisos: JSON.parse(c.permisos || '{}'),
       servicios: cs.results.filter((x) => x.colaboradora_id === c.id).map((x) => x.servicio_id),
       horario: hc.results.filter((x) => x.colaboradora_id === c.id),
+      horario_fechas: hf.results.filter((x) => x.colaboradora_id === c.id),
     }));
     if (!sesion.esPropietaria) {
       colaboradoras = colaboradoras
         .filter((c) => c.activa && (c.id === sesion.id || (verEquipo && c.agenda)))
         .map((c) => ({
           id: c.id, slug: c.slug, nombre: c.nombre, rol: c.rol, cargo: c.cargo, foto: c.foto, color: c.color,
-          activa: c.activa, agenda: c.agenda, servicios: c.servicios, horario: c.horario,
+          activa: c.activa, agenda: c.agenda, servicios: c.servicios, horario: c.horario, horario_fechas: c.horario_fechas,
           ...(c.id === sesion.id ? { ics_token: c.ics_token, permisos: c.permisos } : {}),
         }));
     }
@@ -317,6 +319,66 @@ export function rutasPanel(r) {
     }
     await db.batch(sentencias);
     return { ok: true };
+  });
+
+  // ---------- horario del mes (día por día) ----------
+  // Erika arma el horario de cada chica para el mes; una chica con el permiso "editar_horario" puede ajustar el suyo.
+  r.get('/api/panel/horario-mes', 'sesion', async ({ db, sesion, q }) => {
+    const id = v.entero(Number(q.get('colaboradora')), 'colaboradora', { min: 1 });
+    exigirPropia(sesion, id);
+    const mes = String(q.get('mes') || '');
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(mes)) falla(400, 'Mes inválido (AAAA-MM).');
+    const [sem, dias, fest] = await db.batch([
+      db.prepare('SELECT dia, trabaja, abre, cierra FROM horario_colaboradora WHERE colaboradora_id = ?').bind(id),
+      db.prepare('SELECT fecha, trabaja, abre, cierra FROM horario_fecha WHERE colaboradora_id = ? AND fecha BETWEEN ? AND ? ORDER BY fecha').bind(id, mes + '-01', mes + '-31'),
+      db.prepare('SELECT fecha, motivo FROM festivos WHERE fecha BETWEEN ? AND ?').bind(mes + '-01', mes + '-31'),
+    ]);
+    return { mes, colaboradora_id: id, semanal: sem.results, dias: dias.results, festivos: fest.results };
+  });
+
+  r.put('/api/panel/horario-mes/:id', 'sesion', async ({ db, sesion, params, body }) => {
+    const id = v.entero(Number(params.id), 'colaboradora', { min: 1 });
+    exigirPropia(sesion, id);
+    if (!sesion.esPropietaria) exigir(sesion, 'editar_horario');
+    const cambios = Array.isArray(body.cambios) ? body.cambios : falla(400, 'Faltan los días.');
+    if (!cambios.length || cambios.length > 93) falla(400, 'Elige entre 1 y 93 días.');
+    const sentencias = cambios.map((c) => {
+      const fecha = v.fecha(c.fecha);
+      if (c.modo === 'semana') return db.prepare('DELETE FROM horario_fecha WHERE colaboradora_id = ? AND fecha = ?').bind(id, fecha);
+      const trabaja = c.modo === 'trabaja' ? 1 : c.modo === 'libre' ? 0 : falla(400, 'Modo inválido.');
+      const abre = trabaja ? minutos(c.abre, 'entrada') : 0;
+      const cierra = trabaja ? minutos(c.cierra, 'salida') : 0;
+      if (trabaja && cierra <= abre) falla(400, 'La hora de salida debe ser después de la entrada.');
+      return db.prepare(
+        `INSERT INTO horario_fecha (colaboradora_id, fecha, trabaja, abre, cierra) VALUES (?, ?, ?, ?, ?)
+         ON CONFLICT(colaboradora_id, fecha) DO UPDATE SET trabaja = excluded.trabaja, abre = excluded.abre, cierra = excluded.cierra, actualizado = datetime('now')`
+      ).bind(id, fecha, trabaja, abre, cierra);
+    });
+    sentencias.push(db.prepare("INSERT INTO registro (quien, accion, detalle) VALUES (?, 'horario', ?)").bind(quien(sesion), `${id}: ${cambios.length} días`));
+    await db.batch(sentencias);
+    return { ok: true };
+  });
+
+  // Copia el horario de un mes al siguiente, día de la semana por día de la semana (1.er lunes → 1.er lunes…).
+  r.post('/api/panel/horario-mes/:id/copiar', 'sesion', async ({ db, sesion, params, body }) => {
+    const id = v.entero(Number(params.id), 'colaboradora', { min: 1 });
+    exigirPropia(sesion, id);
+    if (!sesion.esPropietaria) exigir(sesion, 'editar_horario');
+    const de = String(body.de || ''), a = String(body.a || '');
+    if (![de, a].every((m) => /^\d{4}-(0[1-9]|1[0-2])$/.test(m))) falla(400, 'Mes inválido.');
+    const { results } = await db.prepare('SELECT fecha, trabaja, abre, cierra FROM horario_fecha WHERE colaboradora_id = ? AND fecha BETWEEN ? AND ?').bind(id, de + '-01', de + '-31').all();
+    const clave = (f) => { const d = new Date(f + 'T12:00:00Z'); return `${d.getUTCDay()}-${Math.ceil(d.getUTCDate() / 7)}`; };
+    const origen = new Map(results.map((x) => [clave(x.fecha), x]));
+    const sentencias = [db.prepare('DELETE FROM horario_fecha WHERE colaboradora_id = ? AND fecha BETWEEN ? AND ?').bind(id, a + '-01', a + '-31')];
+    for (let d = 1; d <= 31; d++) {
+      const f = `${a}-${String(d).padStart(2, '0')}`;
+      if (new Date(f + 'T12:00:00Z').toISOString().slice(0, 10) !== f) break;
+      const x = origen.get(clave(f));
+      if (x) sentencias.push(db.prepare('INSERT INTO horario_fecha (colaboradora_id, fecha, trabaja, abre, cierra) VALUES (?, ?, ?, ?, ?)').bind(id, f, x.trabaja, x.abre, x.cierra));
+    }
+    sentencias.push(db.prepare("INSERT INTO registro (quien, accion, detalle) VALUES (?, 'horario', ?)").bind(quien(sesion), `${id}: copiar ${de} a ${a}`));
+    await db.batch(sentencias);
+    return { ok: true, dias: sentencias.length - 2 };
   });
 
   // ---------- equipo (solo Erika) ----------

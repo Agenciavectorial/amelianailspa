@@ -1,8 +1,8 @@
 // Agenda: vista día (columnas por colaboradora) y semana (una colaboradora), con citas y bloqueos.
-import { api, html, crudo, pintar, $, $$, abrirHoja, cerrarHoja, hora, horaCorta, fechaLarga, fechaCorta, DIAS_CORTOS, fechaD, sumarDias, diaSemana, inicial, ICONOS, toast } from '/app-citas/js/util.js?v=3aee244dd8';
-import { S, esDuena, puede, colab, conAgenda, horarioSpa, rangoColab, aplicarEstilos } from './estado.js?v=3aee244dd8';
-import { verCita, nuevaCita, nuevoBloqueo, verBloqueo, cobrar, pastillaEstado } from './citas.js?v=3aee244dd8';
-import { enviar, textoPlantilla, datosCita } from './mensajes.js?v=3aee244dd8';
+import { api, html, crudo, pintar, $, $$, abrirHoja, cerrarHoja, hora, horaCorta, fechaLarga, fechaCorta, DIAS_CORTOS, fechaD, sumarDias, diaSemana, inicial, ICONOS, toast } from '/app-citas/js/util.js?v=63bc4ab2f0';
+import { S, esDuena, puede, colab, conAgenda, horarioSpa, rangoColab, aplicarEstilos } from './estado.js?v=63bc4ab2f0';
+import { verCita, nuevaCita, nuevoBloqueo, verBloqueo, cobrar, pastillaEstado } from './citas.js?v=63bc4ab2f0';
+import { enviar, textoPlantilla, datosCita } from './mensajes.js?v=63bc4ab2f0';
 
 const PX = 1.5; // píxeles por minuto
 let estado = null;
@@ -231,7 +231,7 @@ function pintarGrilla({ citas, bloqueos }, desde) {
         </div>
         ${cols.map((c) => {
           const dia = diaSemana(c.fecha);
-          const r = festivos.has(c.fecha) ? null : rangoColab(c.colab, dia);
+          const r = festivos.has(c.fecha) ? null : rangoColab(c.colab, dia, c.fecha);
           const fuera = [];
           if (!r) fuera.push([ini, fin]);
           else { if (r.abre > ini) fuera.push([ini, r.abre]); if (r.cierra < fin) fuera.push([r.cierra, fin]); }

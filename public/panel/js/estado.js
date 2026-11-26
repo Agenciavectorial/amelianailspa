@@ -1,5 +1,5 @@
 // Estado compartido del panel. La fuente de verdad es la API (D1); esto es solo lo cargado en pantalla.
-import { api } from '/app-citas/js/util.js?v=3aee244dd8';
+import { api } from '/app-citas/js/util.js?v=63bc4ab2f0';
 
 export const S = {
   yo: null, hoy: null, ajustes: {}, servicios: [], colaboradoras: [], horario_spa: [], festivos: [],
@@ -24,11 +24,11 @@ export const conAgenda = () => S.colaboradoras.filter((c) => c.activa && c.agend
 export function horarioSpa(dia) { return S.horario_spa.find((h) => h.dia === dia); }
 export function categorias() { return [...new Set(S.servicios.map((s) => s.categoria))]; }
 
-/** Rango [abre, cierra] de una colaboradora un día (null si no trabaja). */
-export function rangoColab(c, dia) {
+/** Rango [abre, cierra] de una colaboradora un día (null si no trabaja). Con `fecha`, el horario del mes manda. */
+export function rangoColab(c, dia, fecha) {
   const spa = horarioSpa(dia);
   if (!spa || !spa.abierto) return null;
-  const h = c.horario?.find((x) => x.dia === dia);
+  const h = (fecha && c.horario_fechas?.find((x) => x.fecha === fecha)) || c.horario?.find((x) => x.dia === dia);
   if (h && !h.trabaja) return null;
   return { abre: Math.max(spa.abre, h ? h.abre : spa.abre), cierra: Math.min(spa.cierra, h ? h.cierra : spa.cierra) };
 }

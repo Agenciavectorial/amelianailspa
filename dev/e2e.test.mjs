@@ -606,6 +606,44 @@ test('clientas: etiquetas, cumpleaños con calendario y eliminar; promociones si
   await erika.pedir(`/api/panel/servicios/${combo.cuerpo.id}`, { metodo: 'DELETE' });
 });
 
+test('horario del mes: Erika ajusta días puntuales y las reservas en línea lo respetan', async () => {
+  let F = proximoDiaHabil(12);
+  const turnos = async () => (await cliente(base).pedir(`/api/public/disponibilidad?fecha=${F}&servicios=${ids.forrado}&con=karla`)).cuerpo.turnos;
+  let antes = await turnos();
+  for (let k = 13; !antes.length && k < 30; k++) { F = proximoDiaHabil(k); antes = await turnos(); }
+  assert.ok(antes.length > 3, 'Karla tiene turnos ese día con su semana tipo');
+  const mes = F.slice(0, 7);
+  // Libre ese día → sin turnos
+  assert.equal((await erika.pedir(`/api/panel/horario-mes/${ids.karla}`, { metodo: 'PUT', datos: { cambios: [{ fecha: F, modo: 'libre' }] } })).status, 200);
+  assert.equal((await turnos()).length, 0, 'libre: no recibe citas');
+  // Solo de 2:00 a 4:00 p. m.
+  await erika.pedir(`/api/panel/horario-mes/${ids.karla}`, { metodo: 'PUT', datos: { cambios: [{ fecha: F, modo: 'trabaja', abre: '14:00', cierra: '16:00' }] } });
+  const t2 = await turnos();
+  assert.ok(t2.length > 0 && t2.every((x) => x.inicio >= 840 && x.fin <= 960), JSON.stringify(t2.slice(0, 3)));
+  const hm = (await erika.pedir(`/api/panel/horario-mes?colaboradora=${ids.karla}&mes=${mes}`)).cuerpo;
+  assert.deepEqual(hm.dias.find((x) => x.fecha === F), { fecha: F, trabaja: 1, abre: 840, cierra: 960 });
+  // La agenda del panel recibe el horario del mes
+  const arr = (await erika.pedir('/api/panel/arranque')).cuerpo;
+  assert.ok(arr.colaboradoras.find((c) => c.id === ids.karla).horario_fechas.some((x) => x.fecha === F));
+  // Permisos: una chica no ve ni cambia el horario de otra
+  const karla = cliente(base);
+  await karla.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.karla, pin: '135792' } });
+  assert.equal((await karla.pedir(`/api/panel/horario-mes/${ids.leidy}`, { metodo: 'PUT', datos: { cambios: [{ fecha: F, modo: 'libre' }] } })).status, 403);
+  assert.equal((await karla.pedir(`/api/panel/horario-mes?colaboradora=${ids.leidy}&mes=${mes}`)).status, 403);
+  // Copiar al mes siguiente (1.er lunes → 1.er lunes…)
+  const sig = new Date(Date.UTC(Number(mes.slice(0, 4)), Number(mes.slice(5)), 1)).toISOString().slice(0, 7);
+  const cp = await erika.pedir(`/api/panel/horario-mes/${ids.karla}/copiar`, { metodo: 'POST', datos: { de: mes, a: sig } });
+  assert.equal(cp.status, 200);
+  assert.equal(cp.cuerpo.dias, 1);
+  const hs = (await erika.pedir(`/api/panel/horario-mes?colaboradora=${ids.karla}&mes=${sig}`)).cuerpo.dias;
+  assert.equal(hs.length, 1);
+  assert.equal(new Date(hs[0].fecha + 'T12:00:00Z').getUTCDay(), new Date(F + 'T12:00:00Z').getUTCDay(), 'mismo día de la semana');
+  // Volver a la semana tipo
+  await erika.pedir(`/api/panel/horario-mes/${ids.karla}`, { metodo: 'PUT', datos: { cambios: [{ fecha: F, modo: 'semana' }, { fecha: hs[0].fecha, modo: 'semana' }] } });
+  assert.equal((await turnos()).length, antes.length, 'vuelve a su horario de siempre');
+  assert.equal((await erika.pedir(`/api/panel/horario-mes/${ids.karla}`, { metodo: 'PUT', datos: { cambios: [{ fecha: F, modo: 'trabaja', abre: '16:00', cierra: '14:00' }] } })).status, 400);
+});
+
 test('notificaciones push: equipo avisado de citas nuevas, recordatorios al agendar, el mismo día y 1 h antes a la clienta, sin duplicados', async () => {
   const { descifrarPush } = await import('../tests/ayuda-push.mjs');
   const navegador = async (nombre) => {

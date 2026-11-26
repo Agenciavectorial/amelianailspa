@@ -577,3 +577,30 @@ a.stat { text-decoration: none; color: inherit; }
 .volver-hoy { justify-self: center; }
 .fila-fechas { margin: 0; }
 .otro-mes { max-width: 260px; }
+
+/* ---------- Horarios del mes ---------- */
+.chicas-horario .chip { flex: none; }
+.resumen-horario { display: flex; align-items: center; gap: 10px; margin: 12px 0 6px; }
+.resumen-horario .avatar { background: var(--c); color: #fff; }
+.resumen-horario span:last-child { display: grid; }
+.leyenda-horario { flex-wrap: wrap; row-gap: 6px; }
+.lh-trabaja { background: color-mix(in srgb, var(--c) 30%, var(--blanco)); border: 1.5px solid var(--c); }
+.lh-libre { background: var(--gris-claro); border: 1.5px dashed var(--gris); }
+.lh-cerrado { background: repeating-linear-gradient(45deg, var(--gris-claro) 0 4px, var(--blanco) 4px 8px); border: 1px solid var(--linea); }
+.punto-propio { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--rosa-deep); }
+.cal-horario { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; margin-top: 8px; }
+.ch-cabeza { font-weight: 700; font-size: .8rem; color: var(--gris); padding: 6px 0; border-radius: 8px; }
+.ch-cabeza:hover { background: var(--gris-claro); }
+.ch-dia { position: relative; display: grid; align-content: start; justify-items: center; gap: 2px; min-height: 58px; padding: 6px 2px; border-radius: 12px; background: var(--blanco); border: 1.5px solid var(--linea); text-align: center; }
+.ch-dia b { font-size: .95rem; }
+.ch-dia small { font-size: .62rem; line-height: 1.1; color: var(--gris); overflow-wrap: anywhere; }
+.ch-dia.trabaja { background: color-mix(in srgb, var(--c) 18%, var(--blanco)); border-color: color-mix(in srgb, var(--c) 55%, var(--blanco)); }
+.ch-dia.trabaja small { color: var(--negro); font-weight: 600; }
+.ch-dia.libre { background: var(--gris-claro); border-style: dashed; }
+.ch-dia.cerrado { background: repeating-linear-gradient(45deg, var(--gris-claro) 0 4px, var(--blanco) 4px 8px); opacity: .7; }
+.ch-dia.hoy b { color: var(--rosa-deep); text-decoration: underline; }
+.ch-dia.elegido { outline: 3px solid var(--rosa-deep); outline-offset: 1px; }
+.ch-dia .punto-propio { position: absolute; top: 5px; right: 5px; width: 6px; height: 6px; }
+@media (min-width: 900px) { .ch-dia { min-height: 70px; } .ch-dia small { font-size: .72rem; } }
+.panel-aplicar { position: sticky; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); z-index: 5; margin-top: 12px; box-shadow: var(--sombra-l); }
+@media (min-width: 900px) { .panel-aplicar { bottom: 12px; } }

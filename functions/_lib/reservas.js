@@ -48,12 +48,13 @@ export async function candidatasPara(db, servicioIds) {
 /** Carga todo lo necesario para calcular turnos entre dos fechas (inclusive). */
 export async function cargarContexto(db, desde, hasta, colabIds) {
   const marcas = colabIds.map(() => '?').join(',') || 'NULL';
-  const [spa, festivos, horarios, bloqueos, citas] = await db.batch([
+  const [spa, festivos, horarios, bloqueos, citas, porFecha] = await db.batch([
     db.prepare('SELECT dia, abierto, abre, cierra FROM horario_spa'),
     db.prepare('SELECT fecha FROM festivos WHERE fecha BETWEEN ? AND ?').bind(desde, hasta),
     db.prepare(`SELECT colaboradora_id, dia, trabaja, abre, cierra FROM horario_colaboradora WHERE colaboradora_id IN (${marcas})`).bind(...colabIds),
     db.prepare(`SELECT colaboradora_id, fecha, inicio, fin FROM bloqueos WHERE fecha BETWEEN ? AND ? AND (colaboradora_id IS NULL OR colaboradora_id IN (${marcas}))`).bind(desde, hasta, ...colabIds),
     db.prepare(`SELECT id, colaboradora_id, fecha, inicio, fin FROM citas WHERE fecha BETWEEN ? AND ? AND estado IN ${ESTADOS_ACTIVOS} AND colaboradora_id IN (${marcas})`).bind(desde, hasta, ...colabIds),
+    db.prepare(`SELECT colaboradora_id, fecha, trabaja, abre, cierra FROM horario_fecha WHERE fecha BETWEEN ? AND ? AND colaboradora_id IN (${marcas})`).bind(desde, hasta, ...colabIds),
   ]);
   return {
     spa: Object.fromEntries(spa.results.map((h) => [h.dia, h])),
@@ -61,6 +62,7 @@ export async function cargarContexto(db, desde, hasta, colabIds) {
     horarios: horarios.results,
     bloqueos: bloqueos.results,
     citas: citas.results,
+    porFecha: porFecha.results,
   };
 }
 
@@ -68,6 +70,8 @@ export function turnosConContexto(ctx, { fecha, duracion, candidatas, ajustes, a
   const dia = diaSemana(fecha);
   const horariosColab = {};
   for (const h of ctx.horarios) if (h.dia === dia) horariosColab[h.colaboradora_id] = h;
+  // El horario del mes (por fecha) manda sobre la semana tipo.
+  for (const h of ctx.porFecha || []) if (h.fecha === fecha) horariosColab[h.colaboradora_id] = h;
   return turnosDelDia({
     fecha, duracion, candidatas, ajustes, ahora, personal, ignorarCita,
     horarioSpa: ctx.spa[dia],
