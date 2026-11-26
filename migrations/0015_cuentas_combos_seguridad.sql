@@ -38,23 +38,25 @@ ALTER TABLE pagos ADD COLUMN colaboradora_id INTEGER;
 UPDATE pagos SET colaboradora_id = (SELECT colaboradora_id FROM citas WHERE citas.id = pagos.cita_id);
 
 -- Ventas sin cita (llegó sin agendar, un producto, un retoque).
-CREATE TABLE ventas (
+-- La base real ya tenía una tabla `ventas` vacía (creada el 24 nov por 0014_contabilidad): se conserva y se le
+-- agregan las columnas que faltan. En una base nueva se crea con la misma forma y luego se completa igual.
+CREATE TABLE IF NOT EXISTS ventas (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  fecha TEXT NOT NULL,
-  concepto TEXT NOT NULL,
-  servicio_id INTEGER REFERENCES servicios(id) ON DELETE SET NULL,
   colaboradora_id INTEGER REFERENCES colaboradoras(id) ON DELETE SET NULL,
-  clienta_id INTEGER REFERENCES clientas(id) ON DELETE SET NULL,
+  concepto TEXT NOT NULL,
   monto INTEGER NOT NULL CHECK (monto >= 0),
   propina INTEGER NOT NULL DEFAULT 0 CHECK (propina >= 0),
-  metodo TEXT NOT NULL,
-  comision INTEGER,
-  costo INTEGER NOT NULL DEFAULT 0,
-  nota TEXT NOT NULL DEFAULT '',
+  metodo TEXT NOT NULL DEFAULT 'efectivo',
+  fecha TEXT NOT NULL,
   registrado_por INTEGER,
   creado TEXT NOT NULL DEFAULT (datetime('now'))
 );
-CREATE INDEX idx_ventas_fecha ON ventas(fecha);
+CREATE INDEX IF NOT EXISTS idx_ventas_fecha ON ventas(fecha);
+ALTER TABLE ventas ADD COLUMN servicio_id INTEGER REFERENCES servicios(id) ON DELETE SET NULL;
+ALTER TABLE ventas ADD COLUMN clienta_id INTEGER REFERENCES clientas(id) ON DELETE SET NULL;
+ALTER TABLE ventas ADD COLUMN comision INTEGER;
+ALTER TABLE ventas ADD COLUMN costo INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE ventas ADD COLUMN nota TEXT NOT NULL DEFAULT '';
 
 -- ---------- gastos ----------
 CREATE TABLE gasto_categorias (
@@ -68,18 +70,22 @@ INSERT INTO gasto_categorias (nombre, color, orden) VALUES
   ('Insumos y materiales', '#7A6494', 1), ('Arriendo', '#5E4570', 2), ('Servicios públicos', '#2F6F8F', 3),
   ('Nómina y pagos', '#2E7D5B', 4), ('Publicidad', '#C4628F', 5), ('Transporte', '#8A6C82', 6),
   ('Cafetería y antojos', '#B4581D', 7), ('Mantenimiento', '#6E6776', 8), ('Otros', '#9C8FA8', 9);
-CREATE TABLE gastos (
+-- `gastos` también existía vacía en la base real (misma situación que `ventas`): se conserva y se completa.
+CREATE TABLE IF NOT EXISTS gastos (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  fecha TEXT NOT NULL,
-  categoria_id INTEGER REFERENCES gasto_categorias(id) ON DELETE SET NULL,
-  concepto TEXT NOT NULL,
+  tipo TEXT NOT NULL CHECK (tipo IN ('fijo','variable')),
+  categoria TEXT NOT NULL DEFAULT 'Otro',
+  descripcion TEXT NOT NULL DEFAULT '',
   monto INTEGER NOT NULL CHECK (monto > 0),
   metodo TEXT NOT NULL DEFAULT 'efectivo',
-  nota TEXT NOT NULL DEFAULT '',
+  fecha TEXT NOT NULL,
+  gasto_fijo_id INTEGER,
   registrado_por INTEGER,
   creado TEXT NOT NULL DEFAULT (datetime('now'))
 );
-CREATE INDEX idx_gastos_fecha ON gastos(fecha);
+CREATE INDEX IF NOT EXISTS idx_gastos_fecha ON gastos(fecha);
+ALTER TABLE gastos ADD COLUMN categoria_id INTEGER REFERENCES gasto_categorias(id) ON DELETE SET NULL;
+ALTER TABLE gastos ADD COLUMN nota TEXT NOT NULL DEFAULT '';
 
 -- ---------- metas de ahorro / inversión ----------
 CREATE TABLE metas (

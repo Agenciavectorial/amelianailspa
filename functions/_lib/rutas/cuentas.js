@@ -111,7 +111,7 @@ export function rutasCuentas(r) {
     }
     const [{ partes, movimientos }, gas, ajustes, colab] = await Promise.all([
       partesDeIngresos(db, desde, hasta),
-      db.prepare(`SELECT g.id, g.fecha, g.concepto, g.monto, g.metodo, g.nota, g.categoria_id, gc.nombre AS categoria, gc.color
+      db.prepare(`SELECT g.id, g.fecha, g.descripcion AS concepto, g.monto, g.metodo, g.nota, g.categoria_id, gc.nombre AS categoria, gc.color
                     FROM gastos g LEFT JOIN gasto_categorias gc ON gc.id = g.categoria_id WHERE g.fecha BETWEEN ? AND ? ORDER BY g.fecha DESC, g.id DESC`).bind(desde, hasta).all(),
       leerAjustes(db),
       db.prepare('SELECT id, nombre, color FROM colaboradoras').all(),
@@ -249,7 +249,7 @@ export function rutasCuentas(r) {
     // Sin categoría elegida va a "Otros" (así nada queda suelto en el resumen).
     if (d[1] == null) d[1] = (await db.prepare("SELECT id FROM gasto_categorias WHERE nombre = 'Otros'").first())?.id ?? null;
     const [ins] = await db.batch([
-      db.prepare('INSERT INTO gastos (fecha, categoria_id, concepto, monto, metodo, nota, registrado_por) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id').bind(...d, sesion.id),
+      db.prepare("INSERT INTO gastos (tipo, fecha, categoria_id, descripcion, monto, metodo, nota, registrado_por) VALUES ('variable', ?, ?, ?, ?, ?, ?, ?) RETURNING id").bind(...d, sesion.id),
       marcar(db, sesion, 'gasto', `${d[3]}`),
     ]);
     return { id: ins.results[0].id };
@@ -257,7 +257,7 @@ export function rutasCuentas(r) {
   r.put('/api/panel/gastos/:id', 'propietaria', async ({ db, sesion, params, body }) => {
     const id = v.entero(Number(params.id), 'gasto', { min: 1 });
     await db.batch([
-      db.prepare('UPDATE gastos SET fecha = ?, categoria_id = ?, concepto = ?, monto = ?, metodo = ?, nota = ? WHERE id = ?').bind(...datosGasto(body), id),
+      db.prepare('UPDATE gastos SET fecha = ?, categoria_id = ?, descripcion = ?, monto = ?, metodo = ?, nota = ? WHERE id = ?').bind(...datosGasto(body), id),
       marcar(db, sesion, 'gasto', String(id)),
     ]);
     return { ok: true };
