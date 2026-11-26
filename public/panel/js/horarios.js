@@ -1,8 +1,8 @@
 // Horarios del mes: Erika arma el horario de cada chica día por día (todo el mes, o el que quiera).
 // Lo que se pone aquí manda sobre la semana tipo solo en esas fechas; las reservas en línea lo respetan.
 // Uso: elegir chica → tocar días (o una columna para "todos los lunes") → Trabaja / Libre / Semana tipo → Aplicar.
-import { api, html, crudo, pintar, $, $$, toast, ocupado, confirmar, aMin, ICONOS, inicial } from '/app-citas/js/util.js?v=63bc4ab2f0';
-import { S, esDuena, horarioSpa, recargar } from './estado.js?v=63bc4ab2f0';
+import { api, html, crudo, pintar, $, $$, toast, ocupado, confirmar, aMin, ICONOS, inicial } from '/app-citas/js/util.js?v=dc24d1e190';
+import { S, esDuena, horarioSpa, recargar } from './estado.js?v=dc24d1e190';
 
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 const CABEZA = [['L', 1], ['M', 2], ['M', 3], ['J', 4], ['V', 5], ['S', 6], ['D', 0]];

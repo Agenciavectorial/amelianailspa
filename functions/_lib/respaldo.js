@@ -61,6 +61,11 @@ export async function hacerRespaldo(env, { motivo = 'diario' } = {}) {
     await env.RESPALDOS.put(clave, gz, { httpMetadata: { contentType: 'application/gzip' } });
     destino = 'r2';
   }
+  // Copia fuera de la base en un espacio KV de Cloudflare (binding RESPALDOS_KV), si existe: vence a los 35 días.
+  if (env.RESPALDOS_KV) {
+    await env.RESPALDOS_KV.put(`base-${fecha}${motivo === 'diario' ? '' : '-' + motivo + '-' + Date.now().toString(36)}`, gz, { expirationTtl: 35 * 86400 });
+    if (destino === 'd1') destino = 'kv';
+  }
   // En la base solo si cabe (límite de D1 por fila ~2 MB). Si no cabe y no hay R2, se avisa en el registro.
   const cabe = gz.byteLength < 1_900_000;
   const f = await db.prepare('INSERT INTO respaldos (fecha, destino, clave, bytes, filas, datos) VALUES (?, ?, ?, ?, ?, ?) RETURNING id')

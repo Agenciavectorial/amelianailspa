@@ -1,7 +1,7 @@
 // Promociones (Erika): aparecen arriba en la app/página de reservas mientras estén vigentes.
-import { api, html, crudo, pintar, $, toast, ocupado, confirmar, abrirHoja, cerrarHoja, dinero, fechaLarga, ICONOS, foto, SITIO } from '/app-citas/js/util.js?v=63bc4ab2f0';
-import { S } from './estado.js?v=63bc4ab2f0';
-import { elegirMedio } from './galeria.js?v=63bc4ab2f0';
+import { api, html, crudo, pintar, $, toast, ocupado, confirmar, abrirHoja, cerrarHoja, dinero, fechaLarga, ICONOS, foto, SITIO } from '/app-citas/js/util.js?v=dc24d1e190';
+import { S } from './estado.js?v=dc24d1e190';
+import { elegirMedio, campoFoto, conectarCampoFoto } from './galeria.js?v=dc24d1e190';
 
 export async function vista(v) {
   const { promociones } = await api('/api/panel/promociones');
@@ -39,7 +39,8 @@ function editar(p, v, forzarNueva) {
         <label class="campo"><span>Desde</span><input name="desde" type="date" value="${p.desde}"></label>
         <label class="campo"><span>Hasta</span><input name="hasta" type="date" value="${p.hasta}"></label>
       </div>
-      <div class="campo"><span>Foto</span><div class="fila-forzar"><input name="foto" class="input" value="${p.foto}" placeholder="Elige o pega un enlace"><button type="button" class="btn sec chico" id="elegirFotoPromo">Elegir</button></div></div>
+      ${campoFoto(p.foto, 'Foto')}
+      <button type="button" class="btn ghost chico" id="elegirFotoPromo">Elegir de las fotos del spa</button>
       <label class="interruptor"><input type="checkbox" name="activa" ${p.activa ? crudo('checked') : ''}> Activa</label>
       <p class="muted small">La clienta ve la promo con su precio y un botón <strong>Agendar</strong> que abre la reserva con el servicio ya elegido. La cita queda con el precio de la promo.</p>
       ${nueva ? '' : html`<div class="campo"><span>Enlace directo de la promoción</span><div class="feed"><code>${SITIO}/reservar/?promo=${p.id}</code></div><button type="button" class="btn sec chico" id="copiarPromo">${crudo(ICONOS.copiar)} Copiar enlace</button></div>`}
@@ -48,6 +49,7 @@ function editar(p, v, forzarNueva) {
       ${nueva ? '' : html`<button type="button" class="btn ghost bloque" id="borrarPromo">Eliminar</button>`}
     </form>`);
   const f = $('#formPromo', h);
+  conectarCampoFoto(h);
   $('#elegirFotoPromo', h).onclick = async () => {
     const datos = { titulo: f.titulo.value, descripcion: f.descripcion.value, servicio_id: f.servicio_id.value ? Number(f.servicio_id.value) : null, precio_promo: f.precio_promo.value === '' ? null : Number(f.precio_promo.value), desde: f.desde.value, hasta: f.hasta.value, activa: f.activa.checked ? 1 : 0, orden: p.orden, id: p.id };
     const m = await elegirMedio({ titulo: 'Foto de la promoción' });

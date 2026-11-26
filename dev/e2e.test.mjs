@@ -644,6 +644,48 @@ test('horario del mes: Erika ajusta días puntuales y las reservas en línea lo 
   assert.equal((await erika.pedir(`/api/panel/horario-mes/${ids.karla}`, { metodo: 'PUT', datos: { cambios: [{ fecha: F, modo: 'trabaja', abre: '16:00', cierra: '14:00' }] } })).status, 400);
 });
 
+test('navegador: botón Subir foto en la ficha del servicio y de la profesional (sin salir de la ficha)', { skip: !chromium && 'Playwright no disponible' }, async () => {
+  const b = await chromium.launch();
+  try {
+    const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    await ctx.addInitScript(() => { try { localStorage.setItem('amelia_tour_omitir', '1'); } catch { /* nada */ } });
+    const p = await ctx.newPage();
+    const errores = [];
+    p.on('pageerror', (e) => errores.push(e.message));
+    await p.goto(`${base}/panel/`, { waitUntil: 'networkidle' });
+    await p.click('.persona >> text=Erika');
+    for (const d of '246813') await p.click(`.tecla[data-n="${d}"]`);
+    await p.click('#entrar');
+    await p.waitForSelector('.dock');
+    // Servicio
+    await p.goto(`${base}/panel/#/servicios`);
+    await p.click('.fila-servicio >> text=Forrado');
+    await p.waitForSelector('#formServ .campo-foto');
+    await p.fill('#formServ [name=descripcion]', 'Texto escrito antes de subir la foto');
+    await p.setInputFiles('#formServ .subir-foto input[type=file]', 'public/app-citas/img/icono-192.png');
+    await p.waitForFunction(() => document.querySelector('#formServ [name=foto]').value.startsWith('/api/medios/'), null, { timeout: 15000 });
+    assert.equal(await p.inputValue('#formServ [name=descripcion]'), 'Texto escrito antes de subir la foto', 'no se pierde lo escrito');
+    assert.match(await p.textContent('#formServ .estado-foto'), /Foto lista/);
+    const url = await p.inputValue('#formServ [name=foto]');
+    await p.click('#guardarServ');
+    await p.waitForSelector('#formServ', { state: 'detached' });
+    const cat = await cliente(base).pedir('/api/public/catalogo');
+    assert.equal(cat.cuerpo.servicios.find((s) => s.slug === 'forrado').foto, url);
+    assert.equal((await fetch(base + url)).status, 200);
+    // Profesional
+    await p.goto(`${base}/panel/#/equipo`);
+    await p.click('.tarjeta-equipo >> text=Daily');
+    await p.waitForSelector('#formColab .campo-foto');
+    await p.setInputFiles('#formColab .subir-foto input[type=file]', 'public/app-citas/img/icono-192.png');
+    await p.waitForFunction(() => document.querySelector('#formColab [name=foto]').value.startsWith('/api/medios/'), null, { timeout: 15000 });
+    await p.click('#guardarColab');
+    await p.waitForSelector('#formColab', { state: 'detached' });
+    const cat2 = await cliente(base).pedir('/api/public/catalogo');
+    assert.match(cat2.cuerpo.colaboradoras.find((c) => c.slug === 'daily').foto, /^\/api\/medios\//);
+    assert.deepEqual(errores, []);
+  } finally { await b.close(); }
+});
+
 test('notificaciones push: equipo avisado de citas nuevas, recordatorios al agendar, el mismo día y 1 h antes a la clienta, sin duplicados', async () => {
   const { descifrarPush } = await import('../tests/ayuda-push.mjs');
   const navegador = async (nombre) => {

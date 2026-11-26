@@ -1,7 +1,7 @@
 // Mensajes (Erika): edita los textos que se envían a las clientas.
-import { api, html, pintar, $$, toast, ocupado } from '/app-citas/js/util.js?v=63bc4ab2f0';
-import { S, recargar } from './estado.js?v=63bc4ab2f0';
-import { VARIABLES, rellenar } from './mensajes.js?v=63bc4ab2f0';
+import { api, html, pintar, $$, toast, ocupado } from '/app-citas/js/util.js?v=dc24d1e190';
+import { S, recargar } from './estado.js?v=dc24d1e190';
+import { VARIABLES, rellenar } from './mensajes.js?v=dc24d1e190';
 
 const EJEMPLO = { nombre: 'Laura', servicio: 'Semipermanente', fecha: 'viernes 5 de diciembre', hora: '10:30 a. m.', colaboradora: 'Karla', codigo: 'AM-7K3PQX', enlace: 'https://amelianailspa.com/reservar/cita/#…', resena: '', spa: 'Amelia Nail Spa', direccion: '' };
 

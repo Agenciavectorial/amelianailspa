@@ -22,3 +22,9 @@ database_id = "426435a8-c159-4f56-9b7d-a7ea37f9df1d"
 # [[r2_buckets]]
 # binding = "RESPALDOS"
 # bucket_name = "amelia-respaldos"
+
+# Opcional (recomendado mientras no haya R2): copia diaria fuera de la base en un espacio KV.
+#   npx wrangler kv namespace create amelia-respaldos   → copiar el id aquí y quitar el comentario:
+# [[kv_namespaces]]
+# binding = "RESPALDOS_KV"
+# id = "<id del espacio KV>"

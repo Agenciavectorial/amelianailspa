@@ -1,6 +1,6 @@
 // Editor de galería (fotos y videos por servicio) y selector de imagen reutilizable
 // (galerías, promociones, portada de la reserva y foto de perfil).
-import { api, html, crudo, pintar, $, $$, toast, ocupado, abrirHoja, cerrarHoja, ICONOS, foto } from '/app-citas/js/util.js?v=63bc4ab2f0';
+import { api, html, crudo, pintar, $, $$, toast, ocupado, abrirHoja, cerrarHoja, ICONOS, foto } from '/app-citas/js/util.js?v=dc24d1e190';
 
 let fotosSpa = null;
 async function cargarFotosSpa() {
@@ -35,6 +35,36 @@ export async function comprimirFoto(archivo, { lado = 1600, calidad = 0.82 } = {
   // Safari viejo no sabe hacer WebP: devuelve PNG; en ese caso, JPG.
   if (!blob || blob.type !== 'image/webp') blob = await new Promise((ok) => c.toBlob(ok, 'image/jpeg', calidad));
   return blob && blob.size < archivo.size ? blob : archivo;
+}
+
+/**
+ * Campo de foto con botón "Subir foto" directo (sin salir de la ficha, así no se pierde lo ya escrito).
+ * El campo de texto sigue aceptando un enlace o una ruta del sitio. Conectar con conectarCampoFoto(hoja).
+ */
+export function campoFoto(valor, etiqueta = 'Foto') {
+  return html`<div class="campo campo-foto"><span>${etiqueta}</span>
+    <div class="fila-forzar"><input name="foto" type="text" class="input" value="${valor || ''}" placeholder="Sube una foto o pega un enlace">
+      <label class="btn sec chico subir-foto">Subir foto<input type="file" accept="image/*" class="sr"></label></div>
+    <small class="muted estado-foto" aria-live="polite"></small></div>`;
+}
+
+export function conectarCampoFoto(raiz) {
+  for (const c of raiz.querySelectorAll('.campo-foto')) {
+    const entrada = c.querySelector('input[name="foto"]');
+    const archivo = c.querySelector('input[type=file]');
+    const estado = c.querySelector('.estado-foto');
+    archivo.onchange = async () => {
+      const f = archivo.files[0];
+      if (!f) return;
+      estado.textContent = 'Subiendo…';
+      try {
+        entrada.value = await subirArchivo(f);
+        entrada.dispatchEvent(new Event('input', { bubbles: true }));
+        estado.textContent = 'Foto lista. Toca Guardar para dejarla.';
+      } catch (e) { estado.textContent = e.message; }
+      archivo.value = '';
+    };
+  }
 }
 
 export async function subirArchivo(original) {

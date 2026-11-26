@@ -2,8 +2,8 @@
 // - Erika: ingresos por día/semana/mes, por servicio y por chica, ticket promedio, servicio más rentable, gastos con
 //   categorías y alerta de gastos hormiga, comisiones, metas de ahorro/inversión y deudas con cuotas.
 // - Cada chica: SOLO lo suyo (servicios de hoy, de la semana y del mes, y cuánto gana).
-import { api, html, crudo, pintar, $, $$, toast, ocupado, confirmar, abrirHoja, cerrarHoja, dinero, fechaCorta, sumarDias, ICONOS } from '/app-citas/js/util.js?v=63bc4ab2f0';
-import { S, esDuena, puede } from './estado.js?v=63bc4ab2f0';
+import { api, html, crudo, pintar, $, $$, toast, ocupado, confirmar, abrirHoja, cerrarHoja, dinero, fechaCorta, sumarDias, ICONOS } from '/app-citas/js/util.js?v=dc24d1e190';
+import { S, esDuena, puede } from './estado.js?v=dc24d1e190';
 
 export const METODOS = { efectivo: 'Efectivo', nequi: 'Nequi', daviplata: 'Daviplata', tarjeta: 'Tarjeta', transferencia: 'Transferencia', otro: 'Otro' };
 const PESTANAS = [['resumen', 'Resumen'], ['movimientos', 'Ventas'], ['gastos', 'Gastos'], ['comisiones', 'Comisiones'], ['metas', 'Metas'], ['deudas', 'Deudas']];

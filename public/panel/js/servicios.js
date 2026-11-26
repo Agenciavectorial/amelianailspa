@@ -1,7 +1,7 @@
 // Servicios (solo Erika): catálogo con foto, precio, duración, quién lo hace y visibilidad.
-import { api, html, crudo, pintar, $, $$, toast, ocupado, confirmar, abrirHoja, cerrarHoja, duracion, dinero, ICONOS, foto, SITIO } from '/app-citas/js/util.js?v=63bc4ab2f0';
-import { S, recargar, categorias, conAgenda } from './estado.js?v=63bc4ab2f0';
-import { editorGaleria, elegirMedio, agregarAGaleria } from './galeria.js?v=63bc4ab2f0';
+import { api, html, crudo, pintar, $, $$, toast, ocupado, confirmar, abrirHoja, cerrarHoja, duracion, dinero, ICONOS, foto, SITIO } from '/app-citas/js/util.js?v=dc24d1e190';
+import { S, recargar, categorias, conAgenda } from './estado.js?v=dc24d1e190';
+import { editorGaleria, elegirMedio, agregarAGaleria, campoFoto, conectarCampoFoto } from './galeria.js?v=dc24d1e190';
 
 /** Enlace directo que abre la reserva con ese servicio o combo ya elegido. */
 export const enlaceServicio = (sv) => `${SITIO}/reservar/?servicio=${encodeURIComponent(sv.slug)}`;
@@ -88,7 +88,8 @@ function editar(s, v, pestana = 'datos') {
       <label class="campo"><span>Ciclo de retorno (días)</span><input name="ciclo_dias" type="number" min="1" max="365" value="${s.ciclo_dias ?? ''}" placeholder="Ej. 21">
         <span class="ayuda">Cada cuánto suele volver una clienta por este servicio. Se usa en Fidelización para recordarle.</span></label>
       <label class="campo"><span>Descripción</span><textarea name="descripcion" maxlength="500">${s.descripcion}</textarea></label>
-      <div class="campo"><span>Foto</span><div class="fila-forzar"><input name="foto" class="input" value="${s.foto}" placeholder="Sube una foto o elige una del spa"><button type="button" class="btn sec chico" id="subirFotoServ">Subir o elegir</button></div></div>
+      ${campoFoto(s.foto, 'Foto principal')}
+      <button type="button" class="btn ghost chico" id="subirFotoServ">Elegir de las fotos del spa</button>
       <div class="campo"><span>¿Quién lo hace?</span>
         <div class="chips-serv">${S.colaboradoras.filter((c) => c.activa && c.agenda).map((c) => html`<label class="chip-check"><input type="checkbox" name="quien" value="${c.id}" ${quienes.has(c.id) ? crudo('checked') : ''}><span>${c.nombre}</span></label>`)}</div>
       </div>
@@ -139,7 +140,8 @@ function editar(s, v, pestana = 'datos') {
       for (const q of $$('[name=quien]', f)) q.checked = pueden.has(Number(q.value));
     }
   });
-  f.foto.oninput = () => { const p = $('#prevFoto', h); p.hidden = !f.foto.value; if (f.foto.value.startsWith('https://')) p.src = f.foto.value; };
+  conectarCampoFoto(h);
+  f.foto.oninput = () => { const p = $('#prevFoto', h); p.hidden = !f.foto.value; if (/^(https:\/\/|\/)/.test(f.foto.value)) p.src = f.foto.value; };
   f.onsubmit = (e) => {
     e.preventDefault();
     ocupado($('#guardarServ', h), async () => {

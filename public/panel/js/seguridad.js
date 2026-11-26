@@ -1,6 +1,6 @@
 // Seguridad y respaldos (Erika): botón de emergencia para pausar las reservas en línea, revisión y borrado en
 // bloque de reservas sospechosas, y copias de seguridad (automáticas cada día + manual + descarga).
-import { api, html, crudo, pintar, $, $$, toast, ocupado, confirmar, fechaCorta, hora, ICONOS } from '/app-citas/js/util.js?v=63bc4ab2f0';
+import { api, html, crudo, pintar, $, $$, toast, ocupado, confirmar, fechaCorta, hora, ICONOS } from '/app-citas/js/util.js?v=dc24d1e190';
 
 let horas = 48;
 

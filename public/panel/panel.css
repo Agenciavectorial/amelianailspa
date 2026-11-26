@@ -604,3 +604,6 @@ a.stat { text-decoration: none; color: inherit; }
 @media (min-width: 900px) { .ch-dia { min-height: 70px; } .ch-dia small { font-size: .72rem; } }
 .panel-aplicar { position: sticky; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); z-index: 5; margin-top: 12px; box-shadow: var(--sombra-l); }
 @media (min-width: 900px) { .panel-aplicar { bottom: 12px; } }
+.campo-foto .fila-forzar input[type=text] { flex: 1; min-width: 0; }
+.subir-foto { white-space: nowrap; position: relative; }
+.estado-foto:empty { display: none; }
