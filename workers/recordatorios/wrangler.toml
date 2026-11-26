@@ -24,7 +24,7 @@ database_id = "426435a8-c159-4f56-9b7d-a7ea37f9df1d"
 # bucket_name = "amelia-respaldos"
 
 # Opcional (recomendado mientras no haya R2): copia diaria fuera de la base en un espacio KV.
-#   npx wrangler kv namespace create amelia-respaldos   → copiar el id aquí y quitar el comentario:
-# [[kv_namespaces]]
-# binding = "RESPALDOS_KV"
-# id = "<id del espacio KV>"
+# Espacio KV amelia-respaldos: el respaldo diario (desde las 3:00 a. m., ver respaldo.js) también se guarda aquí 35 días.
+[[kv_namespaces]]
+binding = "RESPALDOS_KV"
+id = "fa5481e9302542c5b92f295bf9776ffb"   # amelia-respaldos (el id no es secreto)
