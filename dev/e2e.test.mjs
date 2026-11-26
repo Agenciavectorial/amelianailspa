@@ -686,6 +686,56 @@ test('navegador: botón Subir foto en la ficha del servicio y de la profesional 
   } finally { await b.close(); }
 });
 
+test('navegador: categoría en lista desplegable, crear una nueva y renombrar una mal escrita', { skip: !chromium && 'Playwright no disponible' }, async () => {
+  const karla = cliente(base);
+  await karla.pedir('/api/auth/login', { metodo: 'POST', datos: { id: ids.karla, pin: '135792' } });
+  assert.equal((await karla.pedir('/api/panel/categorias', { metodo: 'PUT', datos: { de: 'Uñas', a: 'X' } })).status, 403, 'solo Erika');
+  const b = await chromium.launch();
+  try {
+    const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    await ctx.addInitScript(() => { try { localStorage.setItem('amelia_tour_omitir', '1'); } catch { /* nada */ } });
+    const p = await ctx.newPage();
+    const errores = [];
+    p.on('pageerror', (e) => errores.push(e.message));
+    await p.goto(`${base}/panel/`, { waitUntil: 'networkidle' });
+    await p.click('.persona >> text=Erika');
+    for (const d of '246813') await p.click(`.tecla[data-n="${d}"]`);
+    await p.click('#entrar');
+    await p.waitForSelector('.dock');
+    await p.goto(`${base}/panel/#/servicios`);
+    await p.click('#nuevoServ');
+    await p.waitForSelector('#formServ [name=categoria_sel]');
+    const opciones = await p.$$eval('#formServ [name=categoria_sel] option', (o) => o.map((x) => x.value));
+    assert.ok(opciones.includes('Uñas') && opciones.includes('__nueva'), opciones.join(','));
+    // Categoría nueva (mal escrita a propósito)
+    await p.selectOption('#formServ [name=categoria_sel]', '__nueva');
+    await p.fill('#formServ [name=categoria]', 'Masajez');
+    await p.fill('#formServ [name=nombre]', 'Masaje de manos');
+    await p.fill('#formServ [name=duracion]', '30');
+    await p.click('#guardarServ');
+    await p.waitForSelector('#formServ', { state: 'detached' });
+    let arr = (await erika.pedir('/api/panel/arranque')).cuerpo;
+    assert.equal(arr.servicios.find((s) => s.nombre === 'Masaje de manos').categoria, 'Masajez');
+    // Renombrarla desde "Categorías"
+    await p.click('#editarCats');
+    await p.waitForSelector('.fila-cat-serv[data-de="Masajez"]');
+    await p.fill('.fila-cat-serv[data-de="Masajez"] [name=a]', 'Masajes');
+    await p.click('.fila-cat-serv[data-de="Masajez"] .btn');
+    await p.waitForSelector('.fila-cat-serv[data-de="Masajes"]');
+    arr = (await erika.pedir('/api/panel/arranque')).cuerpo;
+    assert.equal(arr.servicios.find((s) => s.nombre === 'Masaje de manos').categoria, 'Masajes');
+    assert.ok(!arr.servicios.some((s) => s.categoria === 'Masajez'));
+    // Al editar, la lista trae la categoría actual elegida
+    await p.click('[data-cerrar]');
+    await p.click('.fila-servicio >> text=Masaje de manos');
+    await p.waitForSelector('#formServ [name=categoria_sel]');
+    assert.equal(await p.inputValue('#formServ [name=categoria_sel]'), 'Masajes');
+    assert.deepEqual(errores, []);
+    const id = arr.servicios.find((s) => s.nombre === 'Masaje de manos').id;
+    await erika.pedir(`/api/panel/servicios/${id}`, { metodo: 'DELETE' });
+  } finally { await b.close(); }
+});
+
 test('notificaciones push: equipo avisado de citas nuevas, recordatorios al agendar, el mismo día y 1 h antes a la clienta, sin duplicados', async () => {
   const { descifrarPush } = await import('../tests/ayuda-push.mjs');
   const navegador = async (nombre) => {

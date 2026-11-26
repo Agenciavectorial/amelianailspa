@@ -1,7 +1,7 @@
 // Servicios (solo Erika): catálogo con foto, precio, duración, quién lo hace y visibilidad.
-import { api, html, crudo, pintar, $, $$, toast, ocupado, confirmar, abrirHoja, cerrarHoja, duracion, dinero, ICONOS, foto, SITIO } from '/app-citas/js/util.js?v=dc24d1e190';
-import { S, recargar, categorias, conAgenda } from './estado.js?v=dc24d1e190';
-import { editorGaleria, elegirMedio, agregarAGaleria, campoFoto, conectarCampoFoto } from './galeria.js?v=dc24d1e190';
+import { api, html, crudo, pintar, $, $$, toast, ocupado, confirmar, abrirHoja, cerrarHoja, duracion, dinero, ICONOS, foto, SITIO } from '/app-citas/js/util.js?v=7462d0b2a7';
+import { S, recargar, categorias, conAgenda } from './estado.js?v=7462d0b2a7';
+import { editorGaleria, elegirMedio, agregarAGaleria, campoFoto, conectarCampoFoto } from './galeria.js?v=7462d0b2a7';
 
 /** Enlace directo que abre la reserva con ese servicio o combo ya elegido. */
 export const enlaceServicio = (sv) => `${SITIO}/reservar/?servicio=${encodeURIComponent(sv.slug)}`;
@@ -31,7 +31,7 @@ export async function vista(v) {
   pintar(v, html`
     <header class="cabeza-vista">
       <div><span class="script">Catálogo</span><h1>Servicios y <em>combos</em></h1></div>
-      <div class="fila-botones"><button class="btn chico" id="nuevoCombo">${crudo(ICONOS.chispa)} Combo</button><button class="btn sec chico" id="nuevoServ">${crudo(ICONOS.mas)} Servicio</button></div>
+      <div class="fila-botones"><button class="btn chico" id="nuevoCombo">${crudo(ICONOS.chispa)} Combo</button><button class="btn sec chico" id="nuevoServ">${crudo(ICONOS.mas)} Servicio</button><button class="btn ghost chico" id="editarCats">Categorías</button></div>
     </header>
     <p class="muted small">Toca ${crudo(ICONOS.copiar)} para copiar el enlace que abre la reserva con ese servicio ya elegido (para WhatsApp, Instagram o estados).</p>
     <section class="bloque-inicio bloque-combos">
@@ -46,6 +46,7 @@ export async function vista(v) {
       </section>`)}`);
   $('#nuevoServ').onclick = () => editar(null, v);
   $('#nuevoCombo').onclick = () => editar({ tipo: 'combo' }, v);
+  $('#editarCats').onclick = () => editarCategorias(v);
   v.onclick = (e) => {
     const c = e.target.closest('[data-copiar]');
     if (c) return copiarEnlace(S.servicios.find((s) => s.id === Number(c.dataset.copiar)));
@@ -71,10 +72,12 @@ function editar(s, v, pestana = 'datos') {
         <div class="chips-serv" id="armarCombo">${S.servicios.filter((x) => x.tipo !== 'combo' && x.visible).map((x) => html`<label class="chip-check"><input type="checkbox" value="${x.id}" ${s.incluye.split('\n').includes(x.nombre) ? crudo('checked') : ''}><span>${x.nombre}</span></label>`)}</div></div>
         <label class="campo"><span>Qué incluye (uno por línea)</span><textarea name="incluye" maxlength="600" rows="3" placeholder="Manicure semipermanente&#10;Pedicure semipermanente">${s.incluye}</textarea></label>` : ''}
       <div class="dos-col">
-        <label class="campo"><span>Categoría</span><input name="categoria" list="listaCats" maxlength="40" value="${s.categoria}"></label>
+        <label class="campo"><span>Categoría</span><select name="categoria_sel">
+          ${[...new Set([...categorias(), s.categoria].filter(Boolean))].map((c) => html`<option value="${c}" ${c === s.categoria ? crudo('selected') : ''}>${c}</option>`)}
+          <option value="__nueva">+ Nueva categoría…</option></select>
+          <input name="categoria" maxlength="40" value="${s.categoria}" placeholder="Nombre de la categoría nueva" hidden></label>
         <label class="campo"><span>Duración (min)</span><input name="duracion" type="number" min="5" max="720" step="5" required value="${s.duracion}"></label>
       </div>
-      <datalist id="listaCats">${categorias().map((c) => html`<option value="${c}">`)}</datalist>
       <div class="dos-col">
         <label class="campo"><span>Precio (COP)</span><input name="precio" type="number" inputmode="numeric" min="0" step="1000" value="${s.precio ?? ''}" placeholder="Vacío = a consultar"></label>
         <label class="campo"><span>${esCombo ? 'Precio por separado (tachado)' : 'Precio antes (tachado, opcional)'}</span><input name="precio_antes" type="number" inputmode="numeric" min="0" step="1000" value="${s.precio_antes ?? ''}"></label>
@@ -122,6 +125,13 @@ function editar(s, v, pestana = 'datos') {
     });
   }
   $('#copiarServ', h)?.addEventListener('click', () => copiarEnlace(s));
+  // Categoría: lista desplegable con las que ya existen, o una nueva escribiendo el nombre.
+  f.categoria_sel.onchange = () => {
+    const nueva = f.categoria_sel.value === '__nueva';
+    f.categoria.hidden = !nueva;
+    f.categoria.value = nueva ? '' : f.categoria_sel.value;
+    if (nueva) f.categoria.focus();
+  };
   $('#subirFotoServ', h).onclick = async () => {
     const m = await elegirMedio({ titulo: `Foto de ${f.nombre.value || 'servicio'}` });
     if (m) { f.foto.value = m.url; const p = $('#prevFoto', h); p.hidden = false; p.src = m.url; }
@@ -146,7 +156,7 @@ function editar(s, v, pestana = 'datos') {
     e.preventDefault();
     ocupado($('#guardarServ', h), async () => {
       const datos = {
-        nombre: f.nombre.value, categoria: f.categoria.value, duracion: Number(f.duracion.value), precio: f.precio.value === '' ? null : Number(f.precio.value),
+        nombre: f.nombre.value, categoria: (f.categoria_sel.value === '__nueva' ? f.categoria.value : f.categoria_sel.value).trim(), duracion: Number(f.duracion.value), precio: f.precio.value === '' ? null : Number(f.precio.value),
         precio_antes: f.precio_antes.value === '' ? null : Number(f.precio_antes.value), costo: f.costo.value === '' ? 0 : Number(f.costo.value),
         destacado: f.destacado.checked, tipo: s.tipo, incluye: f.incluye ? f.incluye.value : '',
         precio_desde: f.precio_desde.checked, ciclo_dias: f.ciclo_dias.value === '' ? null : Number(f.ciclo_dias.value), descripcion: f.descripcion.value, foto: f.foto.value, visible: f.visible.checked, orden: Number(f.orden.value || 0),
@@ -168,4 +178,34 @@ function editar(s, v, pestana = 'datos') {
       vista(v);
     } catch (x) { toast(x.message, 'error'); }
   });
+}
+
+/** Renombrar categorías (por ejemplo una que quedó mal escrita). Si el nombre ya existe, se unen. */
+function editarCategorias(v) {
+  const cuenta = (c) => S.servicios.filter((s) => s.categoria === c).length;
+  const h = abrirHoja(html`
+    <div class="cabeza-hoja"><div><span class="script">Servicios</span><h2>Categorías</h2></div><button class="icono-btn" data-cerrar aria-label="Cerrar">${crudo(ICONOS.cerrar)}</button></div>
+    <p class="muted small">Cambia el nombre de una categoría y se cambia en todos sus servicios. Si escribes el nombre de otra que ya existe, se unen en una sola.</p>
+    <div class="lista-categorias">${categorias().map((c) => html`
+      <form class="fila-cat-serv" data-de="${c}">
+        <input class="input" name="a" value="${c}" maxlength="40" required aria-label="Nombre de ${c}">
+        <small class="muted">${cuenta(c)} serv.</small>
+        <button class="btn sec chico">Guardar</button>
+      </form>`)}</div>
+    <p class="muted small espacio-arriba">Para crear una categoría nueva, elige "+ Nueva categoría…" al crear o editar un servicio.</p>`, { alCerrar: () => vista(v) });
+  for (const f of $$('.fila-cat-serv', h)) {
+    f.onsubmit = async (e) => {
+      e.preventDefault();
+      const de = f.dataset.de, a = f.a.value.trim();
+      if (!a || a === de) return;
+      const existe = categorias().includes(a);
+      if (existe && !(await confirmar(`¿Unir ${de} con ${a}?`, `Los servicios de ${de} pasan a ${a}.`, { si: 'Unir' }))) return;
+      try {
+        const r = await api('/api/panel/categorias', { metodo: 'PUT', datos: { de, a } });
+        toast(`Listo: ${r.servicios} servicio${r.servicios === 1 ? '' : 's'} en ${a}`, 'ok');
+        await recargar();
+        editarCategorias(v);
+      } catch (x) { toast(x.message, 'error'); }
+    };
+  }
 }

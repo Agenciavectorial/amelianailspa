@@ -1,6 +1,6 @@
 // Editor de galería (fotos y videos por servicio) y selector de imagen reutilizable
 // (galerías, promociones, portada de la reserva y foto de perfil).
-import { api, html, crudo, pintar, $, $$, toast, ocupado, abrirHoja, cerrarHoja, ICONOS, foto } from '/app-citas/js/util.js?v=dc24d1e190';
+import { api, html, crudo, pintar, $, $$, toast, ocupado, abrirHoja, cerrarHoja, ICONOS, foto } from '/app-citas/js/util.js?v=7462d0b2a7';
 
 let fotosSpa = null;
 async function cargarFotosSpa() {

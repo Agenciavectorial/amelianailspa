@@ -524,6 +524,16 @@ export function rutasPanel(r) {
     return { ok: true };
   });
 
+  // Renombrar una categoría (p. ej. una mal escrita). Si el nombre nuevo ya existe, los servicios se unen a esa.
+  r.put('/api/panel/categorias', 'propietaria', async ({ db, sesion, body }) => {
+    const de = v.texto(body.de, 'categoría actual', { min: 1, max: 40 });
+    const a = v.texto(body.a, 'nombre nuevo', { min: 2, max: 40 }).replace(/\s+/g, ' ').trim();
+    const r2 = await db.prepare('UPDATE servicios SET categoria = ? WHERE categoria = ?').bind(a, de).run();
+    if (!r2.meta.changes) falla(404, 'No hay servicios en esa categoría.');
+    await db.prepare("INSERT INTO registro (quien, accion, detalle) VALUES (?, 'categoria', ?)").bind(quien(sesion), `${de} → ${a}`).run();
+    return { ok: true, servicios: r2.meta.changes };
+  });
+
   r.delete('/api/panel/servicios/:id', 'propietaria', async ({ db, params }) => {
     const id = v.entero(Number(params.id), 'servicio', { min: 1 });
     const usado = await db.prepare('SELECT 1 FROM cita_servicios WHERE servicio_id = ? LIMIT 1').bind(id).first();
