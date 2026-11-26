@@ -1,7 +1,7 @@
 // Clientas: búsqueda, historial y notas.
-import { api, html, crudo, pintar, $, $$, toast, ocupado, abrirHoja, cerrarHoja, confirmar, hora, dinero, fechaCorta, celularBonito, inicial, ICONOS } from '/app-citas/js/util.js?v=7462d0b2a7';
-import { esDuena, puede } from './estado.js?v=7462d0b2a7';
-import { nuevaCita, pastillaEstado } from './citas.js?v=7462d0b2a7';
+import { api, html, crudo, pintar, $, $$, toast, ocupado, abrirHoja, cerrarHoja, confirmar, hora, dinero, fechaCorta, celularBonito, inicial, ICONOS } from '/app-citas/js/util.js?v=ebff92790b';
+import { esDuena, puede } from './estado.js?v=ebff92790b';
+import { nuevaCita, pastillaEstado } from './citas.js?v=ebff92790b';
 
 let pagina = 0, texto = '', filtroEtiqueta = 0;
 let ETIQUETAS = [];

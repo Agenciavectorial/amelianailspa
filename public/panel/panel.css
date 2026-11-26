@@ -608,3 +608,18 @@ a.stat { text-decoration: none; color: inherit; }
 .subir-foto { white-space: nowrap; position: relative; }
 .estado-foto:empty { display: none; }
 .fila-cat-serv { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center; }
+.atajos-horario { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 4px; }
+.atajos-horario .chip { min-height: 40px; }
+.chip-rango[aria-pressed="true"] { background: var(--rosa-deep); border-color: var(--rosa-deep); color: #fff; }
+.ayuda-rango { margin: 4px 0; color: var(--rosa-deep); font-weight: 600; }
+.cal-horario { user-select: none; -webkit-user-select: none; }
+.ch-dia.inicio-rango { outline: 3px dashed var(--rosa-deep); outline-offset: 1px; }
+.ch-dia.elegido::after { content: "✓"; position: absolute; bottom: 3px; right: 6px; font-size: .7rem; font-weight: 800; color: var(--rosa-deep); }
+.intervalo-fechas summary { display: grid; gap: 2px; cursor: pointer; list-style: none; }
+.intervalo-fechas summary::-webkit-details-marker { display: none; }
+.dias-intervalo { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.dias-intervalo .chip-check span { display: inline-grid; place-items: center; min-width: 40px; min-height: 40px; border-radius: 12px; border: 1.5px solid var(--linea); font-weight: 700; }
+.dias-intervalo .chip-check input:checked + span { background: var(--rosa-deep); border-color: var(--rosa-deep); color: #fff; }
+.pa-cabeza { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.pa-cabeza h2 { font-size: 1.1rem; }
+body.con-panel-horario .fab { display: none; }

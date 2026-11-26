@@ -1,6 +1,6 @@
 // Tour corto la primera vez que cada persona entra (se puede saltar y volver a ver desde Mi cuenta).
-import { html, crudo, pintar, $, ICONOS } from '/app-citas/js/util.js?v=7462d0b2a7';
-import { S, esDuena, puede } from './estado.js?v=7462d0b2a7';
+import { html, crudo, pintar, $, ICONOS } from '/app-citas/js/util.js?v=ebff92790b';
+import { S, esDuena, puede } from './estado.js?v=ebff92790b';
 
 const clave = () => `amelia_tour_v1_${S.yo?.id}`;
 

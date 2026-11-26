@@ -1,7 +1,7 @@
 // Servicios (solo Erika): catálogo con foto, precio, duración, quién lo hace y visibilidad.
-import { api, html, crudo, pintar, $, $$, toast, ocupado, confirmar, abrirHoja, cerrarHoja, duracion, dinero, ICONOS, foto, SITIO } from '/app-citas/js/util.js?v=7462d0b2a7';
-import { S, recargar, categorias, conAgenda } from './estado.js?v=7462d0b2a7';
-import { editorGaleria, elegirMedio, agregarAGaleria, campoFoto, conectarCampoFoto } from './galeria.js?v=7462d0b2a7';
+import { api, html, crudo, pintar, $, $$, toast, ocupado, confirmar, abrirHoja, cerrarHoja, duracion, dinero, ICONOS, foto, SITIO } from '/app-citas/js/util.js?v=ebff92790b';
+import { S, recargar, categorias, conAgenda } from './estado.js?v=ebff92790b';
+import { editorGaleria, elegirMedio, agregarAGaleria, campoFoto, conectarCampoFoto } from './galeria.js?v=ebff92790b';
 
 /** Enlace directo que abre la reserva con ese servicio o combo ya elegido. */
 export const enlaceServicio = (sv) => `${SITIO}/reservar/?servicio=${encodeURIComponent(sv.slug)}`;

@@ -1,7 +1,7 @@
 // Gestionar la cita con el enlace privado (/reservar/cita/#<token>): ver, reprogramar, cancelar.
-import { api, html, crudo, pintar, $, toast, ocupado, confirmar, hora, duracion, dinero, fechaLarga, ICONOS, hoyBogota, avatarAmpliable, activarAmpliar } from '/app-citas/js/util.js?v=7462d0b2a7';
-import { crearSelector } from './selector.js?v=7462d0b2a7';
-import { estadoPush, activarPush } from '/app-citas/js/push.js?v=7462d0b2a7';
+import { api, html, crudo, pintar, $, toast, ocupado, confirmar, hora, duracion, dinero, fechaLarga, ICONOS, hoyBogota, avatarAmpliable, activarAmpliar } from '/app-citas/js/util.js?v=ebff92790b';
+import { crearSelector } from './selector.js?v=ebff92790b';
+import { estadoPush, activarPush } from '/app-citas/js/push.js?v=ebff92790b';
 
 const app = $('#app');
 const bandeja = $('#bandeja');

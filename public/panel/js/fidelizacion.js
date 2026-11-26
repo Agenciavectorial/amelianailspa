@@ -1,8 +1,8 @@
 // Fidelización: a quién le toca volver (ciclo de retorno del servicio), cumpleaños e inactivas para recuperar.
-import { api, html, crudo, pintar, $, $$, fechaLarga, celularBonito, ICONOS, SITIO } from '/app-citas/js/util.js?v=7462d0b2a7';
-import { S, esDuena } from './estado.js?v=7462d0b2a7';
-import { enviar, textoPlantilla } from './mensajes.js?v=7462d0b2a7';
-import { enlaceRepetir } from './inicio.js?v=7462d0b2a7';
+import { api, html, crudo, pintar, $, $$, fechaLarga, celularBonito, ICONOS, SITIO } from '/app-citas/js/util.js?v=ebff92790b';
+import { S, esDuena } from './estado.js?v=ebff92790b';
+import { enviar, textoPlantilla } from './mensajes.js?v=ebff92790b';
+import { enlaceRepetir } from './inicio.js?v=ebff92790b';
 
 let pestana = 'contactar';
 
